@@ -74,7 +74,6 @@ body {
   width: 480px;
   height: 360px;
   background: #000;
-  container-type: size;
 }
 
 #stage {
@@ -234,13 +233,45 @@ body {
   inset: 0;
   isolation: isolate;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   overflow: hidden;
   background: var(--ui-panel) var(--ui-menu-bg) center / cover no-repeat;
   color: var(--ui-text);
-  font-size: clamp(11px, 3.5cqh, 19px);
+  font-size: clamp(11px, calc(var(--stage-h, 360px) * 0.032), 19px);
   line-height: 1.35;
+}
+
+/* On a phone the stage is small, so the lobby takes the whole screen. */
+@media (orientation: portrait) and (max-width: 700px), (orientation: landscape) and (max-height: 500px) {
+  .lobby {
+    position: fixed;
+    z-index: 6;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+}
+
+@media (orientation: portrait) and (max-width: 700px) {
+  .lobby {
+    font-size: clamp(13px, 4.2vw, 18px);
+  }
+
+  .lobby .lobby-footer-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+}
+
+/* A phone on its side is short, so the text follows the height and the logo is smaller. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .lobby {
+    font-size: clamp(11px, 3.3vh, 16px);
+  }
+
+  .lobby .lobby-title {
+    font-size: 0.75em;
+  }
 }
 
 .lobby::before {
@@ -254,9 +285,12 @@ body {
   pointer-events: none;
 }
 
+/* Centered in the space above the footer, scrolling when a short screen cannot fit it. */
 .lobby-panel {
   width: min(24em, 92%);
-  max-height: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: auto 0;
   overflow: auto;
   padding: 0.8em 0;
   display: flex;
@@ -540,10 +574,23 @@ body {
 }
 
 /* The diamond return button from the character select, in the same corner. */
+.lobby-footer {
+  align-self: stretch;
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6em;
+  padding: 0 0.6em 0.4em;
+}
+
+.lobby-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 1.2em;
+}
+
 .lobby-return {
-  position: absolute;
-  left: 0.6em;
-  bottom: 0.6em;
   height: 3em;
   padding: 0 0 0 3.5em;
   font: inherit;
@@ -564,12 +611,9 @@ body {
   outline: none;
 }
 
-/* A display option in the corner opposite the controls button, with its state in a small tag. */
+/* An on/off option in the footer, with its state in a small tag. */
 .lobby-option {
-  position: absolute;
-  left: 0.6em;
-  bottom: 0.6em;
-  height: 2.6em;
+  height: 2.2em;
   padding: 0;
   display: flex;
   align-items: center;
@@ -606,9 +650,7 @@ body {
 
 /* The main menu's controls button, in the same corner. */
 .lobby-corner {
-  position: absolute;
-  right: 0.6em;
-  bottom: 0.6em;
+  flex: none;
   height: 2.6em;
   padding: 0 3.8em 0 0;
   font: inherit;

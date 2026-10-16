@@ -24,11 +24,27 @@ function capture(target: Element, id: number): void {
   }
 }
 
+const CHOICE_KEY = 'sfrt.touch';
+
+function loadChoice(): boolean | null {
+  try {
+    const v = localStorage.getItem(CHOICE_KEY);
+    return v === null ? null : v === '1';
+  } catch {
+    return null;
+  }
+}
+
 export class TouchControls {
   private root: HTMLDivElement;
+  /** Detected: a touch screen is the main pointer, a touch happened, or a controller took over. */
   private touchDevice = matchMedia('(pointer: coarse)').matches;
+  /** The player's own choice from the lobby, which wins over detection once made. */
+  private choice = loadChoice();
   private playing = false;
   private dirs = new Set<number>();
+  /** Called whenever the controls switch on or off, for the lobby's toggle. */
+  onChange: (on: boolean) => void = () => {};
 
   constructor(parent: HTMLElement, private pads: Pads, private relayout: () => void) {
     this.root = el('div', 'touch');
@@ -48,9 +64,14 @@ export class TouchControls {
     this.update();
   }
 
+  /** Whether the controls show during a game. */
+  get enabled(): boolean {
+    return this.choice ?? this.touchDevice;
+  }
+
   /** True while the controls show, so the page leaves room for them. */
   get active(): boolean {
-    return this.touchDevice && this.playing;
+    return this.enabled && this.playing;
   }
 
   setPlaying(on: boolean): void {
@@ -58,7 +79,19 @@ export class TouchControls {
     this.update();
   }
 
+  /** Records the player's choice, which then wins over detection. */
+  setChoice(on: boolean): void {
+    this.choice = on;
+    try {
+      localStorage.setItem(CHOICE_KEY, on ? '1' : '0');
+    } catch {
+      // Storage may be blocked.
+    }
+    this.update();
+  }
+
   private update(): void {
+    this.onChange(this.enabled);
     document.documentElement.classList.toggle('touch-on', this.active);
     if (!this.active) {
       this.pads.releaseAll();

@@ -17,6 +17,12 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: 
   return e;
 }
 
+/** An on/off option button: its label, then its state in a small tag. */
+function renderOption(b: HTMLButtonElement, label: string, on: boolean): void {
+  b.replaceChildren(label, el('span', `lobby-option-state${on ? ' on' : ''}`, on ? 'On' : 'Off'));
+  b.setAttribute('aria-pressed', String(on));
+}
+
 /** A key name as a button shows it: "space" becomes "Space", "up arrow" becomes "Up arrow". */
 function keyLabel(name: string): string {
   return name ? name[0].toUpperCase() + name.slice(1) : 'None';
@@ -45,6 +51,8 @@ export interface LobbyHandlers {
   prefs(p: Prefs): void;
   /** Called at startup with the saved choice and again whenever the player changes it. */
   hqPen(on: boolean): void;
+  /** The player switched the touch controls on or off. */
+  touchControls(on: boolean): void;
   leave(): void;
 }
 
@@ -64,6 +72,8 @@ export class Lobby {
   private controlsBtn: HTMLButtonElement;
   private hqBtn: HTMLButtonElement;
   private hq = load(HQ_KEY, '1') === '1';
+  private touchBtn: HTMLButtonElement;
+  private touchOn = false;
   private leaveBtn: HTMLButtonElement;
   private keyButtons: HTMLButtonElement[] = [];
   private controls = loadControls();
@@ -180,8 +190,16 @@ export class Lobby {
     this.hqBtn.addEventListener('click', () => this.setHq(!this.hq));
     this.renderHq();
     this.h.hqPen(this.hq);
+    this.touchBtn = el('button', 'lobby-option');
+    this.touchBtn.addEventListener('click', () => this.h.touchControls(!this.touchOn));
+    this.setTouch(false);
     panel.append(this.menu, this.room, this.controlsView, this.status);
-    this.root.append(panel, this.leaveBtn, this.hqBtn, this.controlsBtn);
+    // The footer keeps these out of the panel's way on short screens.
+    const footer = el('div', 'lobby-footer');
+    const left = el('div', 'lobby-footer-left');
+    left.append(this.leaveBtn, this.hqBtn, this.touchBtn);
+    footer.append(left, this.controlsBtn);
+    this.root.append(panel, footer);
     parent.append(this.root);
     window.addEventListener('keydown', (e) => this.onCaptureKey(e), true);
 
@@ -244,6 +262,7 @@ export class Lobby {
     this.controlsView.hidden = view !== 'controls';
     this.leaveBtn.hidden = view !== 'room';
     this.hqBtn.hidden = view !== 'menu';
+    this.touchBtn.hidden = view !== 'menu';
     this.controlsBtn.hidden = view === 'controls';
     this.root.classList.toggle('in-room', view !== 'menu');
   }
@@ -285,9 +304,13 @@ export class Lobby {
   }
 
   private renderHq(): void {
-    const state = el('span', `lobby-option-state${this.hq ? ' on' : ''}`, this.hq ? 'On' : 'Off');
-    this.hqBtn.replaceChildren('High quality pen', state);
-    this.hqBtn.setAttribute('aria-pressed', String(this.hq));
+    renderOption(this.hqBtn, 'High quality pen', this.hq);
+  }
+
+  /** Shows whether the touch controls are on. They decide that from the saved choice or the device. */
+  setTouch(on: boolean): void {
+    this.touchOn = on;
+    renderOption(this.touchBtn, 'Touch controls', on);
   }
 
   private setPrefs(p: Prefs): void {

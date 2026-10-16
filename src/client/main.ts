@@ -39,6 +39,7 @@ function fitStage(): void {
   stageWrap.style.width = `${cssW}px`;
   stageWrap.style.height = `${cssH}px`;
   document.documentElement.style.setProperty('--stage-w', `${cssW}px`);
+  document.documentElement.style.setProperty('--stage-h', `${cssH}px`);
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
@@ -131,6 +132,9 @@ const lobby = new Lobby(overlay, {
   hqPen(on) {
     game.renderer.hqPen = on;
   },
+  touchControls(on) {
+    touch.setChoice(on);
+  },
   start(delay) {
     // Every seat gets Player 1's row, so each player's own controls have a full row to map onto.
     room?.send({ type: 'start', t0: localT0(), delay, sameKeys: true });
@@ -145,6 +149,8 @@ const lobby = new Lobby(overlay, {
     lobby.setStatus('');
   },
 });
+touch.onChange = (on) => lobby.setTouch(on);
+lobby.setTouch(touch.enabled);
 
 function refreshSeats(): void {
   if (!room) return;
