@@ -11,6 +11,8 @@ import { Sprite, Target, type PenState, type Effects, type EffectName } from './
 import { Thread, newFrame, type Frame, STATUS_RUNNING, STATUS_PROMISE_WAIT, STATUS_DONE, PC_FALL_OFF } from './thread.ts';
 
 export const FRAME_MS = 1000 / 30;
+/** Real time between frames. The original schedules frames with an interval of 1000 / 30 ms, which browsers truncate to 33. */
+export const PACE_MS = 33;
 const MAX_CLONES = 300;
 const DECAY_MS = 25;
 

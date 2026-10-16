@@ -3,7 +3,7 @@
 // When real input arrives and differs from the prediction, the session restores the snapshot
 // before that frame and simulates forward again with the corrected input.
 import type { PlayerInput } from '../engine/io.ts';
-import type { Runtime } from '../engine/runtime.ts';
+import { PACE_MS, type Runtime } from '../engine/runtime.ts';
 import type { SoundEvent } from '../engine/sound-model.ts';
 import { saveSnapshot, loadSnapshot, type Snapshot } from '../engine/snapshot.ts';
 import { decodePacket, encodePacket, Kind, type InputPacket, type Packet } from './wire.ts';
@@ -270,7 +270,7 @@ export class RollbackSession {
   private updateAdvantage(): void {
     let worst = -Infinity;
     for (const s of this.remotes) {
-      const rttFrames = (this.rtt.get(s) ?? 0) / (1000 / 30);
+      const rttFrames = (this.rtt.get(s) ?? 0) / PACE_MS;
       const theirs = this.peerFrame.get(s)! + rttFrames / 2;
       worst = Math.max(worst, this.frame - theirs);
     }

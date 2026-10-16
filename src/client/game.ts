@@ -1,5 +1,5 @@
 // Owns one simulation plus everything that presents it: renderer, audio and overlays.
-import { Runtime, FRAME_MS } from '../engine/runtime.ts';
+import { Runtime, PACE_MS } from '../engine/runtime.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import { modules, monitors } from '../game/generated/index.ts';
 import { skins } from '../game/assets.ts';
@@ -66,27 +66,37 @@ export class Game {
 }
 
 /**
- * Calls `tick` at 30 Hz and `after` once following each batch of ticks. A worker drives the
+ * Frame scheduler run in a worker: one message per frame, due every PACE_MS, posted with its due
+ * time. Due times advance by exactly PACE_MS, so timer lateness never accumulates into drift.
+ */
+const PACER = `
+const step = ${PACE_MS};
+const clock = () => performance.timeOrigin + performance.now();
+let next = clock() + step;
+const loop = () => {
+  const now = clock();
+  if (now - next > 250) next = now;
+  while (now >= next) {
+    postMessage(next);
+    next += step;
+  }
+  setTimeout(loop, Math.max(0, Math.min(4, next - now)));
+};
+setTimeout(loop, 4);
+`;
+
+/**
+ * Calls `tick` then `after` once per frame, every PACE_MS like the original. A worker drives the
  * timing because animation frames stop and page timers slow down in background tabs, and an
  * online match must keep running there.
  */
 export function startFixedLoop(tick: () => void, after: () => void): () => void {
-  const src = 'setInterval(() => postMessage(0), 4);';
-  const worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
-  let acc = 0;
-  let last = performance.now();
-  worker.onmessage = () => {
-    const now = performance.now();
-    acc += Math.min(now - last, 250);
-    last = now;
-    let steps = 0;
-    while (acc >= FRAME_MS && steps < 5) {
-      tick();
-      acc -= FRAME_MS;
-      steps++;
-    }
-    if (steps === 5) acc = 0;
-    if (steps > 0) after();
+  const worker = new Worker(URL.createObjectURL(new Blob([PACER], { type: 'text/javascript' })));
+  worker.onmessage = (e: MessageEvent<number>) => {
+    // Frames that waited behind a long main-thread stall are dropped rather than played back at once.
+    if (performance.timeOrigin + performance.now() - e.data > 200) return;
+    tick();
+    after();
   };
   return () => worker.terminate();
 }
