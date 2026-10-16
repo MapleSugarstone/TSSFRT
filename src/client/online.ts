@@ -9,6 +9,7 @@ import type { RoomClient } from '../net/room-client.ts';
 import type { SeatInfo, StartInfo } from '../net/protocol.ts';
 import { report, reportContext } from '../net/report.ts';
 import { fromBase64, toBase64 } from '../net/wire.ts';
+import { skinOf } from '../game/assets.ts';
 import { applyPrefs, loadControls, seatKeys, translateKeys } from './controls.ts';
 import { Game, startFixedLoop } from './game.ts';
 import type { LocalInput } from './input.ts';
@@ -88,6 +89,9 @@ export class OnlineGame {
       for (let row = 2; row <= 4; row++) for (let b = 0; b < 9; b++) keys[row * 9 + b] = keys[9 + b];
     }
     applyPrefs(rt.stage.l.Player_Settings as Value[], start.seats, start.prefs);
+    // The other players' select cursors are drawn eased, since their predicted movement gets corrected.
+    const others = start.seats.filter((s) => s !== local).map((s) => skinOf(`Cursor_P${s + 1}`));
+    game.renderer.smoothSkins = new Set(others.filter((k) => k >= 0));
     this.session = new RollbackSession({
       rt,
       local,

@@ -10,6 +10,9 @@ import { EFFECT_BITS, FRAGMENT, VERTEX } from './shaders.ts';
 
 const NATIVE_W = 480;
 const NATIVE_H = 360;
+/** Share of the remaining distance a smoothed stamp covers per drawn frame, and the jump (stage units) drawn at once. */
+const SMOOTH_RATE = 0.45;
+const SMOOTH_SNAP = 90;
 const MIP_OFFSET = 8;
 
 interface Program {
@@ -73,6 +76,13 @@ export class WebGLRenderer {
   private penH = NATIVE_H;
   /** Draws the pen layer at the canvas resolution instead of 480x360, so pen lines and stamps stay sharp when the stage is enlarged. */
   hqPen = false;
+  /**
+   * Pen stamps of these skins are drawn eased toward their position instead of at it. Online, the
+   * other players' select cursors use this, because rollback corrections make them jump back.
+   * Only the picture changes, never the simulation.
+   */
+  smoothSkins = new Set<number>();
+  private smoothed = new Map<number, { x: number; y: number }>();
   private penArr: PenCmd[] | null = null;
   private penDrawn = 0;
   private penEpoch = -1;
@@ -317,6 +327,11 @@ export class WebGLRenderer {
       return;
     }
     const d: DrawState = { skin: cmd.skin, x: cmd.x, y: cmd.y, sx: cmd.sx, sy: cmd.sy, dir: cmd.dir, fx: cmd.fx };
+    if (this.smoothSkins.has(cmd.skin)) {
+      const p = this.ease(cmd.skin, cmd.x, cmd.y);
+      d.x = p.x;
+      d.y = p.y;
+    }
     // Stamping first asks for the 100% texture (the original checks the stamp bounds with it).
     this.skinTexture(cmd.skin, 100, 100);
     const b = stampBounds(this.geom, this.skins[cmd.skin], d);
@@ -351,6 +366,19 @@ export class WebGLRenderer {
     for (let i = this.penDrawn; i < cmds.length; i++) this.drawPenCmd(cmds[i]);
     this.penDrawn = cmds.length;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  /** Moves a smoothed stamp's drawn position part of the way to its real one, or straight there after a big jump. */
+  private ease(skin: number, x: number, y: number): { x: number; y: number } {
+    const p = this.smoothed.get(skin);
+    if (!p || Math.hypot(x - p.x, y - p.y) > SMOOTH_SNAP) {
+      const q = { x, y };
+      this.smoothed.set(skin, q);
+      return q;
+    }
+    p.x += (x - p.x) * SMOOTH_RATE;
+    p.y += (y - p.y) * SMOOTH_RATE;
+    return p;
   }
 
   /** Resizes the pen texture to match the current setting and canvas. The command list then redraws it at the new size. */

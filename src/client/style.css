@@ -44,6 +44,7 @@ body {
   overflow: hidden;
 }
 
+/* Nothing on the page is selectable or shows a text caret, except text fields, the room code and the list monitors. */
 #app {
   height: 100%;
   display: flex;
@@ -51,6 +52,18 @@ body {
   gap: 6px;
   align-items: center;
   justify-content: center;
+  -webkit-user-select: none;
+  user-select: none;
+  caret-color: transparent;
+  cursor: default;
+}
+
+#app input,
+#app textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  caret-color: auto;
+  cursor: text;
 }
 
 #stage-wrap {
@@ -427,7 +440,9 @@ body {
   color: #ffffff;
   font-weight: 700;
   letter-spacing: 0.18em;
+  -webkit-user-select: all;
   user-select: all;
+  cursor: text;
 }
 
 .lobby-seats {
