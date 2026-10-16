@@ -7,6 +7,10 @@ import { ATTACK, COMBO, CROUCH, JUMP, LEFT, PAUSE, RIGHT, SHIELD, TAUNT, UP, typ
 const STICK_DEADZONE = 0.3;
 /** Direction threshold on each axis: cos 67.5 degrees, so the eight directions get equal sectors. */
 const AXIS = 0.383;
+/** In menus the thumb must move further, since each release of a direction moves the selection. */
+const MENU_DEADZONE = 0.5;
+/** In menus the current axis is kept until the other leads it by this much, so a thumb near 45 degrees does not flip between them. */
+const MENU_STICKINESS = 0.25;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -45,6 +49,8 @@ export class TouchControls {
   private dirs = new Set<number>();
   /** Called whenever the controls switch on or off, for the lobby's toggle. */
   onChange: (on: boolean) => void = () => {};
+  /** True while the game shows a menu, where the joystick gives one direction at a time. */
+  menuMode: () => boolean = () => false;
 
   constructor(parent: HTMLElement, private pads: Pads, private relayout: () => void) {
     this.root = el('div', 'touch');
@@ -127,13 +133,24 @@ export class TouchControls {
       }
       knob.style.transform = `translate(${dx}px, ${dy}px)`;
       const next = new Set<number>();
-      if (dist > r * STICK_DEADZONE) {
+      const menu = this.menuMode();
+      if (dist > r * (menu ? MENU_DEADZONE : STICK_DEADZONE)) {
         const ux = (e.clientX - cx) / dist;
         const uy = (e.clientY - cy) / dist;
-        if (ux > AXIS) next.add(RIGHT);
-        if (ux < -AXIS) next.add(LEFT);
-        if (uy < -AXIS) next.add(UP);
-        if (uy > AXIS) next.add(CROUCH);
+        if (menu) {
+          // Menus act on the last direction released, so they get exactly one direction at a time.
+          const ax = Math.abs(ux);
+          const ay = Math.abs(uy);
+          let across = ax >= ay;
+          if (this.dirs.has(RIGHT) || this.dirs.has(LEFT)) across = ay < ax + MENU_STICKINESS;
+          else if (this.dirs.has(UP) || this.dirs.has(CROUCH)) across = ax >= ay + MENU_STICKINESS;
+          next.add(across ? (ux > 0 ? RIGHT : LEFT) : uy > 0 ? CROUCH : UP);
+        } else {
+          if (ux > AXIS) next.add(RIGHT);
+          if (ux < -AXIS) next.add(LEFT);
+          if (uy < -AXIS) next.add(UP);
+          if (uy > AXIS) next.add(CROUCH);
+        }
       }
       this.setDirs(next);
     };

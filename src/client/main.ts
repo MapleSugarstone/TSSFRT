@@ -150,6 +150,13 @@ const lobby = new Lobby(overlay, {
   },
 });
 touch.onChange = (on) => lobby.setTouch(on);
+// Every screen but a running match and the character select's free cursor is a menu.
+touch.menuMode = () => {
+  const g = game.rt.stage;
+  const state = String(g.v.Main_State);
+  if (state === 'Match') return Number((g.l.Paused_Data as Value[])[0]) === 1;
+  return state !== 'MainMenu_CharacterSelect';
+};
 lobby.setTouch(touch.enabled);
 
 function refreshSeats(): void {
