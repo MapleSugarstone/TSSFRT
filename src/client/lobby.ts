@@ -250,8 +250,11 @@ export class Lobby {
 
   private renderKeys(): void {
     this.keyButtons.forEach((b, i) => {
-      b.textContent = i === this.capturing ? 'Press a key' : keyLabel(this.controls[i]);
+      const label = i === this.capturing ? 'Press a key' : keyLabel(this.controls[i]);
+      b.textContent = label;
+      b.title = label;
       b.classList.toggle('capturing', i === this.capturing);
+      b.classList.toggle('long', label.length > 6);
     });
   }
 

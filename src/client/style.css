@@ -575,10 +575,11 @@ body {
   gap: 0.3em 1.2em;
 }
 
+/* The key column has a fixed width in the row's em, so a smaller font for long key names keeps the button size. */
 .control {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.4em;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5em;
 }
 
@@ -589,16 +590,25 @@ body {
   color: var(--ui-muted);
 }
 
-.lobby .control-key {
-  width: 6.9em;
+/* Specific enough to win over the general lobby button rule. */
+.lobby .controls-grid button.control-key {
+  width: 100%;
+  min-height: 2.2em;
   font-size: 0.9em;
-  padding: 0.4em 0.4em;
+  padding: 0.4em 0.3em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: none;
   letter-spacing: 0.02em;
 }
 
-.lobby .control-key.capturing {
+.lobby .controls-grid button.control-key.long {
+  font-size: 0.72em;
+  min-height: 2.75em;
+}
+
+.lobby .controls-grid button.control-key.capturing {
   --stroke: var(--p1);
   color: #ffffff;
 }
