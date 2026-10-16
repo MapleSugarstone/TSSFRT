@@ -4,6 +4,7 @@
 import { PROTOCOL, isBuild, type QueueReply } from '../../src/net/protocol';
 import { lobbyOf, type Env } from './env';
 import { Lobby } from './lobby';
+import { log } from './log';
 import { Room } from './room';
 
 export { Lobby, Room };
@@ -15,12 +16,17 @@ const WORLD_PER_SECOND = 100;
 const BUCKETS_MAX = 5000;
 const BUCKET_IDLE_MS = 10 * 60 * 1000;
 const BODY_MAX = 1024;
+/** Problem reports from players' pages have their own, smaller limit so they never block hosting or joining. */
+const REPORT_BURST = 10;
+const REPORT_PER_SECOND = 0.2;
+const REPORT_MAX = 8192;
 
 interface Bucket {
   tokens: number;
   at: number;
 }
 const buckets = new Map<string, Bucket>();
+const reportBuckets = new Map<string, Bucket>();
 const world: Bucket = { tokens: WORLD_BURST, at: Date.now() };
 
 function draw(b: Bucket, burst: number, perSecond: number, now: number): boolean {
@@ -38,6 +44,28 @@ function limited(address: string, now: number): string | null {
   if (!draw(b, ADDRESS_BURST, ADDRESS_PER_SECOND, now)) return 'Too many requests from this address. Wait a minute and try again.';
   if (!draw(world, WORLD_BURST, WORLD_PER_SECOND, now)) return 'The rooms are busy. Try again in a minute.';
   return null;
+}
+
+function reportAllowed(address: string, now: number): boolean {
+  if (reportBuckets.size > BUCKETS_MAX) for (const [k, b] of reportBuckets) if (now - b.at > BUCKET_IDLE_MS) reportBuckets.delete(k);
+  let b = reportBuckets.get(address);
+  if (!b) reportBuckets.set(address, (b = { tokens: REPORT_BURST, at: now }));
+  return draw(b, REPORT_BURST, REPORT_PER_SECOND, now);
+}
+
+/** Logs a report a player's page sent about a problem (a freeze, a desync, a lost link or a script error). */
+async function takeReport(request: Request, address: string): Promise<number> {
+  const text = await request.text();
+  if (text.length > REPORT_MAX) return 413;
+  let report: unknown;
+  try {
+    report = JSON.parse(text);
+  } catch {
+    return 400;
+  }
+  if (!report || typeof report !== 'object' || Array.isArray(report)) return 400;
+  log('client-report', { from: addressKey(address), country: request.headers.get('CF-IPCountry'), ...(report as Record<string, unknown>) });
+  return 204;
 }
 
 function addressKey(address: string): string {
@@ -85,20 +113,35 @@ export default {
     if (url.pathname === '/api/health') return Response.json({ ok: true, protocol: PROTOCOL }, { headers: cors });
     const address = request.headers.get('CF-Connecting-IP') ?? 'unknown';
 
+    if (url.pathname === '/api/report') {
+      if (request.method !== 'POST') return new Response('use POST', { status: 405, headers: cors });
+      if (!allowedOrigin(env, origin)) return new Response('forbidden origin', { status: 403, headers: cors });
+      if (!reportAllowed(address, Date.now())) return new Response(null, { status: 429, headers: cors });
+      return new Response(null, { status: await takeReport(request, address), headers: cors });
+    }
+
     if (url.pathname.startsWith('/api/queue/')) {
       if (request.method !== 'POST') return new Response('use POST', { status: 405, headers: cors });
       if (!allowedOrigin(env, origin)) return new Response('forbidden origin', { status: 403, headers: cors });
       const busy = limited(address, Date.now());
-      if (busy) return reply({ ok: false, reason: busy }, 429);
+      if (busy) {
+        log('rate-limited', { path: url.pathname, from: addressKey(address) });
+        return reply({ ok: false, reason: busy }, 429);
+      }
       const b = await bodyOf(request);
       if (!b || !isBuild(b.build)) return reply({ ok: false, reason: 'The request could not be read.' }, 400);
       const lobby = lobbyOf(env);
       switch (url.pathname.slice('/api/queue/'.length)) {
-        case 'host':
-          return reply(await lobby.host(b.build, addressKey(address)));
+        case 'host': {
+          const r = await lobby.host(b.build, addressKey(address));
+          log('lobby-host', { ok: r.ok, reason: r.ok ? undefined : r.reason, build: b.build, from: addressKey(address) });
+          return reply(r);
+        }
         case 'join': {
           if (typeof b.code !== 'string' || !CODE.test(b.code)) return reply({ ok: false, reason: 'A code is six letters and numbers.' }, 400);
-          return reply(await lobby.join(b.code.toUpperCase(), b.build));
+          const r = await lobby.join(b.code.toUpperCase(), b.build);
+          log('lobby-join', { ok: r.ok, reason: r.ok ? undefined : r.reason, build: b.build, from: addressKey(address) });
+          return reply(r);
         }
         case 'cancel':
           if (typeof b.code === 'string' && CODE.test(b.code)) await lobby.cancel(b.code.toUpperCase());

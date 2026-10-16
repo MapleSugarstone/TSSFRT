@@ -7,8 +7,9 @@ import { RollbackSession } from '../net/rollback.ts';
 import type { Mesh } from '../net/mesh.ts';
 import type { RoomClient } from '../net/room-client.ts';
 import type { SeatInfo, StartInfo } from '../net/protocol.ts';
+import { report, reportContext } from '../net/report.ts';
 import { fromBase64, toBase64 } from '../net/wire.ts';
-import { loadControls, seatKeys, translateKeys } from './controls.ts';
+import { applyPrefs, loadControls, seatKeys, translateKeys } from './controls.ts';
 import { Game, startFixedLoop } from './game.ts';
 import type { LocalInput } from './input.ts';
 
@@ -55,6 +56,8 @@ export interface OnlineHud {
 
 /** Seconds of silence before the host may continue without a player. */
 const DROP_AFTER_S = 5;
+const FREEZE_REPORT_MS = 5_000;
+const AWAY_SILENT_MS = 1_000;
 
 export class OnlineGame {
   session: RollbackSession;
@@ -62,6 +65,9 @@ export class OnlineGame {
   private probeTimer: ReturnType<typeof setInterval> | null = null;
   private away = new Set<number>();
   private dropped = new Set<number>();
+  private stuckSince: number | null = null;
+  private freezeReported = false;
+  private desyncReported = false;
   host: number;
 
   constructor(
@@ -81,6 +87,7 @@ export class OnlineGame {
       const keys = rt.stage.l.Player_Input as unknown[];
       for (let row = 2; row <= 4; row++) for (let b = 0; b < 9; b++) keys[row * 9 + b] = keys[9 + b];
     }
+    applyPrefs(rt.stage.l.Player_Settings as Value[], start.seats, start.prefs);
     this.session = new RollbackSession({
       rt,
       local,
@@ -92,6 +99,30 @@ export class OnlineGame {
     const audio = new RollbackAudio(game);
     this.session.onFrame = (f, resim, sounds) => audio.frame(f, resim, sounds);
     mesh.onPacket = (data) => this.session.receive(data);
+    reportContext.room = room.id;
+    reportContext.seat = local;
+    reportContext.online = true;
+    mesh.onFallback = (seat, reason) => report('link-fallback', { seat, reason, ...this.diagnostics() });
+  }
+
+  /** The session and link state that problem reports carry. */
+  diagnostics(): Record<string, unknown> {
+    const st = this.session.stats;
+    return {
+      frame: st.frame,
+      confirmed: this.session.confirmedFrame(),
+      seats: this.start.seats,
+      delay: this.start.delay,
+      waitingFor: st.waitingFor,
+      away: [...this.away],
+      dropped: [...this.dropped],
+      silentFor: st.silentFor,
+      pings: st.pings,
+      rollbacks: st.rollbacks,
+      stalls: st.stalls,
+      advantage: st.advantage,
+      links: this.mesh.describe(),
+    };
   }
 
   /** Seat list updates from the room: who is connected and who hosts now. */
@@ -120,6 +151,7 @@ export class OnlineGame {
 
   run(input: LocalInput): void {
     this.probeTimer = setInterval(() => this.session.probe(), 1000);
+    this.mesh.watch();
     const own = loadControls();
     this.stop = startFixedLoop(
       () => {
@@ -163,9 +195,23 @@ export class OnlineGame {
     }
     parts.push(`rollbacks ${st.rollbacks}`);
     let warn = '';
-    const stuck = [...new Set([...st.waitingFor, ...this.away])].filter((s) => !this.dropped.has(s));
+    // A player whose room socket is reconnecting still plays while their inputs arrive directly.
+    const silentAway = [...this.away].filter((s) => (st.silentFor[s] ?? 0) > AWAY_SILENT_MS);
+    const stuck = [...new Set([...st.waitingFor, ...silentAway])].filter((s) => !this.dropped.has(s));
     if (stuck.length) warn = `Waiting for ${stuck.map((s) => this.name(s)).join(', ')}...`;
     if (st.desync) warn = `Games went out of sync at frame ${st.desync.frame}. Please start a new room.`;
+    const now = performance.now();
+    if (!stuck.length) this.stuckSince = null;
+    else if (this.stuckSince === null) this.stuckSince = now;
+    else if (now - this.stuckSince > FREEZE_REPORT_MS && !this.freezeReported) {
+      this.freezeReported = true;
+      report('freeze', { stuck, ...this.diagnostics() });
+    }
+    if (!stuck.length) this.freezeReported = false;
+    if (st.desync && !this.desyncReported) {
+      this.desyncReported = true;
+      report('desync', { desync: st.desync, ...this.diagnostics() });
+    }
     this.hud.update(parts.join('  |  '), warn);
     // The host may continue without a player who has been gone a few seconds.
     const gone = stuck.find((s) => this.away.has(s) || st.silentFor[s] > DROP_AFTER_S * 1000);

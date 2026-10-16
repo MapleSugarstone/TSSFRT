@@ -2,7 +2,8 @@
 import type { SeatInfo } from '../net/protocol.ts';
 import type { LinkState } from '../net/mesh.ts';
 import { browserKeyToName } from '../engine/io.ts';
-import { ACTIONS, DEFAULT_CONTROLS, loadControls, saveControls } from './controls.ts';
+import { DEFAULT_PREFS, type Prefs } from '../net/protocol.ts';
+import { ACTIONS, DEFAULT_CONTROLS, loadControls, loadPrefs, saveControls, savePrefs } from './controls.ts';
 import { installUiAssets, playerBadge } from './ui-assets.ts';
 
 const NAME_KEY = 'sfrt.name';
@@ -40,6 +41,7 @@ export interface LobbyHandlers {
   host(name: string): void;
   join(name: string, code: string): void;
   start(delay: number): void;
+  prefs(p: Prefs): void;
   leave(): void;
 }
 
@@ -60,6 +62,9 @@ export class Lobby {
   private leaveBtn: HTMLButtonElement;
   private keyButtons: HTMLButtonElement[] = [];
   private controls = loadControls();
+  private prefs = loadPrefs();
+  private upJumpBtn!: HTMLButtonElement;
+  private comboBtn!: HTMLButtonElement;
   private capturing = -1;
   private backTo: 'menu' | 'room' = 'menu';
   private loading = true;
@@ -129,6 +134,18 @@ export class Lobby {
       row.append(el('span', '', action), key);
       grid.append(row);
     });
+    // The controls menu's two per-player options, applied to this player's own seat when a game starts.
+    const options = el('div', 'controls-grid');
+    const option = (label: string, onClick: () => void): HTMLButtonElement => {
+      const row = el('div', 'control');
+      const b = el('button', 'control-key');
+      b.addEventListener('click', onClick);
+      row.append(el('span', '', label), b);
+      options.append(row);
+      return b;
+    };
+    this.upJumpBtn = option('Up is Jump', () => this.setPrefs({ ...this.prefs, upJump: !this.prefs.upJump }));
+    this.comboBtn = option('Combo use', () => this.setPrefs({ ...this.prefs, combo: this.prefs.combo === 'Charge' ? 'Best' : 'Charge' }));
     const actions = el('div', 'lobby-actions');
     const resetBtn = el('button', '', 'Reset to default');
     const backBtn = el('button', 'primary', 'Done');
@@ -137,11 +154,13 @@ export class Lobby {
       el('div', 'lobby-heading', 'Your controls'),
       el('p', 'lobby-note', 'Online, these keys control your player in any seat. Other players can use the same keys.'),
       grid,
+      options,
       actions,
     );
     resetBtn.addEventListener('click', () => {
       this.controls = [...DEFAULT_CONTROLS];
       saveControls(this.controls);
+      this.setPrefs({ ...DEFAULT_PREFS });
       this.capture(-1);
     });
     backBtn.addEventListener('click', () => this.closeControls());
@@ -248,7 +267,16 @@ export class Lobby {
     this.capture(-1);
   }
 
+  private setPrefs(p: Prefs): void {
+    this.prefs = p;
+    savePrefs(p);
+    this.h.prefs(p);
+    this.renderKeys();
+  }
+
   private renderKeys(): void {
+    this.upJumpBtn.textContent = this.prefs.upJump ? 'On' : 'Off';
+    this.comboBtn.textContent = this.prefs.combo;
     this.keyButtons.forEach((b, i) => {
       const label = i === this.capturing ? 'Press a key' : keyLabel(this.controls[i]);
       b.textContent = label;

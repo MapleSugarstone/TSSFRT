@@ -5,6 +5,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { readClient, type FromRoom } from '../../src/net/protocol';
 import { newRoom, RoomRules, type Out, type RoomData } from '../../src/net/room-rules';
 import type { Env } from './env';
+import { log } from './log';
 
 interface Tag {
   seat: number | null;
@@ -12,8 +13,8 @@ interface Tag {
   count: number;
 }
 
-/** Messages one socket may send in a window; the input relay fallback sends about 30 a second. */
-const FLOOD_MAX = 900;
+/** Messages one socket may send in a window. Relaying inputs sends about 30 a second to each of up to 3 other players. */
+const FLOOD_MAX = 1800;
 const FLOOD_WINDOW_MS = 10_000;
 const SOCKETS_MAX = 8;
 const IDLE_MS = 6 * 60 * 60 * 1000;
@@ -69,11 +70,13 @@ export class Room extends DurableObject<Env> {
       tag.count = 0;
     }
     if (++tag.count > FLOOD_MAX) {
+      log('room-flood', { room: this.id(), seat: tag.seat });
       shut(ws, 1008, 'too many messages');
       return;
     }
     const read = readClient(raw);
     if ('why' in read) {
+      log('room-bad-message', { room: this.id(), seat: tag.seat, why: read.why });
       shut(ws, 1008, read.why);
       return;
     }
@@ -85,23 +88,36 @@ export class Room extends DurableObject<Env> {
       // A rejoin replaces any older socket on the same seat.
       for (const other of this.ctx.getWebSockets()) if (other !== ws && this.tagOf(other).seat === r.seat) shut(other, 4000, 'replaced');
       tag.seat = r.seat;
+      log('room-seat', { room: this.id(), seat: r.seat, resume: read.m.type === 'hello' && 'resume' in read.m, started: d.start !== null });
     }
     ws.serializeAttachment(tag);
     this.deliver(r.out);
+    if (read.m.type === 'start' && d.start) log('room-start', { room: this.id(), seats: d.start.seats, delay: d.start.delay });
+    if (read.m.type === 'drop') log('room-drop', { room: this.id(), by: tag.seat, seat: read.m.seat, frame: read.m.frame });
     if (r.close) {
-      if (r.close !== 'left') send(ws, { type: 'refused', reason: r.close });
+      if (r.close !== 'left') {
+        log('room-refused', { room: this.id(), seat: tag.seat, reason: r.close });
+        send(ws, { type: 'refused', reason: r.close });
+      }
       shut(ws, 1000, 'closed');
     }
     // Relayed inputs and signaling do not change the room record, so most messages write nothing.
     if (JSON.stringify(d) !== before) await this.save();
   }
 
-  async webSocketClose(ws: WebSocket): Promise<void> {
+  async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
+    log('room-socket-closed', { room: this.id(), seat: this.tagOf(ws).seat, code, reason, wasClean });
     await this.closed(ws);
   }
 
-  async webSocketError(ws: WebSocket): Promise<void> {
+  async webSocketError(ws: WebSocket, error: unknown): Promise<void> {
+    log('room-socket-error', { room: this.id(), seat: this.tagOf(ws).seat, error: String(error) });
     await this.closed(ws);
+  }
+
+  /** A short form of this room's object id, enough to group one room's log lines. */
+  private id(): string {
+    return this.ctx.id.toString().slice(0, 12);
   }
 
   private async closed(ws: WebSocket): Promise<void> {

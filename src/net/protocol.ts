@@ -2,7 +2,7 @@
 // direction. The Worker and the game share this file. Gameplay inputs do not pass through
 // here: they travel peer to peer (see wire.ts), or through the room's relay only as a fallback.
 
-export const PROTOCOL = 1;
+export const PROTOCOL = 2;
 export const SEATS = 4;
 export const NAME_MAX = 16;
 export const FRAME_MAX = 16_384;
@@ -18,6 +18,16 @@ export interface SeatInfo {
   connected: boolean;
 }
 
+/** A player's own choices for the controls menu's per-player options, applied to their seat at the start. */
+export interface Prefs {
+  /** "Up is Jump" */
+  upJump: boolean;
+  /** "Combo Use" */
+  combo: 'Charge' | 'Best';
+}
+
+export const DEFAULT_PREFS: Prefs = { upJump: true, combo: 'Charge' };
+
 export interface StartInfo {
   seed: number;
   /** Simulation start time; the date blocks read it as local time. */
@@ -28,11 +38,14 @@ export interface StartInfo {
   delay: number;
   /** Every player uses the Player 1 key layout on their own keyboard. */
   sameKeys: boolean;
+  /** Each playing seat's prefs, in the order of `seats`. */
+  prefs: Prefs[];
 }
 
 export type ToRoom =
   | { type: 'hello'; build: string; name: string }
   | { type: 'hello'; build: string; resume: string }
+  | { type: 'prefs'; prefs: Prefs }
   | { type: 'start'; t0: number; delay: number; sameKeys: boolean }
   | { type: 'signal'; to: number; data: string }
   | { type: 'relay'; to: number; data: string }
@@ -105,11 +118,20 @@ function readSeats(v: unknown): SeatInfo[] | undefined {
   return out;
 }
 
+export function readPrefs(v: unknown): Prefs | undefined {
+  const o = obj(v, ['upJump', 'combo']);
+  if (!o || typeof o.upJump !== 'boolean' || (o.combo !== 'Charge' && o.combo !== 'Best')) return NO;
+  return { upJump: o.upJump, combo: o.combo };
+}
+
 export function readStart(v: unknown): StartInfo | undefined {
-  const o = obj(v, ['seed', 't0', 'seats', 'delay', 'sameKeys']);
+  const o = obj(v, ['seed', 't0', 'seats', 'delay', 'sameKeys', 'prefs']);
   if (!o || !whole(o.seed, 0, 0xffffffff) || !whole(o.t0, 0, 9e15) || !whole(o.delay, 0, 8) || typeof o.sameKeys !== 'boolean') return NO;
   if (!Array.isArray(o.seats) || o.seats.length < 1 || o.seats.length > SEATS || !o.seats.every(isSeat)) return NO;
-  return { seed: o.seed, t0: o.t0, seats: [...(o.seats as number[])], delay: o.delay, sameKeys: o.sameKeys };
+  if (!Array.isArray(o.prefs) || o.prefs.length !== o.seats.length) return NO;
+  const prefs = o.prefs.map(readPrefs);
+  if (prefs.some((p) => p === NO)) return NO;
+  return { seed: o.seed, t0: o.t0, seats: [...(o.seats as number[])], delay: o.delay, sameKeys: o.sameKeys, prefs: prefs as Prefs[] };
 }
 
 export function readClient(raw: unknown): { m: ToRoom } | { why: string } {
@@ -129,6 +151,11 @@ function clientMessage(o: Obj): ToRoom | undefined {
       const h = obj(o, ['type', 'build', 'name']);
       const name = h ? readName(h.name) : NO;
       return h && isBuild(h.build) && name ? { type: 'hello', build: h.build, name } : NO;
+    }
+    case 'prefs': {
+      const p = obj(o, ['type', 'prefs']);
+      const prefs = p ? readPrefs(p.prefs) : NO;
+      return prefs ? { type: 'prefs', prefs } : NO;
     }
     case 'start': {
       const s = obj(o, ['type', 't0', 'delay', 'sameKeys']);

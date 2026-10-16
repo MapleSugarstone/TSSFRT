@@ -1,5 +1,5 @@
 // Owns one simulation plus everything that presents it: renderer, audio and overlays.
-import { Runtime, PACE_MS } from '../engine/runtime.ts';
+import { Runtime, FRAME_MS } from '../engine/runtime.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import { modules, monitors } from '../game/generated/index.ts';
 import { skins } from '../game/assets.ts';
@@ -59,6 +59,7 @@ export class Game {
 
   present(): void {
     this.audio.apply(this.rt.soundEvents);
+    this.audio.sync(this.rt.currentMSecs);
     this.renderer.render(this.rt);
     this.question.update(this.rt);
     this.lists.update(this.rt);
@@ -66,11 +67,11 @@ export class Game {
 }
 
 /**
- * Frame scheduler run in a worker: one message per frame, due every PACE_MS, posted with its due
- * time. Due times advance by exactly PACE_MS, so timer lateness never accumulates into drift.
+ * Frame scheduler run in a worker: one message per frame, due every FRAME_MS, posted with its due
+ * time. Due times advance by exactly FRAME_MS, so timer lateness never accumulates into drift.
  */
 const PACER = `
-const step = ${PACE_MS};
+const step = ${FRAME_MS};
 const clock = () => performance.timeOrigin + performance.now();
 let next = clock() + step;
 const loop = () => {
@@ -86,7 +87,7 @@ setTimeout(loop, 4);
 `;
 
 /**
- * Calls `tick` then `after` once per frame, every PACE_MS like the original. A worker drives the
+ * Calls `tick` then `after` once per frame, every FRAME_MS like the original. A worker drives the
  * timing because animation frames stop and page timers slow down in background tabs, and an
  * online match must keep running there.
  */

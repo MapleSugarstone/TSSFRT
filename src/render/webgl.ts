@@ -68,6 +68,11 @@ export class WebGLRenderer {
   private linePos: WebGLBuffer;
   private penTex: WebGLTexture;
   private penFbo: WebGLFramebuffer;
+  /** Pen layer size in pixels: 480x360, or the canvas size with high quality pen. */
+  private penW = NATIVE_W;
+  private penH = NATIVE_H;
+  /** Draws the pen layer at the canvas resolution instead of 480x360, so pen lines and stamps stay sharp when the stage is enlarged. */
+  hqPen = false;
   private penArr: PenCmd[] | null = null;
   private penDrawn = 0;
   private penEpoch = -1;
@@ -277,7 +282,8 @@ export class WebGLRenderer {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  private drawLine(cmd: Extract<PenCmd, { op: 'line' }>): void {
+  /** Draws a pen line. `s` is pen pixels per stage unit, so the shader's one-unit antialiased edge is one pixel. */
+  private drawLine(cmd: Extract<PenCmd, { op: 'line' }>, s: number): void {
     const gl = this.gl;
     const p = this.program(true, 0);
     gl.useProgram(p.prog);
@@ -286,14 +292,14 @@ export class WebGLRenderer {
     gl.vertexAttribPointer(p.aPos, 2, gl.FLOAT, false, 0, 0);
     const d = cmd.d || 1;
     const off = d === 1 || d === 3 ? 0.5 : 0;
-    const x0 = cmd.x0 + off;
-    const y0 = cmd.y0 + off;
-    const dx = cmd.x1 + off - x0;
-    const dy = cmd.y1 + off - y0;
+    const x0 = (cmd.x0 + off) * s;
+    const y0 = (cmd.y0 + off) * s;
+    const dx = (cmd.x1 + off) * s - x0;
+    const dy = (cmd.y1 + off) * s - y0;
     const c = cmd.c4;
-    gl.uniform2f(this.loc(p, 'u_stageSize'), NATIVE_W, NATIVE_H);
+    gl.uniform2f(this.loc(p, 'u_stageSize'), NATIVE_W * s, NATIVE_H * s);
     gl.uniform4f(this.loc(p, 'u_lineColor'), c[0] * c[3], c[1] * c[3], c[2] * c[3], c[3]);
-    gl.uniform1f(this.loc(p, 'u_lineThickness'), d);
+    gl.uniform1f(this.loc(p, 'u_lineThickness'), d * s);
     gl.uniform1f(this.loc(p, 'u_lineLength'), Math.sqrt(dx * dx + dy * dy));
     gl.uniform4f(this.loc(p, 'u_penPoints'), x0, -y0, dx, -dy);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -303,10 +309,11 @@ export class WebGLRenderer {
 
   private drawPenCmd(cmd: PenCmd): void {
     const gl = this.gl;
+    const s = this.penW / NATIVE_W;
     if (cmd.op === 'line') {
-      gl.viewport(0, 0, NATIVE_W, NATIVE_H);
+      gl.viewport(0, 0, this.penW, this.penH);
       gl.disable(gl.SCISSOR_TEST);
-      this.drawLine(cmd);
+      this.drawLine(cmd, s);
       return;
     }
     const d: DrawState = { skin: cmd.skin, x: cmd.x, y: cmd.y, sx: cmd.sx, sy: cmd.sy, dir: cmd.dir, fx: cmd.fx };
@@ -314,6 +321,12 @@ export class WebGLRenderer {
     this.skinTexture(cmd.skin, 100, 100);
     const b = stampBounds(this.geom, this.skins[cmd.skin], d);
     if (!b) return;
+    if (this.penW !== NATIVE_W || this.penH !== NATIVE_H) {
+      gl.disable(gl.SCISSOR_TEST);
+      gl.viewport(0, 0, this.penW, this.penH);
+      this.drawSprite(d, this.penFlip, s, this.penH / NATIVE_H);
+      return;
+    }
     // A viewport and projection covering only the stamp's bounds, as the original does; using the
     // full layer with a scissor rasterizes edges slightly differently.
     gl.disable(gl.SCISSOR_TEST);
@@ -325,9 +338,10 @@ export class WebGLRenderer {
   private syncPen(rt: Runtime): void {
     const gl = this.gl;
     const cmds = rt.pen.cmds;
+    const resized = this.sizePen();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.penFbo);
-    if (cmds !== this.penArr || this.penDrawn > cmds.length || rt.penEpoch !== this.penEpoch) {
-      gl.viewport(0, 0, NATIVE_W, NATIVE_H);
+    if (resized || cmds !== this.penArr || this.penDrawn > cmds.length || rt.penEpoch !== this.penEpoch) {
+      gl.viewport(0, 0, this.penW, this.penH);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       this.penArr = cmds;
@@ -337,6 +351,19 @@ export class WebGLRenderer {
     for (let i = this.penDrawn; i < cmds.length; i++) this.drawPenCmd(cmds[i]);
     this.penDrawn = cmds.length;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  /** Resizes the pen texture to match the current setting and canvas. The command list then redraws it at the new size. */
+  private sizePen(): boolean {
+    const w = this.hqPen ? Math.max(NATIVE_W, this.canvas.width) : NATIVE_W;
+    const h = this.hqPen ? Math.max(NATIVE_H, this.canvas.height) : NATIVE_H;
+    if (w === this.penW && h === this.penH) return false;
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.penTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    this.penW = w;
+    this.penH = h;
+    return true;
   }
 
   private stageProj = ortho(-NATIVE_W / 2, NATIVE_W / 2, -NATIVE_H / 2, NATIVE_H / 2);

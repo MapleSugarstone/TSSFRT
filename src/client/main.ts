@@ -4,6 +4,8 @@ import { LocalInput } from './input.ts';
 import { Hud, Lobby } from './lobby.ts';
 import { OnlineGame } from './online.ts';
 import { Mesh } from '../net/mesh.ts';
+import { report } from '../net/report.ts';
+import { loadPrefs } from './controls.ts';
 import { hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import type { SeatInfo, StartInfo } from '../net/protocol.ts';
@@ -41,6 +43,7 @@ window.addEventListener('resize', fitStage);
 // One game object per page: assets load once while the menu shows, and the runtime is replaced
 // when an online game starts with the shared seed.
 const game = new Game(canvas, overlay, { seed: crypto.getRandomValues(new Uint32Array(1))[0], t0: localT0() });
+game.renderer.hqPen = true;
 const input = new LocalInput(stageWrap);
 game.question.onFocusChange = (f) => (input.enabled = !f);
 const resumeAudio = () => game.audio.resume();
@@ -99,6 +102,9 @@ const lobby = new Lobby(overlay, {
     code = c;
     connect(r.room, name);
   },
+  prefs(p) {
+    if (room && !online) room.send({ type: 'prefs', prefs: p });
+  },
   start(delay) {
     // Every seat gets Player 1's row, so each player's own controls have a full row to map onto.
     room?.send({ type: 'start', t0: localT0(), delay, sameKeys: true });
@@ -121,7 +127,8 @@ function refreshSeats(): void {
 
 function connect(roomId: string, name: string): void {
   room = new RoomClient(roomId, name);
-  room.onStatus = (s) => {
+  room.onStatus = (s, why) => {
+    if (s !== 'open') report('room-socket', { status: s, why, inGame: online !== null, ...(online?.diagnostics() ?? {}) });
     if (s === 'reconnecting') lobby.setStatus('Connection lost; reconnecting...');
     else if (s === 'closed' && !online) lobby.setStatus('Disconnected from the room.');
     else if (s === 'open') lobby.setStatus('');
@@ -129,11 +136,16 @@ function connect(roomId: string, name: string): void {
   room.onMessage = (m) => {
     switch (m.type) {
       case 'welcome':
-        mesh?.close();
-        mesh = new Mesh(room!, m.seat);
-        mesh.onLinkChange = () => refreshSeats();
+        // A welcome also arrives after the room socket reconnects. The running game keeps its
+        // links, so the mesh is only replaced when this player's seat changed.
+        if (!mesh || mesh.local !== m.seat) {
+          mesh?.close();
+          mesh = new Mesh(room!, m.seat);
+          mesh.onLinkChange = () => refreshSeats();
+        }
         seats = m.seats;
         host = m.host;
+        if (!m.start) room!.send({ type: 'prefs', prefs: loadPrefs() });
         lobby.showRoom(code);
         mesh.ensure(seats.map((s) => s.seat));
         refreshSeats();
@@ -188,6 +200,9 @@ function begin(start: StartInfo): void {
 }
 
 if (!onlineAvailable()) lobby.disableOnline();
+
+window.addEventListener('error', (e) => report('error', { message: e.message, at: `${e.filename}:${e.lineno}:${e.colno}`, stack: e.error?.stack, ...(online?.diagnostics() ?? {}) }));
+window.addEventListener('unhandledrejection', (e) => report('error', { message: String(e.reason?.message ?? e.reason), stack: e.reason?.stack, ...(online?.diagnostics() ?? {}) }));
 
 void game
   .load((t) => lobby.setStatus(t))

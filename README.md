@@ -26,7 +26,7 @@ Online games are peer to peer. Every player runs the whole game, and inputs trav
 2. Up to three others enter the code and choose **Join**.
 3. The host picks the input delay and starts the game. Everyone sees the same game from the title screen on, and each player controls their own seat (P1 to P4).
 
-Each player sets their own keys with **Controls** in the lobby. They start as the Player 1 layout and are saved in that browser. Online, a player's keys control their own seat, so players can choose the same keys. Only the first seat moves the mouse pointer in menus.
+Each player sets their own keys, "Up is Jump" and "Combo use" with **Controls** in the lobby. They start as the Player 1 defaults and are saved in that browser. Online, a player's keys control their own seat, so players can choose the same keys, and their two options apply to their own seat when the game starts. Only the first seat moves the mouse pointer in menus.
 
 Input delay trades smoothness for responsiveness. One frame (33 ms) suits most connections. On a link with more than about 100 ms of round-trip time, two frames give fewer visible corrections.
 
@@ -55,8 +55,10 @@ A build made without a room server address hides the online controls and shows a
 1. `cd server`, then run `npx wrangler login` and `npx wrangler whoami` to confirm the account.
 2. Check that `ALLOWED_ORIGINS` in `server/wrangler.toml` lists the origin of the published site (scheme and host, no path).
 3. Run `npx wrangler deploy` and note the address it prints.
-4. Check it with `curl <address>/api/health`, which answers `{"ok":true,"protocol":1}`.
+4. Check it with `curl <address>/api/health`, which answers `{"ok":true,"protocol":2}`.
 5. Put that address in the `RELAY_URL` line of `.github/workflows/pages.yml`, or set a repository variable named `RELAY_URL`, which takes precedence. Then run the site workflow again. For a build on your own machine, run `RELAY_URL=<address> npm run build` instead.
+
+The room server logs one JSON line per event: rooms opening, players joining and leaving, refusals, and problem reports that players' pages send when a game freezes, goes out of sync or loses its direct link. Follow them live with `npx wrangler tail` in `server/`, or search them in the hosting dashboard's log view.
 
 Deploy the room server again whenever `src/net/protocol.ts` changes, and raise `PROTOCOL` with any message change. Each build carries a fingerprint of the simulation code, and rooms only accept players with the same fingerprint, so different builds never share a game.
 

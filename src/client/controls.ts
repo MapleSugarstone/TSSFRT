@@ -2,6 +2,7 @@
 // translated to the keys of their own seat before they are sent, so players may choose the same keys.
 import { keyArgToName } from '../engine/io.ts';
 import type { Value } from '../engine/cast.ts';
+import { DEFAULT_PREFS, readPrefs, type Prefs } from '../net/protocol.ts';
 
 /** The controls menu's names for the nine buttons of a player row, then the shared Pause key. */
 export const ACTIONS = ['Right', 'Left', 'Up', 'Crouch', 'Shield', 'Attack', 'Combo', 'Jump', 'Taunt', 'Pause'];
@@ -9,6 +10,32 @@ export const ACTIONS = ['Right', 'Left', 'Up', 'Crouch', 'Shield', 'Attack', 'Co
 export const DEFAULT_CONTROLS = ['D', 'A', 'W', 'S', 'B', 'V', 'C', 'space', 'F', 'P'];
 
 const STORE_KEY = 'sfrt.controls';
+const PREFS_KEY = 'sfrt.prefs';
+
+/** This player's "Up is Jump" and "Combo Use" choices for online games. */
+export function loadPrefs(): Prefs {
+  try {
+    return readPrefs(JSON.parse(localStorage.getItem(PREFS_KEY) ?? 'null')) ?? { ...DEFAULT_PREFS };
+  } catch {
+    return { ...DEFAULT_PREFS };
+  }
+}
+
+export function savePrefs(p: Prefs): void {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(p));
+  } catch {
+    // Storage may be blocked.
+  }
+}
+
+/** Writes each playing seat's prefs into the controls menu's per-player options (three entries per player). */
+export function applyPrefs(settings: Value[], seats: number[], prefs: Prefs[]): void {
+  seats.forEach((seat, i) => {
+    settings[seat * 3] = prefs[i].combo;
+    settings[seat * 3 + 1] = prefs[i].upJump ? 'On' : 'Off';
+  });
+}
 const BUTTONS = 9;
 
 export function loadControls(): string[] {

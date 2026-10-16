@@ -4,7 +4,9 @@
 (function () {
   'use strict';
 
+  // The VM steps from an interval of 1000 / 30 ms, which browsers truncate to 33, so real frames are 33 ms apart.
   const FRAME_MS = 1000 / 30;
+  const CLOCK_STEP_MS = 33;
   const T0 = Date.UTC(2026, 0, 1, 12, 0, 0);
   let simNow = T0;
   Date.now = () => simNow;
@@ -445,7 +447,7 @@
   // Runs one frame. `events` apply before the frame's ticks.
   H.step = async function (events, want) {
     H.frame++;
-    simNow = T0 + H.frame * FRAME_MS;
+    simNow = T0 + H.frame * CLOCK_STEP_MS;
     H.penLog = [];
     H.soundLog = [];
     for (const p of allPlayers) p.checkEnded();

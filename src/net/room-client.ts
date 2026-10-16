@@ -50,6 +50,10 @@ export class RoomClient {
 
   constructor(private room: string, private name: string) {}
 
+  get id(): string {
+    return this.room;
+  }
+
   connect(): void {
     const base = relayBase().replace(/^http/, 'ws');
     const ws = new WebSocket(`${base}/api/room/${this.room}`);
@@ -71,15 +75,16 @@ export class RoomClient {
       if (m.type === 'refused') this.closedByUs = true;
       this.onMessage(m);
     };
-    ws.onclose = () => {
+    ws.onclose = (e) => {
       if (this.pingTimer) clearInterval(this.pingTimer);
       this.pingTimer = null;
+      const why = `${e.code} ${e.reason}`.trim();
       if (this.closedByUs || this.retries >= RETRY_LIMIT) {
-        this.onStatus('closed');
+        this.onStatus('closed', why);
         return;
       }
       this.retries++;
-      this.onStatus('reconnecting');
+      this.onStatus('reconnecting', why);
       setTimeout(() => this.connect(), RETRY_MS);
     };
   }

@@ -1,7 +1,7 @@
 // The rules of a matchmaking room as a plain class, so tests drive it without the Worker runtime.
 // A room seats up to four players, starts the game for everyone at once, and forwards
 // connection setup messages between them. It never runs the game.
-import { HOLD_SECONDS, SEATS, type FromRoom, type SeatInfo, type StartInfo, type ToRoom } from './protocol.ts';
+import { DEFAULT_PREFS, HOLD_SECONDS, SEATS, type FromRoom, type Prefs, type SeatInfo, type StartInfo, type ToRoom } from './protocol.ts';
 
 export interface SeatState {
   name: string;
@@ -9,6 +9,8 @@ export interface SeatState {
   connected: boolean;
   /** When the seat's socket dropped, or null while connected. */
   awaySince: number | null;
+  /** Missing in rooms stored before prefs existed. */
+  prefs?: Prefs;
 }
 
 export interface RoomData {
@@ -79,10 +81,16 @@ export class RoomRules {
     }
     if (seat === null) return { out, close: 'Say hello first.' };
     switch (m.type) {
+      case 'prefs': {
+        const s = this.d.seats[seat];
+        if (s && !this.d.start) s.prefs = m.prefs;
+        return { out };
+      }
       case 'start': {
         if (seat !== this.d.host || this.d.start) return { out };
         const seats = this.d.seats.map((s, i) => (s && s.connected ? i : -1)).filter((i) => i >= 0);
-        this.d.start = { seed: seed(), t0: m.t0, seats, delay: m.delay, sameKeys: m.sameKeys };
+        const prefs = seats.map((i) => this.d.seats[i]!.prefs ?? DEFAULT_PREFS);
+        this.d.start = { seed: seed(), t0: m.t0, seats, delay: m.delay, sameKeys: m.sameKeys, prefs };
         out.push({ seat: -1, m: { type: 'go', start: this.d.start } });
         return { out };
       }
