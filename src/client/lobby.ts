@@ -1,6 +1,8 @@
 // The screen shown before the game starts: play on this computer, or host or join an online room.
 import type { SeatInfo } from '../net/protocol.ts';
 import type { LinkState } from '../net/mesh.ts';
+import { browserKeyToName } from '../engine/io.ts';
+import { ACTIONS, DEFAULT_CONTROLS, loadControls, saveControls } from './controls.ts';
 import { installUiAssets, playerBadge } from './ui-assets.ts';
 
 const NAME_KEY = 'sfrt.name';
@@ -11,6 +13,11 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: 
   if (cls) e.className = cls;
   if (text !== undefined) e.textContent = text;
   return e;
+}
+
+/** A key name as a button shows it: "space" becomes "Space", "up arrow" becomes "Up arrow". */
+function keyLabel(name: string): string {
+  return name ? name[0].toUpperCase() + name.slice(1) : 'None';
 }
 
 function load(key: string, fallback: string): string {
@@ -32,7 +39,7 @@ export interface LobbyHandlers {
   local(): void;
   host(name: string): void;
   join(name: string, code: string): void;
-  start(delay: number, sameKeys: boolean): void;
+  start(delay: number): void;
   leave(): void;
 }
 
@@ -48,7 +55,13 @@ export class Lobby {
   private waitNote: HTMLParagraphElement;
   private nameIn: HTMLInputElement;
   private delayIn: HTMLSelectElement;
-  private sameKeysIn: HTMLInputElement;
+  private controlsView: HTMLDivElement;
+  private controlsBtn: HTMLButtonElement;
+  private leaveBtn: HTMLButtonElement;
+  private keyButtons: HTMLButtonElement[] = [];
+  private controls = loadControls();
+  private capturing = -1;
+  private backTo: 'menu' | 'room' = 'menu';
   private loading = true;
 
   constructor(parent: HTMLElement, private h: LobbyHandlers) {
@@ -100,21 +113,49 @@ export class Lobby {
     }
     this.delayIn.value = load(DELAY_KEY, '1');
     delayRow.append(this.delayIn);
-    const sameRow = el('label', 'lobby-check');
-    this.sameKeysIn = el('input');
-    this.sameKeysIn.type = 'checkbox';
-    this.sameKeysIn.checked = true;
-    sameRow.append(this.sameKeysIn, el('span', '', 'Everyone uses the Player 1 keys on their own keyboard'));
-    opts.append(delayRow, sameRow);
+    opts.append(delayRow);
     this.startBtn = el('button', 'primary', 'Start');
     this.waitNote = el('p', 'lobby-note', 'Waiting for the host to start.');
-    const leaveBtn = el('button', 'lobby-return', 'Leave');
-    this.room.append(bar, this.seatList, opts, this.startBtn, this.waitNote, leaveBtn);
+    this.room.append(bar, this.seatList, opts, this.startBtn, this.waitNote);
+
+    this.controlsView = el('div', 'lobby-controls');
+    this.controlsView.hidden = true;
+    const grid = el('div', 'controls-grid');
+    ACTIONS.forEach((action, i) => {
+      const row = el('div', 'control');
+      const key = el('button', 'control-key');
+      key.addEventListener('click', () => this.capture(i));
+      this.keyButtons.push(key);
+      row.append(el('span', '', action), key);
+      grid.append(row);
+    });
+    const actions = el('div', 'lobby-actions');
+    const resetBtn = el('button', '', 'Reset to default');
+    const backBtn = el('button', 'primary', 'Done');
+    actions.append(resetBtn, backBtn);
+    this.controlsView.append(
+      el('div', 'lobby-heading', 'Your controls'),
+      el('p', 'lobby-note', 'Online, these keys control your player in any seat. Other players can use the same keys.'),
+      grid,
+      actions,
+    );
+    resetBtn.addEventListener('click', () => {
+      this.controls = [...DEFAULT_CONTROLS];
+      saveControls(this.controls);
+      this.capture(-1);
+    });
+    backBtn.addEventListener('click', () => this.closeControls());
+    this.renderKeys();
 
     this.status = el('div', 'lobby-status');
-    panel.append(this.menu, this.room, this.status);
-    this.root.append(panel);
+    this.leaveBtn = el('button', 'lobby-return', 'Leave');
+    this.leaveBtn.hidden = true;
+    this.controlsBtn = el('button', 'lobby-corner', 'Controls');
+    this.controlsBtn.addEventListener('click', () => this.openControls());
+    panel.append(this.menu, this.room, this.controlsView, this.status);
+    this.root.append(panel, this.leaveBtn, this.controlsBtn);
     parent.append(this.root);
+    window.addEventListener('keydown', (e) => this.onCaptureKey(e), true);
 
     const name = () => {
       const n = this.nameIn.value.trim() || 'Player';
@@ -129,9 +170,9 @@ export class Lobby {
     });
     this.startBtn.addEventListener('click', () => {
       store(DELAY_KEY, this.delayIn.value);
-      this.h.start(Number(this.delayIn.value), this.sameKeysIn.checked);
+      this.h.start(Number(this.delayIn.value));
     });
-    leaveBtn.addEventListener('click', () => this.h.leave());
+    this.leaveBtn.addEventListener('click', () => this.h.leave());
     for (const b of [localBtn, hostBtn, joinBtn]) b.disabled = true;
     this.enableWhenLoaded = () => {
       for (const b of [localBtn, hostBtn, joinBtn]) b.disabled = false;
@@ -159,16 +200,59 @@ export class Lobby {
   }
 
   showMenu(): void {
-    this.menu.hidden = false;
-    this.room.hidden = true;
-    this.root.classList.remove('in-room');
+    this.show('menu');
   }
 
   showRoom(code: string): void {
-    this.menu.hidden = true;
-    this.room.hidden = false;
-    this.root.classList.add('in-room');
     this.codeOut.textContent = code;
+    this.show('room');
+  }
+
+  private show(view: 'menu' | 'room' | 'controls'): void {
+    if (view !== 'controls') this.backTo = view;
+    this.capture(-1);
+    this.menu.hidden = view !== 'menu';
+    this.room.hidden = view !== 'room';
+    this.controlsView.hidden = view !== 'controls';
+    this.leaveBtn.hidden = view !== 'room';
+    this.controlsBtn.hidden = view === 'controls';
+    this.root.classList.toggle('in-room', view !== 'menu');
+  }
+
+  private openControls(): void {
+    this.show('controls');
+  }
+
+  private closeControls(): void {
+    this.show(this.backTo);
+  }
+
+  /** Starts waiting for a key for one button, or stops waiting when `i` is -1. */
+  private capture(i: number): void {
+    this.capturing = i;
+    this.renderKeys();
+  }
+
+  private onCaptureKey(e: KeyboardEvent): void {
+    if (this.capturing < 0 || this.root.hidden) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.key === 'Escape') {
+      this.capture(-1);
+      return;
+    }
+    const name = browserKeyToName(e.key);
+    if (!name) return;
+    this.controls[this.capturing] = name;
+    saveControls(this.controls);
+    this.capture(-1);
+  }
+
+  private renderKeys(): void {
+    this.keyButtons.forEach((b, i) => {
+      b.textContent = i === this.capturing ? 'Press a key' : keyLabel(this.controls[i]);
+      b.classList.toggle('capturing', i === this.capturing);
+    });
   }
 
   updateSeats(seats: SeatInfo[], host: number, me: number, links: (seat: number) => LinkState): void {
@@ -197,7 +281,6 @@ export class Lobby {
     const isHost = host === me;
     this.startBtn.hidden = !isHost;
     this.delayIn.disabled = !isHost;
-    this.sameKeysIn.disabled = !isHost;
     this.waitNote.hidden = isHost;
   }
 

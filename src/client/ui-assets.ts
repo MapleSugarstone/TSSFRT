@@ -30,5 +30,6 @@ export function installUiAssets(root: HTMLElement): void {
   root.style.setProperty('--ui-logo-gem', url('SFrT_Logo_GemAnim_1'));
   root.style.setProperty('--ui-logo-text', url('SFrT_Logo_TextAnim_14'));
   root.style.setProperty('--ui-return', url('CharSelect_ReturnButton'));
+  root.style.setProperty('--ui-controls', url('MainMenu_ControlsButton'));
   PLAYER_COLORS.forEach((c, i) => root.style.setProperty(`--p${i + 1}`, c));
 }

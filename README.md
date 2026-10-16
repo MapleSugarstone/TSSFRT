@@ -26,7 +26,7 @@ Online games are peer to peer. Every player runs the whole game, and inputs trav
 2. Up to three others enter the code and choose **Join**.
 3. The host picks the input delay and starts the game. Everyone sees the same game from the title screen on, and each player controls their own seat (P1 to P4).
 
-With "Everyone uses the Player 1 keys" turned on, every player uses the Player 1 layout on their own keyboard. Only the first seat moves the mouse pointer in menus.
+Each player sets their own keys with **Controls** in the lobby. They start as the Player 1 layout and are saved in that browser. Online, a player's keys control their own seat, so players can choose the same keys. Only the first seat moves the mouse pointer in menus.
 
 Input delay trades smoothness for responsiveness. One frame (33 ms) suits most connections. On a link with more than about 100 ms of round-trip time, two frames give fewer visible corrections.
 
@@ -56,7 +56,7 @@ A build made without a room server address hides the online controls and shows a
 2. Check that `ALLOWED_ORIGINS` in `server/wrangler.toml` lists the origin of the published site (scheme and host, no path).
 3. Run `npx wrangler deploy` and note the address it prints.
 4. Check it with `curl <address>/api/health`, which answers `{"ok":true,"protocol":1}`.
-5. Set the repository variable `RELAY_URL` to that address and run the site workflow again. For a build on your own machine, run `RELAY_URL=<address> npm run build` instead.
+5. Put that address in the `RELAY_URL` line of `.github/workflows/pages.yml`, or set a repository variable named `RELAY_URL`, which takes precedence. Then run the site workflow again. For a build on your own machine, run `RELAY_URL=<address> npm run build` instead.
 
 Deploy the room server again whenever `src/net/protocol.ts` changes, and raise `PROTOCOL` with any message change. Each build carries a fingerprint of the simulation code, and rooms only accept players with the same fingerprint, so different builds never share a game.
 

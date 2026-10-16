@@ -99,8 +99,9 @@ const lobby = new Lobby(overlay, {
     code = c;
     connect(r.room, name);
   },
-  start(delay, sameKeys) {
-    room?.send({ type: 'start', t0: localT0(), delay, sameKeys });
+  start(delay) {
+    // Every seat gets Player 1's row, so each player's own controls have a full row to map onto.
+    room?.send({ type: 'start', t0: localT0(), delay, sameKeys: true });
   },
   leave() {
     online?.leave();

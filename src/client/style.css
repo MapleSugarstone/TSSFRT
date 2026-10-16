@@ -191,7 +191,7 @@ body {
 /* ------------------------------------------------------------------ lobby */
 
 /* Buttons and player cards use the menu buttons' shape: top-left and bottom-right corners cut. */
-.lobby button:not(.lobby-return),
+.lobby button:not(.lobby-return, .lobby-corner),
 .seat,
 .hud button {
   --cut: 0.45em;
@@ -202,7 +202,7 @@ body {
 }
 
 /* The fill sits 2px inside the stroke color. Its cut is 2px * (2 - sqrt 2) smaller so the diagonal stroke is 2px wide too. */
-.lobby button:not(.lobby-return)::before,
+.lobby button:not(.lobby-return, .lobby-corner)::before,
 .seat::before,
 .hud button::before {
   --inner: calc(var(--cut) - 1.17px);
@@ -293,7 +293,7 @@ body {
   content: ' -';
 }
 
-.lobby button:not(.lobby-return),
+.lobby button:not(.lobby-return, .lobby-corner),
 .hud button {
   --stroke: var(--ui-stroke);
   --fill: var(--ui-fill);
@@ -307,7 +307,7 @@ body {
   cursor: pointer;
 }
 
-.lobby button:not(.lobby-return)::before,
+.lobby button:not(.lobby-return, .lobby-corner)::before,
 .hud button::before {
   background: var(--fill);
 }
@@ -379,19 +379,6 @@ body {
 .lobby-field input,
 .lobby-field select {
   flex: 1;
-}
-
-.lobby-check {
-  display: flex;
-  gap: 0.6em;
-  align-items: flex-start;
-  font-size: 0.9em;
-  color: var(--ui-text);
-}
-
-.lobby-check input {
-  accent-color: var(--p1);
-  margin-top: 0.2em;
 }
 
 .lobby-join {
@@ -552,9 +539,82 @@ body {
 }
 
 .lobby-return:hover,
-.lobby-return:focus-visible {
+.lobby-return:focus-visible,
+.lobby-corner:hover,
+.lobby-corner:focus-visible {
   color: #ffffff;
   outline: none;
+}
+
+/* The main menu's controls button, in the same corner. */
+.lobby-corner {
+  position: absolute;
+  right: 0.6em;
+  bottom: 0.6em;
+  height: 2.6em;
+  padding: 0 3.8em 0 0;
+  font: inherit;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-muted);
+  background: var(--ui-controls) right center / 3.4em 2.47em no-repeat;
+  border: none;
+  cursor: pointer;
+}
+
+.lobby-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.3em 1.2em;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+}
+
+.control > span {
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-muted);
+}
+
+.lobby .control-key {
+  width: 6.9em;
+  font-size: 0.9em;
+  padding: 0.4em 0.4em;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.lobby .control-key.capturing {
+  --stroke: var(--p1);
+  color: #ffffff;
+}
+
+.lobby-actions {
+  display: flex;
+  gap: 0.6em;
+}
+
+.lobby-actions button {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.lobby-controls .lobby-note {
+  font-size: 0.85em;
 }
 
 /* ------------------------------------------------------------------ online HUD */

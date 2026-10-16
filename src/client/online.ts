@@ -1,5 +1,6 @@
 // An online game: the shared simulation driven by the rollback session, with sound that follows
 // corrections, a status line for connection quality, and continuing without a player who left.
+import type { Value } from '../engine/cast.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import type { SoundEvent } from '../engine/sound-model.ts';
 import { RollbackSession } from '../net/rollback.ts';
@@ -7,6 +8,7 @@ import type { Mesh } from '../net/mesh.ts';
 import type { RoomClient } from '../net/room-client.ts';
 import type { SeatInfo, StartInfo } from '../net/protocol.ts';
 import { fromBase64, toBase64 } from '../net/wire.ts';
+import { loadControls, seatKeys, translateKeys } from './controls.ts';
 import { Game, startFixedLoop } from './game.ts';
 import type { LocalInput } from './input.ts';
 
@@ -75,7 +77,7 @@ export class OnlineGame {
     this.host = host;
     const rt = game.rt;
     if (start.sameKeys) {
-      // Rows 2 to 4 of the controls table get Player 1's keys; online, each row only sees its own player's keys.
+      // Rows 2 to 4 of the controls table get Player 1's keys. Each row only sees its own player's keys.
       const keys = rt.stage.l.Player_Input as unknown[];
       for (let row = 2; row <= 4; row++) for (let b = 0; b < 9; b++) keys[row * 9 + b] = keys[9 + b];
     }
@@ -118,9 +120,12 @@ export class OnlineGame {
 
   run(input: LocalInput): void {
     this.probeTimer = setInterval(() => this.session.probe(), 1000);
+    const own = loadControls();
     this.stop = startFixedLoop(
       () => {
-        const p: PlayerInput = { keys: input.sampleKeys() };
+        const pressed = input.sampleKeys();
+        const seat = seatKeys(this.game.rt.stage.l.Player_Input as Value[], this.local);
+        const p: PlayerInput = { keys: translateKeys(pressed, own, seat) };
         // Only the first seat drives the shared mouse pointer.
         if (this.local === this.start.seats[0] && input.mouseDirty) {
           p.mouse = { ...input.mouse };
@@ -132,7 +137,7 @@ export class OnlineGame {
         }
         if (!this.session.tick(p)) {
           // The frame did not advance, so offer the same input again next tick.
-          input.retap(p.keys);
+          input.retap(pressed);
           if (p.mouse) input.mouseDirty = true;
           if (p.answer !== undefined) this.game.question.pendingAnswer ??= p.answer;
         }
