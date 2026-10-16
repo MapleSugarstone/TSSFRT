@@ -29,6 +29,16 @@ export function savePrefs(p: Prefs): void {
   }
 }
 
+/**
+ * Makes this player's own keys and options Player 1's, for play on one computer. They go into the
+ * controls table and settings, so the in-game controls menu shows them and can still change them.
+ */
+export function applyToPlayerOne(table: Value[], settings: Value[], keys: string[], prefs: Prefs): void {
+  for (let b = 0; b < BUTTONS; b++) table[BUTTONS + b] = keys[b];
+  table[0] = keys[BUTTONS];
+  applyPrefs(settings, [0], [prefs]);
+}
+
 /** Writes each playing seat's prefs into the controls menu's per-player options (three entries per player). */
 export function applyPrefs(settings: Value[], seats: number[], prefs: Prefs[]): void {
   seats.forEach((seat, i) => {

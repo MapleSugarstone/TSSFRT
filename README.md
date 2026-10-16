@@ -30,7 +30,7 @@ Online games are peer to peer. Every player runs the whole game, and inputs trav
 2. Up to three others enter the code and choose **Join**.
 3. The host picks the input delay and starts the game. Everyone sees the same game from the title screen on, and each player controls their own seat (P1 to P4).
 
-Each player sets their own keys, "Up is Jump" and "Combo use" with **Controls** in the lobby. They start as the Player 1 defaults and are saved in that browser. Online, a player's keys control their own seat, so players can choose the same keys, and their two options apply to their own seat when the game starts. Only the first seat moves the mouse pointer in menus.
+Each player sets their own keys, "Up is Jump" and "Combo use" with **Controls** in the lobby. They start as the Player 1 defaults and are saved in that browser. On one computer they become Player 1's controls when the game starts, and the in-game controls menu can still change them. Online, a player's keys control their own seat, so players can choose the same keys, and their two options apply to their own seat when the game starts. Only the first seat moves the mouse pointer in menus.
 
 Input delay trades smoothness for responsiveness. One frame (33 ms) suits most connections. On a link with more than about 100 ms of round-trip time, two frames give fewer visible corrections.
 

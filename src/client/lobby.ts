@@ -167,7 +167,7 @@ export class Lobby {
     actions.append(resetBtn, backBtn);
     this.controlsView.append(
       el('div', 'lobby-heading', 'Your controls'),
-      el('p', 'lobby-note', 'Online, these keys control your player in any seat. Other players can use the same keys.'),
+      el('p', 'lobby-note', 'On this computer these are Player 1\'s controls. Online they control your own seat, and other players can use the same keys.'),
       grid,
       options,
       actions,

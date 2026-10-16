@@ -5,7 +5,7 @@ import { Hud, Lobby } from './lobby.ts';
 import { OnlineGame } from './online.ts';
 import { Mesh } from '../net/mesh.ts';
 import { report } from '../net/report.ts';
-import { loadPrefs, seatKeys } from './controls.ts';
+import { applyToPlayerOne, loadControls, loadPrefs, seatKeys } from './controls.ts';
 import { actionKeys, Pads } from './pads.ts';
 import { TouchControls } from './touch.ts';
 import type { Value } from '../engine/cast.ts';
@@ -79,6 +79,8 @@ const lobby = new Lobby(overlay, {
   local() {
     lobby.hide();
     input.enabled = true;
+    const g = game.rt.stage;
+    applyToPlayerOne(g.l.Player_Input as Value[], g.l.Player_Settings as Value[], loadControls(), loadPrefs());
     touch.setPlaying(true);
     startFixedLoop(
       () => {
