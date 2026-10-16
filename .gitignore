@@ -1,0 +1,37 @@
+# Working notes and local tool settings
+Notes
+.claude
+
+# Dependencies and build output
+node_modules
+dist
+
+# The source project file and its extracted copy (the generated code and assets are committed)
+*.sb3
+sb3
+
+# Test and tool output
+out
+*.log
+*.tsbuildinfo
+
+# One-off investigation scripts, and scenarios from an abandoned state explorer that parity runs skip
+tools/analyze.cjs
+tools/decompile.js
+tools/showmethods.cjs
+tools/dbg-*.ts
+tools/explore.ts
+tools/mathcheck*.ts
+tools/ref-smoke.ts
+tests/scenarios/explore-*.json
+
+# Room server local state and secrets
+server/.wrangler
+.dev.vars
+.env
+.env.*
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini

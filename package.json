@@ -1,0 +1,37 @@
+{
+  "name": "super-fighter-port",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript port of a block-based platform fighter, with rollback netplay.",
+  "scripts": {
+    "extract": "node tools/extract.mjs",
+    "ref:dump": "tsx tools/ref-dump.ts",
+    "transpile": "tsx tools/transpile/main.ts",
+    "assets": "tsx tools/assets.ts",
+    "refmath": "esbuild src/engine/dmath.ts --bundle --format=iife --global-name=DMATH --outfile=reference/dmath.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "worker:dev": "npm --prefix server run dev",
+    "worker:deploy": "npm --prefix server run deploy",
+    "typecheck": "tsc --noEmit",
+    "test:parity": "tsx tools/parity-all.ts 4",
+    "test:rollback": "tsx tools/rollback-test.ts tests/scenarios/tutorial-fuzz.json",
+    "test:net": "tsx tools/netsim.ts 3 3000 120 40 0.1",
+    "test:visual": "tsx tools/visual.ts tests/scenarios/to-main-menu.json 60,280,400,800",
+    "test:math": "tsx tools/dmath-test.ts"
+  },
+  "devDependencies": {
+    "@scratch/scratch-render": "15.1.1",
+    "@scratch/scratch-svg-renderer": "15.1.1",
+    "@scratch/scratch-vm": "15.1.1",
+    "@types/node": "^26.6.5",
+    "esbuild": "0.28.2",
+    "jszip": "3.10.1",
+    "playwright-core": "^1.64.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.4"
+  }
+}

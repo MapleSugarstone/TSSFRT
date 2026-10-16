@@ -1,0 +1,469 @@
+// WebGL renderer for the port. It follows the original renderer's rules: vector costumes are
+// rasterized at power-of-two scales, bitmaps sample with nearest filtering, the pen layer is a
+// 480x360 texture shown with nearest filtering, and effects run in the fragment shader.
+import type { SkinDef } from '../engine/defs.ts';
+import type { PenCmd, Runtime } from '../engine/runtime.ts';
+import { RenderModel } from '../engine/render-model.ts';
+import { cos, sin } from '../engine/dmath.ts';
+import type { Effects } from '../engine/target.ts';
+import { EFFECT_BITS, FRAGMENT, VERTEX } from './shaders.ts';
+
+const NATIVE_W = 480;
+const NATIVE_H = 360;
+const MIP_OFFSET = 8;
+
+interface Program {
+  prog: WebGLProgram;
+  uni: Map<string, WebGLUniformLocation | null>;
+  aPos: number;
+  aTex: number;
+}
+
+/** What a drawable needs to be drawn: a skin, a transform and effects. */
+export interface DrawState {
+  skin: number;
+  x: number;
+  y: number;
+  sx: number;
+  sy: number;
+  dir: number;
+  fx: Effects;
+}
+
+function ortho(left: number, right: number, bottom: number, top: number): Float32Array {
+  const m = new Float32Array(16);
+  m[0] = 2 / (right - left);
+  m[5] = 2 / (top - bottom);
+  m[10] = 2 / (-1 - 1);
+  m[12] = (right + left) / (left - right);
+  m[13] = (top + bottom) / (bottom - top);
+  m[14] = (1 + -1) / (-1 - 1);
+  m[15] = 1;
+  return m;
+}
+
+function effectBits(fx: Effects): number {
+  let b = 0;
+  if (fx.color) b |= EFFECT_BITS.color;
+  if (fx.fisheye) b |= EFFECT_BITS.fisheye;
+  if (fx.whirl) b |= EFFECT_BITS.whirl;
+  if (fx.pixelate) b |= EFFECT_BITS.pixelate;
+  if (fx.mosaic) b |= EFFECT_BITS.mosaic;
+  if (fx.brightness) b |= EFFECT_BITS.brightness;
+  if (fx.ghost) b |= EFFECT_BITS.ghost;
+  return b;
+}
+
+export class WebGLRenderer {
+  readonly canvas: HTMLCanvasElement;
+  readonly gl: WebGLRenderingContext;
+  private skins: SkinDef[];
+  private geom: RenderModel;
+  private images: (HTMLImageElement | ImageBitmap | null)[];
+  /** Per skin: mip level -> texture (vectors) or a single texture at index 0 (bitmaps). */
+  private textures: Map<number, WebGLTexture | null>[];
+  private programs = new Map<string, Program>();
+  private quadPos: WebGLBuffer;
+  private quadTex: WebGLBuffer;
+  private linePos: WebGLBuffer;
+  private penTex: WebGLTexture;
+  private penFbo: WebGLFramebuffer;
+  private penArr: PenCmd[] | null = null;
+  private penDrawn = 0;
+  private penEpoch = -1;
+  private emptyTex: WebGLTexture;
+  private mipCanvas = new Map<number, HTMLCanvasElement>();
+
+  constructor(canvas: HTMLCanvasElement, skins: SkinDef[]) {
+    this.canvas = canvas;
+    const gl = canvas.getContext('webgl', { alpha: false, stencil: true, antialias: false, preserveDrawingBuffer: true });
+    if (!gl) throw new Error('WebGL is not available in this browser.');
+    this.gl = gl;
+    this.skins = skins;
+    this.geom = new RenderModel(skins);
+    this.images = skins.map(() => null);
+    this.textures = skins.map(() => new Map());
+
+    this.quadPos = this.buffer([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
+    this.quadTex = this.buffer([1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1]);
+    this.linePos = this.buffer([1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1]);
+
+    this.emptyTex = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, this.emptyTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+    this.texParams();
+
+    this.penTex = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, this.penTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, NATIVE_W, NATIVE_H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.penFbo = gl.createFramebuffer()!;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.penFbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.penTex, 0);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  }
+
+  private buffer(data: number[]): WebGLBuffer {
+    const gl = this.gl;
+    const b = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    return b;
+  }
+
+  private texParams(): void {
+    const gl = this.gl;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  }
+
+  // ---------------------------------------------------------------- assets
+
+  /** Loads every costume image; `base` is the URL prefix of the assets folder. */
+  async loadImages(base: string, onProgress?: (done: number, total: number) => void): Promise<void> {
+    let done = 0;
+    const total = this.skins.length;
+    const queue = this.skins.map((_, i) => i);
+    const worker = async () => {
+      for (;;) {
+        const i = queue.shift();
+        if (i === undefined) return;
+        this.images[i] = await loadImage(`${base}${this.skins[i].file}`);
+        done++;
+        onProgress?.(done, total);
+      }
+    };
+    await Promise.all(Array.from({ length: 12 }, worker));
+  }
+
+  /** Texture for a skin at a draw scale (percent), creating vector mips on demand. */
+  private skinTexture(skinIdx: number, scaleX: number, scaleY: number): WebGLTexture {
+    const skin = this.skins[skinIdx];
+    const img = this.images[skinIdx];
+    if (!img) return this.emptyTex;
+    const gl = this.gl;
+    const cache = this.textures[skinIdx];
+    let level = 0;
+    let mipScale = 1;
+    if (skin.kind === 'svg') {
+      const requested = Math.min(Math.max(Math.abs(scaleX), Math.abs(scaleY)) / 100, skin.maxScale);
+      level = Math.max(Math.ceil(Math.log2(requested)) + MIP_OFFSET, 0);
+      mipScale = Math.pow(2, level - MIP_OFFSET);
+    }
+    const hit = cache.get(level);
+    if (hit !== undefined) return hit ?? this.emptyTex;
+    let source: TexImageSource | ImageData = img;
+    if (skin.kind === 'svg') {
+      // One canvas per costume, used for its mips in the same order as the original renderer: the
+      // browser moves a canvas to its CPU rasterizer after a few readbacks, which antialiases differently.
+      let c = this.mipCanvas.get(skinIdx);
+      if (!c) {
+        c = document.createElement('canvas');
+        this.mipCanvas.set(skinIdx, c);
+      }
+      c.width = skin.w * mipScale;
+      c.height = skin.h * mipScale;
+      if (c.width <= 0 || c.height <= 0) {
+        cache.set(level, null);
+        return this.emptyTex;
+      }
+      const ctx = c.getContext('2d')!;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.setTransform(mipScale, 0, 0, mipScale, 0, 0);
+      ctx.drawImage(img, 0, 0);
+      source = ctx.getImageData(0, 0, c.width, c.height);
+    }
+    const tex = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    this.texParams();
+    cache.set(level, tex);
+    return tex;
+  }
+
+  private useNearest(skin: SkinDef, d: DrawState, scaleX: number, scaleY: number): boolean {
+    if (skin.kind === 'bitmap') return true;
+    if (d.fx.fisheye || d.fx.whirl || d.fx.pixelate || d.fx.mosaic) return false;
+    if (d.dir % 90 !== 0) return false;
+    const ax = Math.abs(scaleX);
+    const ay = Math.abs(scaleY);
+    return ax > 99 && ax < 101 && ay > 99 && ay < 101;
+  }
+
+  // ---------------------------------------------------------------- programs
+
+  private program(line: boolean, bits: number): Program {
+    const key = `${line ? 'L' : 'S'}${bits}`;
+    const cached = this.programs.get(key);
+    if (cached) return cached;
+    const gl = this.gl;
+    const defs: string[] = [];
+    if (line) defs.push('#define LINE');
+    for (const [name, bit] of Object.entries(EFFECT_BITS)) if (bits & bit) defs.push(`#define ENABLE_${name}`);
+    const head = `${defs.join('\n')}\n`;
+    const compile = (type: number, src: string) => {
+      const s = gl.createShader(type)!;
+      gl.shaderSource(s, head + src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) ?? 'shader error');
+      return s;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERTEX));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAGMENT));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog) ?? 'link error');
+    const p: Program = { prog, uni: new Map(), aPos: gl.getAttribLocation(prog, 'a_position'), aTex: gl.getAttribLocation(prog, 'a_texCoord') };
+    this.programs.set(key, p);
+    return p;
+  }
+
+  private loc(p: Program, name: string): WebGLUniformLocation | null {
+    if (!p.uni.has(name)) p.uni.set(name, this.gl.getUniformLocation(p.prog, name));
+    return p.uni.get(name)!;
+  }
+
+  // ---------------------------------------------------------------- drawing
+
+  /** Draws one drawable with the given projection; `fbScaleX/Y` convert stage units to target pixels. */
+  private drawSprite(d: DrawState, projection: Float32Array, fbScaleX: number, fbScaleY: number): void {
+    const gl = this.gl;
+    const skin = this.skins[d.skin];
+    const scaleX = d.sx * fbScaleX;
+    const scaleY = d.sy * fbScaleY;
+    const tex = this.skinTexture(d.skin, scaleX, scaleY);
+    const bits = effectBits(d.fx);
+    const p = this.program(false, bits);
+    gl.useProgram(p.prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPos);
+    gl.enableVertexAttribArray(p.aPos);
+    gl.vertexAttribPointer(p.aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadTex);
+    gl.enableVertexAttribArray(p.aTex);
+    gl.vertexAttribPointer(p.aTex, 2, gl.FLOAT, false, 0, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    const filter = this.useNearest(skin, d, scaleX, scaleY) ? gl.NEAREST : gl.LINEAR;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    gl.uniform1i(this.loc(p, 'u_skin'), 0);
+    gl.uniformMatrix4fv(this.loc(p, 'u_projectionMatrix'), false, projection);
+    gl.uniformMatrix4fv(this.loc(p, 'u_modelMatrix'), false, modelMatrix(skin, d));
+    const fx = d.fx;
+    if (bits & EFFECT_BITS.color) gl.uniform1f(this.loc(p, 'u_color'), (fx.color / 200) % 1);
+    if (bits & EFFECT_BITS.fisheye) gl.uniform1f(this.loc(p, 'u_fisheye'), Math.max(0, (fx.fisheye + 100) / 100));
+    if (bits & EFFECT_BITS.whirl) gl.uniform1f(this.loc(p, 'u_whirl'), (-fx.whirl * Math.PI) / 180);
+    if (bits & EFFECT_BITS.pixelate) {
+      gl.uniform1f(this.loc(p, 'u_pixelate'), Math.abs(fx.pixelate) / 10);
+      gl.uniform2f(this.loc(p, 'u_skinSize'), skin.w, skin.h);
+    }
+    if (bits & EFFECT_BITS.mosaic) gl.uniform1f(this.loc(p, 'u_mosaic'), Math.max(1, Math.min(Math.round((Math.abs(fx.mosaic) + 10) / 10), 512)));
+    if (bits & EFFECT_BITS.brightness) gl.uniform1f(this.loc(p, 'u_brightness'), Math.max(-100, Math.min(fx.brightness, 100)) / 100);
+    if (bits & EFFECT_BITS.ghost) gl.uniform1f(this.loc(p, 'u_ghost'), 1 - Math.max(0, Math.min(fx.ghost, 100)) / 100);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  private drawLine(cmd: Extract<PenCmd, { op: 'line' }>): void {
+    const gl = this.gl;
+    const p = this.program(true, 0);
+    gl.useProgram(p.prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.linePos);
+    gl.enableVertexAttribArray(p.aPos);
+    gl.vertexAttribPointer(p.aPos, 2, gl.FLOAT, false, 0, 0);
+    const d = cmd.d || 1;
+    const off = d === 1 || d === 3 ? 0.5 : 0;
+    const x0 = cmd.x0 + off;
+    const y0 = cmd.y0 + off;
+    const dx = cmd.x1 + off - x0;
+    const dy = cmd.y1 + off - y0;
+    const c = cmd.c4;
+    gl.uniform2f(this.loc(p, 'u_stageSize'), NATIVE_W, NATIVE_H);
+    gl.uniform4f(this.loc(p, 'u_lineColor'), c[0] * c[3], c[1] * c[3], c[2] * c[3], c[3]);
+    gl.uniform1f(this.loc(p, 'u_lineThickness'), d);
+    gl.uniform1f(this.loc(p, 'u_lineLength'), Math.sqrt(dx * dx + dy * dy));
+    gl.uniform4f(this.loc(p, 'u_penPoints'), x0, -y0, dx, -dy);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  private penFlip = ortho(-NATIVE_W / 2, NATIVE_W / 2, NATIVE_H / 2, -NATIVE_H / 2);
+
+  private drawPenCmd(cmd: PenCmd): void {
+    const gl = this.gl;
+    if (cmd.op === 'line') {
+      gl.viewport(0, 0, NATIVE_W, NATIVE_H);
+      gl.disable(gl.SCISSOR_TEST);
+      this.drawLine(cmd);
+      return;
+    }
+    const d: DrawState = { skin: cmd.skin, x: cmd.x, y: cmd.y, sx: cmd.sx, sy: cmd.sy, dir: cmd.dir, fx: cmd.fx };
+    // Stamping first asks for the 100% texture (the original checks the stamp bounds with it).
+    this.skinTexture(cmd.skin, 100, 100);
+    const b = stampBounds(this.geom, this.skins[cmd.skin], d);
+    if (!b) return;
+    // A viewport and projection covering only the stamp's bounds, as the original does; using the
+    // full layer with a scissor rasterizes edges slightly differently.
+    gl.disable(gl.SCISSOR_TEST);
+    gl.viewport(NATIVE_W / 2 + b.left, NATIVE_H / 2 - b.top, b.right - b.left, b.top - b.bottom);
+    this.drawSprite(d, ortho(b.left, b.right, b.top, b.bottom), 1, 1);
+  }
+
+  /** Brings the pen texture up to date with the simulation's command list. */
+  private syncPen(rt: Runtime): void {
+    const gl = this.gl;
+    const cmds = rt.pen.cmds;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.penFbo);
+    if (cmds !== this.penArr || this.penDrawn > cmds.length || rt.penEpoch !== this.penEpoch) {
+      gl.viewport(0, 0, NATIVE_W, NATIVE_H);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      this.penArr = cmds;
+      this.penDrawn = 0;
+      this.penEpoch = rt.penEpoch;
+    }
+    for (let i = this.penDrawn; i < cmds.length; i++) this.drawPenCmd(cmds[i]);
+    this.penDrawn = cmds.length;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  private stageProj = ortho(-NATIVE_W / 2, NATIVE_W / 2, -NATIVE_H / 2, NATIVE_H / 2);
+
+  /** Draws the current simulation state to the canvas. */
+  render(rt: Runtime): void {
+    const gl = this.gl;
+    this.syncPen(rt);
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.clearColor(1, 1, 1, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    const fbx = this.canvas.width / NATIVE_W;
+    const fby = this.canvas.height / NATIVE_H;
+    const differs = this.canvas.width !== NATIVE_W && this.canvas.height !== NATIVE_H;
+    const sxF = differs ? fbx : 1;
+    const syF = differs ? fby : 1;
+    const stage = rt.stage;
+    this.drawSprite(drawStateOf(stage), this.stageProj, sxF, syF);
+    if (rt.penCreated) this.drawPenLayer(sxF, syF);
+    for (const t of rt.drawList) {
+      if (!t.visible) continue;
+      this.drawSprite(drawStateOf(t), this.stageProj, sxF, syF);
+    }
+  }
+
+  private drawPenLayer(sxF: number, syF: number): void {
+    const gl = this.gl;
+    const p = this.program(false, 0);
+    gl.useProgram(p.prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPos);
+    gl.enableVertexAttribArray(p.aPos);
+    gl.vertexAttribPointer(p.aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadTex);
+    gl.enableVertexAttribArray(p.aTex);
+    gl.vertexAttribPointer(p.aTex, 2, gl.FLOAT, false, 0, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.penTex);
+    const nearest = Math.max(100 * sxF, 100 * syF) >= 100;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, nearest ? gl.NEAREST : gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, nearest ? gl.NEAREST : gl.LINEAR);
+    gl.uniform1i(this.loc(p, 'u_skin'), 0);
+    gl.uniformMatrix4fv(this.loc(p, 'u_projectionMatrix'), false, this.stageProj);
+    const m = new Float32Array(16);
+    // Pen skin: 480x360 with its center at the stage origin, direction 90, scale 100.
+    m[0] = -NATIVE_W;
+    m[5] = -NATIVE_H;
+    m[10] = 1;
+    m[15] = 1;
+    gl.uniformMatrix4fv(this.loc(p, 'u_modelMatrix'), false, m);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  resize(w: number, h: number): void {
+    if (this.canvas.width !== w || this.canvas.height !== h) {
+      this.canvas.width = w;
+      this.canvas.height = h;
+    }
+  }
+}
+
+export function drawStateOf(t: import('../engine/target.ts').Target): DrawState {
+  return {
+    skin: t.sprite.costumes[t.currentCostume].skin,
+    x: t.drawX,
+    y: t.drawY,
+    sx: Math.fround(t.renderedScaleX()),
+    sy: Math.fround(t.size),
+    dir: t.renderedDirection(),
+    fx: t.effects,
+  };
+}
+
+/** Model matrix with the same 32-bit float storage as the simulation's geometry. */
+function modelMatrix(skin: SkinDef, d: DrawState): Float32Array {
+  const f = Math.fround;
+  const rotation = ((270 - d.dir) * Math.PI) / 180;
+  const cd = cos(rotation);
+  const sd = sin(rotation);
+  const r00 = f(cd);
+  const r01 = f(sd);
+  const r10 = f(-sd);
+  const r11 = f(cd);
+  const adj0 = f(((f(skin.rcx) - skin.w / 2) * d.sx) / 100);
+  const adj1 = f((((f(skin.rcy) - skin.h / 2) * d.sy) / 100) * -1);
+  const s0 = f((skin.w * d.sx) / 100);
+  const s1 = f((skin.h * d.sy) / 100);
+  const m = new Float32Array(16);
+  m[0] = s0 * r00;
+  m[1] = s0 * r01;
+  m[4] = s1 * r10;
+  m[5] = s1 * r11;
+  m[10] = 1;
+  m[12] = r00 * adj0 + r10 * adj1 + d.x;
+  m[13] = r01 * adj0 + r11 * adj1 + d.y;
+  m[15] = 1;
+  return m;
+}
+
+function stampBounds(_geom: RenderModel, skin: SkinDef, d: DrawState): { left: number; right: number; bottom: number; top: number } | null {
+  const m = modelMatrix(skin, d);
+  const x = Math.abs(0.5 * m[0]) + Math.abs(0.5 * m[4]);
+  const y = Math.abs(0.5 * m[1]) + Math.abs(0.5 * m[5]);
+  let left = -x + m[12];
+  let right = x + m[12];
+  let top = y + m[13];
+  let bottom = -y + m[13];
+  left = Math.max(left, -240);
+  right = Math.min(right, 240);
+  bottom = Math.max(bottom, -180);
+  top = Math.min(top, 180);
+  left = Math.min(left, 240);
+  right = Math.max(right, -240);
+  bottom = Math.min(bottom, 180);
+  top = Math.max(top, -180);
+  left = Math.floor(left);
+  right = Math.ceil(right);
+  bottom = Math.floor(bottom);
+  top = Math.ceil(top);
+  if (right - left === 0 || top - bottom === 0) return null;
+  return { left, right, bottom, top };
+}
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`failed to load ${url}`));
+    img.src = url;
+  });
+}

@@ -1,0 +1,1 @@
+{"name":"to-main-menu","seed":3,"frames":929,"events":[{"f":321,"type":"key","key":"space","down":true,"p":0},{"f":325,"type":"key","key":"space","down":false,"p":0},{"f":525,"type":"key","key":"P","down":true,"p":0},{"f":529,"type":"key","key":"P","down":false,"p":0}]}

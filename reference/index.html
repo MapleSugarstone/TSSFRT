@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Reference runner</title>
+<style>
+  body { margin: 0; background: #222; color: #ddd; font: 12px monospace; }
+  canvas { display: block; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<canvas id="stage" width="480" height="360"></canvas>
+<div id="status">loading</div>
+<script src="/reference/dmath.js"></script>
+<script>
+  // Same transcendental functions as the port, so results do not depend on this browser's libm.
+  for (const k of ["sin", "cos", "tan", "asin", "acos", "atan", "atan2", "exp", "log"]) Math[k] = DMATH[k];
+</script>
+<script src="/node_modules/@scratch/scratch-storage/dist/web/scratch-storage.js"></script>
+<script src="/node_modules/@scratch/scratch-svg-renderer/dist/web/scratch-svg-renderer.js"></script>
+<script src="/node_modules/@scratch/scratch-render/dist/web/scratch-render.js"></script>
+<script src="/node_modules/@scratch/scratch-vm/dist/web/scratch-vm.js"></script>
+<script src="/reference/harness.js"></script>
+</body>
+</html>
