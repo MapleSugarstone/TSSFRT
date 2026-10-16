@@ -43,7 +43,6 @@ window.addEventListener('resize', fitStage);
 // One game object per page: assets load once while the menu shows, and the runtime is replaced
 // when an online game starts with the shared seed.
 const game = new Game(canvas, overlay, { seed: crypto.getRandomValues(new Uint32Array(1))[0], t0: localT0() });
-game.renderer.hqPen = true;
 const input = new LocalInput(stageWrap);
 game.question.onFocusChange = (f) => (input.enabled = !f);
 const resumeAudio = () => game.audio.resume();
@@ -104,6 +103,9 @@ const lobby = new Lobby(overlay, {
   },
   prefs(p) {
     if (room && !online) room.send({ type: 'prefs', prefs: p });
+  },
+  hqPen(on) {
+    game.renderer.hqPen = on;
   },
   start(delay) {
     // Every seat gets Player 1's row, so each player's own controls have a full row to map onto.

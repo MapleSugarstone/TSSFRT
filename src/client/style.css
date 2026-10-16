@@ -191,7 +191,7 @@ body {
 /* ------------------------------------------------------------------ lobby */
 
 /* Buttons and player cards use the menu buttons' shape: top-left and bottom-right corners cut. */
-.lobby button:not(.lobby-return, .lobby-corner),
+.lobby button:not(.lobby-return, .lobby-corner, .lobby-option),
 .seat,
 .hud button {
   --cut: 0.45em;
@@ -202,7 +202,7 @@ body {
 }
 
 /* The fill sits 2px inside the stroke color. Its cut is 2px * (2 - sqrt 2) smaller so the diagonal stroke is 2px wide too. */
-.lobby button:not(.lobby-return, .lobby-corner)::before,
+.lobby button:not(.lobby-return, .lobby-corner, .lobby-option)::before,
 .seat::before,
 .hud button::before {
   --inner: calc(var(--cut) - 1.17px);
@@ -293,7 +293,7 @@ body {
   content: ' -';
 }
 
-.lobby button:not(.lobby-return, .lobby-corner),
+.lobby button:not(.lobby-return, .lobby-corner, .lobby-option),
 .hud button {
   --stroke: var(--ui-stroke);
   --fill: var(--ui-fill);
@@ -307,7 +307,7 @@ body {
   cursor: pointer;
 }
 
-.lobby button:not(.lobby-return, .lobby-corner)::before,
+.lobby button:not(.lobby-return, .lobby-corner, .lobby-option)::before,
 .hud button::before {
   background: var(--fill);
 }
@@ -544,6 +544,46 @@ body {
 .lobby-corner:focus-visible {
   color: #ffffff;
   outline: none;
+}
+
+/* A display option in the corner opposite the controls button, with its state in a small tag. */
+.lobby-option {
+  position: absolute;
+  left: 0.6em;
+  bottom: 0.6em;
+  height: 2.6em;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font: inherit;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.lobby-option:hover,
+.lobby-option:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
+.lobby-option-state {
+  min-width: 3em;
+  padding: 0.1em 0.45em;
+  font-weight: 700;
+  color: var(--ui-muted);
+  background: var(--ui-fill);
+  border: 1px solid var(--ui-stroke);
+}
+
+.lobby-option-state.on {
+  color: #ffffff;
+  border-color: var(--p1);
 }
 
 /* The main menu's controls button, in the same corner. */

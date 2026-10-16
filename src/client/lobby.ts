@@ -8,6 +8,7 @@ import { installUiAssets, playerBadge } from './ui-assets.ts';
 
 const NAME_KEY = 'sfrt.name';
 const DELAY_KEY = 'sfrt.delay';
+const HQ_KEY = 'sfrt.hqpen';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -42,6 +43,8 @@ export interface LobbyHandlers {
   join(name: string, code: string): void;
   start(delay: number): void;
   prefs(p: Prefs): void;
+  /** Called at startup with the saved choice and again whenever the player changes it. */
+  hqPen(on: boolean): void;
   leave(): void;
 }
 
@@ -59,6 +62,8 @@ export class Lobby {
   private delayIn: HTMLSelectElement;
   private controlsView: HTMLDivElement;
   private controlsBtn: HTMLButtonElement;
+  private hqBtn: HTMLButtonElement;
+  private hq = load(HQ_KEY, '1') === '1';
   private leaveBtn: HTMLButtonElement;
   private keyButtons: HTMLButtonElement[] = [];
   private controls = loadControls();
@@ -171,8 +176,12 @@ export class Lobby {
     this.leaveBtn.hidden = true;
     this.controlsBtn = el('button', 'lobby-corner', 'Controls');
     this.controlsBtn.addEventListener('click', () => this.openControls());
+    this.hqBtn = el('button', 'lobby-option');
+    this.hqBtn.addEventListener('click', () => this.setHq(!this.hq));
+    this.renderHq();
+    this.h.hqPen(this.hq);
     panel.append(this.menu, this.room, this.controlsView, this.status);
-    this.root.append(panel, this.leaveBtn, this.controlsBtn);
+    this.root.append(panel, this.leaveBtn, this.hqBtn, this.controlsBtn);
     parent.append(this.root);
     window.addEventListener('keydown', (e) => this.onCaptureKey(e), true);
 
@@ -234,6 +243,7 @@ export class Lobby {
     this.room.hidden = view !== 'room';
     this.controlsView.hidden = view !== 'controls';
     this.leaveBtn.hidden = view !== 'room';
+    this.hqBtn.hidden = view !== 'menu';
     this.controlsBtn.hidden = view === 'controls';
     this.root.classList.toggle('in-room', view !== 'menu');
   }
@@ -265,6 +275,19 @@ export class Lobby {
     this.controls[this.capturing] = name;
     saveControls(this.controls);
     this.capture(-1);
+  }
+
+  private setHq(on: boolean): void {
+    this.hq = on;
+    store(HQ_KEY, on ? '1' : '0');
+    this.renderHq();
+    this.h.hqPen(on);
+  }
+
+  private renderHq(): void {
+    const state = el('span', `lobby-option-state${this.hq ? ' on' : ''}`, this.hq ? 'On' : 'Off');
+    this.hqBtn.replaceChildren('High quality pen', state);
+    this.hqBtn.setAttribute('aria-pressed', String(this.hq));
   }
 
   private setPrefs(p: Prefs): void {
