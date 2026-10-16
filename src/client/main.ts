@@ -5,7 +5,10 @@ import { Hud, Lobby } from './lobby.ts';
 import { OnlineGame } from './online.ts';
 import { Mesh } from '../net/mesh.ts';
 import { report } from '../net/report.ts';
-import { loadPrefs } from './controls.ts';
+import { loadPrefs, seatKeys } from './controls.ts';
+import { actionKeys, Pads } from './pads.ts';
+import { TouchControls } from './touch.ts';
+import type { Value } from '../engine/cast.ts';
 import { hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import type { SeatInfo, StartInfo } from '../net/protocol.ts';
@@ -15,14 +18,24 @@ const canvas = document.getElementById('stage') as HTMLCanvasElement;
 const overlay = document.getElementById('overlay')!;
 const page = document.getElementById('app')!;
 
+/** Set once the touch controls exist; they call `fitStage` while being built. */
+let touchUi: TouchControls | null = null;
+
 function fitStage(): void {
-  const pad = 16;
+  // In portrait the touch controls take the bottom of the screen and the stage sits above them.
+  const portraitTouch = !!touchUi?.active && window.innerHeight > window.innerWidth;
+  const touchMin = portraitTouch ? 220 : 0;
+  document.documentElement.classList.toggle('touch-portrait', portraitTouch);
+  const pad = portraitTouch ? 8 : 16;
   const hudSpace = 28;
   const w = Math.max(240, window.innerWidth - pad * 2);
-  const h = Math.max(180, window.innerHeight - pad * 2 - hudSpace);
+  const h = Math.max(180, window.innerHeight - pad * 2 - hudSpace - touchMin);
   const scale = Math.min(w / 480, h / 360);
   const cssW = Math.floor(480 * scale);
   const cssH = Math.floor(360 * scale);
+  // The controls get all the height left under the stage and its status line.
+  const touchH = portraitTouch ? window.innerHeight - pad * 2 - hudSpace - cssH : 0;
+  document.documentElement.style.setProperty('--touch-h', `${touchH}px`);
   stageWrap.style.width = `${cssW}px`;
   stageWrap.style.height = `${cssH}px`;
   document.documentElement.style.setProperty('--stage-w', `${cssW}px`);
@@ -44,6 +57,10 @@ window.addEventListener('resize', fitStage);
 // when an online game starts with the shared seed.
 const game = new Game(canvas, overlay, { seed: crypto.getRandomValues(new Uint32Array(1))[0], t0: localT0() });
 const input = new LocalInput(stageWrap);
+const pads = new Pads();
+const touch = new TouchControls(page, pads, fitStage);
+touchUi = touch;
+fitStage();
 game.question.onFocusChange = (f) => (input.enabled = !f);
 const resumeAudio = () => game.audio.resume();
 window.addEventListener('pointerdown', resumeAudio);
@@ -61,9 +78,16 @@ const lobby = new Lobby(overlay, {
   local() {
     lobby.hide();
     input.enabled = true;
+    touch.setPlaying(true);
     startFixedLoop(
       () => {
-        const p0: PlayerInput = { keys: input.sampleKeys() };
+        const keys = new Set(input.sampleKeys());
+        // Touch and controller slot n press the buttons of player n+1's row of the controls table.
+        const table = game.rt.stage.l.Player_Input as Value[];
+        pads.sample().forEach((acts, slot) => {
+          for (const k of actionKeys(acts, seatKeys(table, slot))) keys.add(k);
+        });
+        const p0: PlayerInput = { keys: [...keys] };
         if (input.mouseDirty) {
           p0.mouse = { ...input.mouse };
           input.mouseDirty = false;
@@ -198,7 +222,8 @@ function begin(start: StartInfo): void {
   (window as unknown as { __online: OnlineGame }).__online = online;
   lobby.hide();
   input.enabled = true;
-  online.run(input);
+  touch.setPlaying(true);
+  online.run(input, pads);
 }
 
 if (!onlineAvailable()) lobby.disableOnline();

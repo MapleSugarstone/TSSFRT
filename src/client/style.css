@@ -42,6 +42,9 @@ body {
   color: var(--page-fg);
   font: 14px/1.4 system-ui, sans-serif;
   overflow: hidden;
+  overscroll-behavior: none;
+  /* No double-tap zoom on touch screens. */
+  touch-action: manipulation;
 }
 
 /* Nothing on the page is selectable or shows a text caret, except text fields, the room code and the list monitors. */
@@ -711,4 +714,159 @@ body {
 
 .hud .hud-leave {
   margin-left: auto;
+}
+
+/* ------------------------------------------------------------------ touch controls */
+
+/* In portrait the stage sits at the top, above the controls. */
+.touch-portrait #app {
+  justify-content: flex-start;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+.touch {
+  --stick: min(34vmin, 150px);
+  --face: min(40vmin, 190px);
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: none;
+  pointer-events: none;
+}
+
+.touch-on .touch {
+  display: block;
+}
+
+.touch-stick {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 30vw;
+  height: 80vh;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.touch-stick-base {
+  position: absolute;
+  left: max(calc(var(--stick) / 2 + 12px), 50%);
+  top: 62%;
+  width: var(--stick);
+  height: var(--stick);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(20, 22, 30, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.touch-stick-base.held {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.touch-stick-knob {
+  position: absolute;
+  left: 30%;
+  top: 30%;
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid var(--p1);
+}
+
+.touch-face {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: 8vh;
+  width: var(--face);
+  height: var(--face);
+}
+
+.touch-btn {
+  position: absolute;
+  width: 38%;
+  height: 38%;
+  padding: 0;
+  border-radius: 50%;
+  font: 600 clamp(9px, 2.4vmin, 13px) / 1 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: rgba(41, 41, 41, 0.72);
+  border: 2px solid var(--ui-stroke);
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn.down {
+  background: rgba(193, 78, 78, 0.8);
+  border-color: #ffffff;
+}
+
+.touch-btn.top {
+  left: 31%;
+  top: 0;
+}
+
+.touch-btn.left {
+  left: 0;
+  top: 31%;
+}
+
+.touch-btn.right {
+  left: 62%;
+  top: 31%;
+}
+
+.touch-btn.bottom {
+  left: 31%;
+  top: 62%;
+}
+
+.touch-small {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+}
+
+.touch-btn.pill {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0.6em 1em;
+  border-radius: 999px;
+}
+
+/* Portrait: everything lives in the band below the stage. */
+.touch-portrait .touch {
+  --stick: min(40vw, 30vh, 180px);
+  --face: min(48vw, 34vh, 220px);
+}
+
+.touch-portrait .touch-stick {
+  width: 50vw;
+  height: var(--touch-h);
+}
+
+.touch-portrait .touch-stick-base {
+  left: 50%;
+  top: 55%;
+}
+
+.touch-portrait .touch-face {
+  right: 5vw;
+  bottom: calc(var(--touch-h) * 0.45 - var(--face) / 2);
+}
+
+.touch-portrait .touch-small {
+  top: auto;
+  right: auto;
+  left: 50%;
+  bottom: calc(var(--touch-h) - 3em);
+  transform: translateX(-50%);
 }

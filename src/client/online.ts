@@ -13,6 +13,7 @@ import { skinOf } from '../game/assets.ts';
 import { applyPrefs, loadControls, seatKeys, translateKeys } from './controls.ts';
 import { Game, startFixedLoop } from './game.ts';
 import type { LocalInput } from './input.ts';
+import { actionKeys, type Pads } from './pads.ts';
 
 /** Plays sounds once per frame even when a frame is simulated again after a correction. */
 class RollbackAudio {
@@ -153,15 +154,19 @@ export class OnlineGame {
     this.room.send({ type: 'drop', seat, frame: offer.frame, data: toBase64(offer.data) });
   }
 
-  run(input: LocalInput): void {
+  run(input: LocalInput, pads: Pads): void {
     this.probeTimer = setInterval(() => this.session.probe(), 1000);
     this.mesh.watch();
     const own = loadControls();
     this.stop = startFixedLoop(
       () => {
         const pressed = input.sampleKeys();
+        // Every touch and controller slot on this device plays this player's seat.
+        const acts = pads.sample().flat();
         const seat = seatKeys(this.game.rt.stage.l.Player_Input as Value[], this.local);
-        const p: PlayerInput = { keys: translateKeys(pressed, own, seat) };
+        const keys = new Set(translateKeys(pressed, own, seat));
+        for (const k of actionKeys(acts, seat)) keys.add(k);
+        const p: PlayerInput = { keys: [...keys] };
         // Only the first seat drives the shared mouse pointer.
         if (this.local === this.start.seats[0] && input.mouseDirty) {
           p.mouse = { ...input.mouse };
@@ -174,6 +179,7 @@ export class OnlineGame {
         if (!this.session.tick(p)) {
           // The frame did not advance, so offer the same input again next tick.
           input.retap(pressed);
+          pads.retap(acts);
           if (p.mouse) input.mouseDirty = true;
           if (p.answer !== undefined) this.game.question.pendingAnswer ??= p.answer;
         }

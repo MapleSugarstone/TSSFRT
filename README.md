@@ -18,6 +18,10 @@ npm run dev
 
 Open http://localhost:5173 and choose **Play on this computer**. Player 1 uses W A S D to move, V to attack, C for combo, B to shield, Space to jump and F to taunt. Player 2 uses the arrow keys with `, . M N K`. P pauses. The in-game controls menu can rebind every key.
 
+Controllers work too, in the standard layout: the left stick or the D-pad moves, A attacks and confirms in menus, B is the combo button and goes back in menus, X and Y jump, the shoulder buttons and triggers shield, Back taunts and Start pauses. On one computer the first controller plays Player 1 and the second plays Player 2. Online, every controller plays your own seat.
+
+On touch screens a joystick and four buttons appear once a game starts: beside the stage when the screen is wide, below it when the screen is tall. The joystick centers wherever your thumb lands. The controls hide while a controller is in use and come back at the next touch.
+
 ## Online play
 
 Online games are peer to peer. Every player runs the whole game, and inputs travel directly between browsers over WebRTC data channels. A small room server in `server/` hands out room codes and passes the connection setup messages between players. It never sees gameplay traffic unless a direct connection fails, and then it relays inputs for that pair of players.
