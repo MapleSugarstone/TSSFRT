@@ -2510,13 +2510,13 @@ export function build(rt: Runtime) {
 
   /** define Does attack %s hit before %s frames? %s %s %b %b */
   function p_Does_attack_hit_before_frames(t: T, a_attack: Value, a_n: Value, a_attackerID: Value, a_enemyID: Value, a_select_best_one: Value, a_predictiveMovement: Value): void {
-    if (rt.isMove(a_attack, "DownPunch-6")) {
+    if (rt.isMove(a_attack, "DownPunch-6", true)) {
       p_Does_attack_hit_before_frames(t, "DownPunch-6_Scarf", a_n, a_attackerID, a_enemyID, a_select_best_one, a_predictiveMovement);
     }
-    if (rt.isMove(a_attack, "DownAirPunch-6")) {
+    if (rt.isMove(a_attack, "DownAirPunch-6", true)) {
       p_Does_attack_hit_before_frames(t, "DownAirPunch-6_Scarf", a_n, a_attackerID, a_enemyID, a_select_best_one, a_predictiveMovement);
     }
-    if (rt.isMove(a_attack, "DownPunch-3")) {
+    if (rt.isMove(a_attack, "DownPunch-3", true)) {
       p_predict_position_in_frames(t, (12 * num(a_predictiveMovement)), item(G.l.C_Pos, (num((num(a_enemyID) * 2)) - 1)), item(G.l.C_Pos, (num(a_enemyID) * 2)), item(G.l.C_Velocity, (num((num(a_enemyID) * 2)) - 1)), item(G.l.C_Velocity, (num(a_enemyID) * 2)), "0", "0", a_enemyID);
       deleteAll(t.l.CPU_playerStats);
       p_Split_List_Input_Seperator_Level(t, item(G.l.CharData_SP_FC_JH_Fall_JA_AirSP_hitwidth_hitheight, item(G.l.CHARACTERS, a_enemyID)), "'", "1");
@@ -2564,11 +2564,11 @@ export function build(rt: Runtime) {
     if (listContains(t.l.CPU_attacks_hitting, "DownAirPunch-6_Scarf")) {
       addTo(t.l.CPU_attacks_hitting, "DownAirPunch-6");
     }
-    if (and((listContains(t.l.CPU_attacks_hitting, "RunPunch-5") || listContains(t.l.CPU_attacks_hitting, "NPunch-5")), and((rt.isMove(a_attack, "DownPunch-5") || rt.isMove(a_attack, "NPunch-5")), eq(rt.pickRandom("1", "2"), "2")))) {
+    if (and((listContains(t.l.CPU_attacks_hitting, "RunPunch-5") || listContains(t.l.CPU_attacks_hitting, "NPunch-5")), and((rt.isMove(a_attack, "DownPunch-5", true) || rt.isMove(a_attack, "NPunch-5", true)), eq(rt.pickRandom("1", "2"), "2")))) {
       deleteAll(t.l.CPU_attacks_hitting);
       addTo(t.l.CPU_attacks_hitting, "DownPunch-5");
     }
-    if (and(listContains(t.l.CPU_attacks_hitting, "RunPunch-5"), and(rt.isMove(a_attack, "DownAirPunch-5"), eq(rt.pickRandom("1", "2"), "2")))) {
+    if (and(listContains(t.l.CPU_attacks_hitting, "RunPunch-5"), and(rt.isMove(a_attack, "DownAirPunch-5", true), eq(rt.pickRandom("1", "2"), "2")))) {
       deleteAll(t.l.CPU_attacks_hitting);
       addTo(t.l.CPU_attacks_hitting, "DownAirPunch-5");
     }
@@ -2636,7 +2636,7 @@ export function build(rt: Runtime) {
     if (((gt(item(G.l.C_VelocityBuffer, item(t.l.Variables, "9")), "0") || gt(item(G.l.C_VelocityBuffer, item(t.l.Variables, "10")), "0")) && (eq(Math.round(num(mod(num((num(G.v.Timer) * 50)), 1))), "1") && eq(item(G.l.C_Conditions, item(t.l.Variables, "4")), "hurt")))) {
       p_Create_Particle_ID_XPos_YPos_Direc_IgnoreHitPause_0_1_Tied_to_Character_Layer(t, "05_FlyingSmoke", item(G.l.C_Pos, item(t.l.Variables, "9")), item(G.l.C_Pos, item(t.l.Variables, "10")), t.v.direc_visual, "0", t.v.cloneID, "2");
     }
-    if ((lt(item(G.l.C_Velocity, item(t.l.Variables, "10")), "-10") && !(gt(item(G.l.C_Grabbed, t.v.cloneID), "0") || listContains(G.l.Attacks_IgnoreVelocityLimit, ((String(item(G.l.C_Conditions, item(t.l.Variables, "3"))) + "-") + String(item(G.l.CHARACTERS, t.v.cloneID))))))) {
+    if ((lt(item(G.l.C_Velocity, item(t.l.Variables, "10")), "-10") && !(gt(item(G.l.C_Grabbed, t.v.cloneID), "0") || listContains(G.l.Attacks_IgnoreVelocityLimit, rt.moveName(item(G.l.C_Conditions, item(t.l.Variables, "3")), item(G.l.CHARACTERS, t.v.cloneID)))))) {
       replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), "-10");
     }
   }

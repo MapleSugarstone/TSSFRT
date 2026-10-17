@@ -2,6 +2,7 @@
 import type { SeatInfo } from '../net/protocol.ts';
 import type { LinkState } from '../net/mesh.ts';
 import { browserKeyToName } from '../engine/io.ts';
+import { CHARACTER_FILE_TYPES } from '../game/pack-format.ts';
 import { DEFAULT_PREFS, type Prefs } from '../net/protocol.ts';
 import { ACTIONS, DEFAULT_CONTROLS, loadControls, loadPrefs, saveControls, savePrefs } from './controls.ts';
 import { addMod, deleteMod, listMods, modScript, setModEnabled, setModScriptAllowed, type ModInfo, type ModLoad } from './mods.ts';
@@ -213,7 +214,7 @@ export class Lobby {
     this.modsView.append(
       el('div', 'lobby-heading', 'Mods'),
       el('p', 'lobby-note', 'Mods add characters, made with the mod maker. They stay in this browser, and changes apply when the page reloads.'),
-      el('p', 'lobby-note', 'Online, you can only play with people who have the same mods turned on. A script in a mod from someone else starts off: read it and turn it on only if you trust where it came from.'),
+      el('p', 'lobby-note', 'Online, you can only play with people who have the same mods turned on. When you add a mod with a script, the game asks whether to turn the script on. Turn it on only if you trust where the mod came from.'),
       this.modList,
       this.scriptView,
       this.modProblems,
@@ -221,7 +222,7 @@ export class Lobby {
     );
     const filePick = el('input');
     filePick.type = 'file';
-    filePick.accept = '.zip';
+    filePick.accept = CHARACTER_FILE_TYPES;
     filePick.multiple = true;
     filePick.hidden = true;
     this.modsView.append(filePick);
@@ -230,15 +231,17 @@ export class Lobby {
       const files = [...(filePick.files ?? [])];
       filePick.value = '';
       const problems: string[] = [];
+      const added: ModInfo[] = [];
       for (const file of files) {
         try {
-          await addMod(file);
+          added.push(await addMod(file));
           this.modsChanged = true;
         } catch (e) {
           problems.push(`${file.name}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
       await this.refreshMods(problems);
+      for (const m of added) if (m.hasScript && !m.scriptAllowed) await this.showScript(m, true);
     });
     this.reloadBtn.addEventListener('click', () => location.reload());
     modsDone.addEventListener('click', () => this.show('menu'));
@@ -409,32 +412,49 @@ export class Lobby {
         return li;
       }),
     );
-    if (!this.mods.length) this.modList.append(el('li', 'lobby-note', 'No mods yet. Add a character zip exported from the mod maker.'));
+    if (!this.mods.length) this.modList.append(el('li', 'lobby-note', 'No mods yet. Add a .sfrt character file exported from the mod maker.'));
     this.modProblems.replaceChildren(...[...this.modLoad.problems, ...extra].map((p) => el('li', '', p)));
     this.reloadBtn.hidden = !this.modsChanged;
   }
 
-  /** Shows a mod's script with a button to turn it on or off. */
-  private async showScript(m: ModInfo): Promise<void> {
+  /**
+   * Shows a mod's script with a button to turn it on or off. Right after the mod is added (`asking`), it asks
+   * whether to turn the script on and keeps the source folded. Resolves when the panel closes.
+   */
+  private async showScript(m: ModInfo, asking = false): Promise<void> {
     const source = (await modScript(m.id)) ?? '';
     const turn = el('button', m.scriptAllowed ? '' : 'primary', m.scriptAllowed ? 'Turn script off' : 'Turn script on');
-    const close = el('button', '', 'Close');
+    const close = el('button', '', asking ? 'Keep it off' : 'Close');
     const actions = el('div', 'lobby-actions');
     actions.append(turn, close);
+    const code = el('pre', 'mod-code', source);
+    let shown: HTMLElement = code;
+    if (asking) {
+      const fold = el('details', 'mod-code-fold');
+      fold.append(el('summary', '', 'Show the script'), code);
+      shown = fold;
+    }
     this.scriptView.replaceChildren(
-      el('div', 'lobby-heading', `${m.name}'s script`),
-      el('p', 'lobby-note', 'The script adds this character\'s special rules. It runs walled off from the page: it can change fights but not this page, your saved data or other sites. Read it, and turn it on only if you trust where the mod came from.'),
-      el('pre', 'mod-code', source),
+      el('div', 'lobby-heading', asking ? `Turn on ${m.name}'s script?` : `${m.name}'s script`),
+      el('p', 'lobby-note', "The script adds this character's special rules. It runs walled off from the page: it can change fights but not this page, your saved data or other sites. Turn it on only if you trust where the mod came from."),
+      shown,
       actions,
     );
     this.scriptView.hidden = false;
-    turn.addEventListener('click', async () => {
-      await setModScriptAllowed(m.id, !m.scriptAllowed);
-      this.modsChanged = true;
-      this.scriptView.hidden = true;
-      await this.refreshMods();
+    this.scriptView.scrollIntoView({ block: 'nearest' });
+    await new Promise<void>((done) => {
+      turn.addEventListener('click', async () => {
+        await setModScriptAllowed(m.id, !m.scriptAllowed);
+        this.modsChanged = true;
+        this.scriptView.hidden = true;
+        await this.refreshMods();
+        done();
+      });
+      close.addEventListener('click', () => {
+        this.scriptView.hidden = true;
+        done();
+      });
     });
-    close.addEventListener('click', () => (this.scriptView.hidden = true));
   }
 
   private setHq(on: boolean): void {

@@ -2,7 +2,7 @@
 
 ![Red Gnaw's character select portrait](art/portrait/icvd8s4d-01.png)
 
-Red Gnaw is Gnaw with red scales, gold spikes and angry eyebrows. He is quicker on his feet, falls faster, and takes more knockback, and several of his moves hit sooner, reach further or come out in a new shape. Every hit adds a third of a Red stack to the target, shown as three diamonds over its head, and Red fades 3 seconds after the last hit. Three full stacks burst for 18% extra damage.
+Red Gnaw is Gnaw with red scales, gold spikes and angry eyebrows. He is quicker on his feet, falls faster, and takes more knockback, and several of his moves hit sooner, reach further or come out in a new shape. His fireball burns red and hits harder. Every hit adds a third of a Red stack to the target, shown as three diamonds over its head, and Red fades 3 seconds after the last hit. Three full stacks burst for 18% extra damage and paint the target red for 3 seconds.
 
 This folder holds the finished character. The steps below make it from scratch in the mod maker.
 
@@ -16,31 +16,35 @@ This folder holds the finished character. The steps below make it from scratch i
 6. Open **Recolor character** again and tick one green. Choose **Tick similar colors**, drag the hue to red, and choose **Apply**.
 7. Choose **Paint** (the brush icon) on the idle row and add a layer. Draw a short dark line above the eye that slopes down toward the snout, and save.
 8. Draw the eyebrows on the other animations the same way. Onion skin shows the neighboring frames, so the brows line up from frame to frame.
-9. On the **Art** tab, paint thick brows over the eyes in the portrait, the roster frame and the match intro art, and repaint the name images.
+9. On the **Art** tab, paint thick brows over the eyes in the portrait, the roster icon and the match intro art, and repaint the name images.
 10. On the **Moves** tab, set **Move data** to Customized for every move and raise its damage a little.
 11. Select UpPunch and drag the start of the red **Can hit** bar to frame 3. Drag a corner of the red hitbox until it is tall and narrow, then drag the box up a little.
 12. Select DownAirPunch and drag its **Can hit** bar to start at frame 6 and end at frame 14, so the spike comes out sooner.
 13. Select DownPunch and make the hitbox wide and flat. Select NPunch and drag the box further in front of Gnaw for more reach.
 14. Select E3 (Big Bite), move the timeline to frame 8, and choose **Add a sound at the timeline frame** with the bite sound from `sounds/E3.wav`. The bite now chomps twice.
-15. On the **Particles** tab, choose **New particle**, name it `red1`, and paint three small diamonds with the first one a third full. Make `red2` to `red9` the same way, each a third fuller than the one before.
-16. On the **Overview** tab, choose **Add a gimmick script**. Replace the contents of the new `gimmick.ts` with this folder's `gimmick.ts`.
-17. Choose **Build and play** (the play icon) and pick Red Gnaw on the character select screen.
+15. Under **Extra hitboxes** at the bottom of the move list, select Fireball, the fireball that E1 and E5 throw. Set **Move data** to Customized, raise Damage to 12, and raise Knockback Y to 18 so the fireball pops targets up.
+16. Customize FireStationary, the fire the fireball leaves on the ground, and raise its damage to 4. Customize FireballImpact, the fireball's explosion, without changing its numbers.
+17. Make the fire red in all three. Choose **Paint effect frames** (the brush icon) and fill the yellow, light orange, orange and deep orange with `#ff9a8a`, `#ff5a50`, `#e8242c` and `#96101c`, the colors of the Red marks. You can also choose **Export effect**, change the colors in another image editor, and bring the frames back with **Import effect**.
+18. On the **Particles** tab, choose **New particle**, name it `red1`, and paint three small diamonds with the first one a third full. Make `red2` to `red9` the same way, each a third fuller than the one before.
+19. On the **Overview** tab, choose **Add a gimmick script**. Replace the contents of the new `gimmick.ts` with this folder's `gimmick.ts`.
+20. Choose **Build and play** (the play icon) and pick Red Gnaw on the character select screen.
 
 Hover over any button to see its name.
 
 ## Add it to the game as a mod
 
-1. In the mod maker, pick Red Gnaw under Examples and choose **Export character** in the top bar to download `red-gnaw.zip`.
-2. On the game's page, choose **Mods** in the top-left corner of the main menu, then **Add mod**, and pick the zip.
-3. Choose **Reload to apply**. Red Gnaw stays on the character select screen in this browser.
+1. In the mod maker, pick Red Gnaw under Examples and choose **Export character** in the top bar to download `red-gnaw.sfrt`.
+2. On the game's page, choose **Mods** in the top-left corner of the main menu, then **Add mod**, and pick `red-gnaw.sfrt`.
+3. The game asks whether to turn on Red Gnaw's script. Choose **Turn script on**, or his Red marks and burst do not happen.
+4. Choose **Reload to apply**. Red Gnaw stays on the character select screen in this browser.
 
-The Mods screen also turns a mod off and on, and deletes it. Anyone can add the zip the same way, on the published site too.
+The Mods screen also turns a mod off and on, and deletes it. Anyone can add the `.sfrt` file the same way, on the published site too.
 
 ## Play it online
 
 Two players meet online only when they run the same game with the same mods turned on. A player with different mods gets "That room runs a different version of the game" instead of a game that drifts apart.
 
-1. Every player adds the same mod zips on the Mods screen and turns on the same ones.
+1. Every player adds the same `.sfrt` files on the Mods screen and turns on the same ones.
 2. One player hosts a game and shares the room code, and the others join as usual.
 
 ## Other ways to add it

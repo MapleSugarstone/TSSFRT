@@ -407,7 +407,7 @@ export function build(rt: Runtime) {
       if (eq(item(G.l.Game_Settings, "5"), "1")) {
         p_draw_hitbox(t);
       }
-      if ((rt.isMove(t.v.AttackID, "E1-6") || eq(t.v.AttackID, "E1-6_Impact"))) {
+      if ((rt.isMove(t.v.AttackID, "E1-6", true) || rt.isMove(t.v.AttackID, "E1-6_Impact", true))) {
         t.setXY(num((num((num(t.v.xpos) - num(item(G.l.Camera_Data, "1")))) * num(item(G.l.Camera_Data, "3")))), num((num((num(t.v.ypos) - num(item(G.l.Camera_Data, "2")))) * num(item(G.l.Camera_Data, "3")))));
         t.setPenSize((2 * num(item(G.l.Camera_Data, "3"))));
         t.setPenColorToColor("#461f1f");
@@ -693,7 +693,7 @@ export function build(rt: Runtime) {
             p_Delete_clone(t);
           }
         }
-        if (eq(t.v.AttackID, "DownPunch-3_Spike")) {
+        if (rt.isMove(t.v.AttackID, "DownPunch-3_Spike")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.setEffect("ghost", "100");
@@ -759,7 +759,7 @@ export function build(rt: Runtime) {
             }
           }
         }
-        if (eq(t.v.AttackID, "DownAirPunch-3_Impact")) {
+        if (rt.isMove(t.v.AttackID, "DownAirPunch-3_Impact")) {
           p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "2"))) {
             p_move_x_y_use_displacement_0_1_Collision_0_1_IgnoreSoftPlats_0_1(t, "0", "13", "1", "1", "");
@@ -898,7 +898,7 @@ export function build(rt: Runtime) {
             }
           }
         }
-        if (eq(t.v.AttackID, "E3-3_Spike")) {
+        if (rt.isMove(t.v.AttackID, "E3-3_Spike")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.v.AttackID_OverwriteAnimationID = ("E3-3_Spike" + String(rt.pickRandom("1", "4")));
@@ -1542,7 +1542,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "Fireball")) {
+    if (rt.isMove(t.v.AttackID, "Fireball")) {
       t.v.clone_deleteOnCharDeath = "0";
       p_HitboxCheck_lifetime_framecount_from_to(t, "0", "inf");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
@@ -1565,14 +1565,14 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "FireballImpact")) {
+    if (rt.isMove(t.v.AttackID, "FireballImpact")) {
       t.v.clone_deleteOnCharDeath = "0";
       p_HitboxCheck_lifetime_framecount_from_to(t, "6", "6");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "FireStationary")) {
+    if (rt.isMove(t.v.AttackID, "FireStationary")) {
       t.v.clone_deleteOnCharDeath = "0";
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "250", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
@@ -1616,7 +1616,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-1_Grab")) {
+    if (rt.isMove(t.v.AttackID, "E3-1_Grab")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "13", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.AttackGrab = "1";
@@ -1867,7 +1867,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-2_Impact")) {
+    if (rt.isMove(t.v.AttackID, "E1-2_Impact")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "10");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.size = num(t.v.size) + 5;
@@ -1880,7 +1880,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-2_Circle")) {
+    if (rt.isMove(t.v.AttackID, "E1-2_Circle")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "10");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.size = num(t.v.size) + 5;
@@ -1970,7 +1970,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if ((eq(t.v.AttackID, "E5-2_Hand") || eq(t.v.AttackID, "E5-2_Hand2"))) {
+    if ((rt.isMove(t.v.AttackID, "E5-2_Hand") || eq(t.v.AttackID, "E5-2_Hand2"))) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         p_CharacterExtraModifier_set_ModID_optional_for_Character_s_ModifierData(t, "", t.v.cloneID, "No100Combo");
@@ -2097,7 +2097,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-2_Spark")) {
+    if (rt.isMove(t.v.AttackID, "E5-2_Spark")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "11", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.AttackID_OverwriteAnimationID = "DownAirPunch-2";
@@ -2338,7 +2338,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "E1-4_Impact")) {
+    if (rt.isMove(t.v.AttackID, "E1-4_Impact")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "20", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.direc_visual = num(t.v.direc_visual) + 120;
@@ -2414,7 +2414,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-4_Impact")) {
+    if (rt.isMove(t.v.AttackID, "E3-4_Impact")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.size = "200";
@@ -2439,7 +2439,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "XavRune")) {
+    if (rt.isMove(t.v.AttackID, "XavRune")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.AttackID_OverwriteAnimationID = ("XavRune" + String(rt.pickRandom("1", "5")));
@@ -2514,7 +2514,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-4_Planet")) {
+    if (rt.isMove(t.v.AttackID, "E5-4_Planet")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "100");
@@ -2744,7 +2744,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-5_Impact")) {
+    if (rt.isMove(t.v.AttackID, "E1-5_Impact")) {
       t.v.active = "0";
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "10", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
@@ -2795,7 +2795,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-5_Bullet")) {
+    if (rt.isMove(t.v.AttackID, "E3-5_Bullet")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.switchCostume("5)E3-5_Bullet-1");
@@ -2843,7 +2843,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-5_Jump")) {
+    if (rt.isMove(t.v.AttackID, "E5-5_Jump")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.misc1 = "1";
@@ -3048,7 +3048,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownPunch-6_Scarf")) {
+    if (rt.isMove(t.v.AttackID, "DownPunch-6_Scarf")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "30");
@@ -3080,7 +3080,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownAirPunch-6_Scarf")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-6_Scarf")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "30");
@@ -3292,7 +3292,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-6_Spawner")) {
+    if (rt.isMove(t.v.AttackID, "E3-6_Spawner")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.active = "0";
@@ -3322,7 +3322,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-6_Hitbox")) {
+    if (rt.isMove(t.v.AttackID, "E3-6_Hitbox")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_Set_Move_Attributes_to(t, "", "", "", "", "", "", (16 * num(sin(num(t.v.direc_calc)))), (16 * num(cos(num(t.v.direc_calc)))), "", "", "", "", "", "", (20 * num(sin(num(t.v.direc_calc)))), (20 * num(cos(num(t.v.direc_calc)))), "7", "", "");
@@ -3371,7 +3371,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-6_")) {
+    if (rt.isMove(t.v.AttackID, "E5-6_")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.active = "0";
@@ -3405,7 +3405,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-6_Hitbox")) {
+    if (rt.isMove(t.v.AttackID, "E5-6_Hitbox")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.clone_NoHitFreeze = "1";
@@ -3885,7 +3885,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "RedBeam")) {
+    if (rt.isMove(t.v.AttackID, "RedBeam")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "2", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.Armor = "1";
@@ -3959,7 +3959,7 @@ export function build(rt: Runtime) {
         if (!eq(t.v.clone_collisionPlatformType, "4")) {
           replaceItem(t.l.collision_ImpactChecks, "1", "true");
           t.v.xpos = num(t.v.xpos) + num((num((num(a_x) * -1)) * num((num(t.v.direc) / 90))));
-          if (rt.isMove(t.v.AttackID, "E1-5")) {
+          if (rt.isMove(t.v.AttackID, "E1-5", true)) {
             t.v.clone_xVel = (num(t.v.clone_xVel) * -1);
           }
         }
@@ -3969,7 +3969,7 @@ export function build(rt: Runtime) {
       if ((eq(t.v.collided, "1") && eq(a_cl, "1"))) {
         replaceItem(t.l.collision_ImpactChecks, "2", "true");
         t.v.ypos = num(t.v.ypos) + num((num(a_y) * -1));
-        if (rt.isMove(t.v.AttackID, "E1-5")) {
+        if (rt.isMove(t.v.AttackID, "E1-5", true)) {
           rt.startSound(t, "SnowyStep");
           t.v.clone_yVel = (num(t.v.clone_yVel) * -0.8);
           if (lt(t.v.clone_yVel, "3")) {
@@ -4090,7 +4090,7 @@ export function build(rt: Runtime) {
     p_CollisionCheck_IgnoreSoftPlats_0_1(t, (num(item(t.l.MoveAttributes, "1")) / 2), (num(item(t.l.MoveAttributes, "2")) / 2), "x", t.v.temp_ignSoftPlats);
     if ((eq(t.v.collided, "1") && eq(a_cl, "1"))) {
       replaceItem(t.l.collision_ImpactChecks, "1", "true");
-      if (rt.isMove(t.v.AttackID, "E1-6")) {
+      if (rt.isMove(t.v.AttackID, "E1-6", true)) {
       } else {
         t.v.xpos = num(t.v.xpos) + num((num((num(a_steps) * num(sin(num(a_dir))))) * -1));
       }
@@ -4099,11 +4099,11 @@ export function build(rt: Runtime) {
     p_CollisionCheck_IgnoreSoftPlats_0_1(t, (num(item(t.l.MoveAttributes, "1")) / 2), (num(item(t.l.MoveAttributes, "2")) / 2), "y", t.v.temp_ignSoftPlats);
     if ((eq(t.v.collided, "1") && eq(a_cl, "1"))) {
       replaceItem(t.l.collision_ImpactChecks, "2", "true");
-      if (rt.isMove(t.v.AttackID, "E1-6")) {
+      if (rt.isMove(t.v.AttackID, "E1-6", true)) {
       } else {
         t.v.ypos = num(t.v.ypos) + num((num((num(a_steps) * num(cos(num(a_dir))))) * -1));
       }
-      if (rt.isMove(t.v.AttackID, "E1-5")) {
+      if (rt.isMove(t.v.AttackID, "E1-5", true)) {
         t.v.clone_yVel = (num(t.v.clone_yVel) * -0.8);
       } else {
         t.v.clone_yVel = "0";
@@ -4206,14 +4206,14 @@ export function build(rt: Runtime) {
         rt.broadcast("Misc.HitboxMessage");
       } else {
         if (!listContains(G.l.C_Grabbed, a_HitPlayerID)) {
-          if ((rt.isMove(t.v.AttackID, "E1-6") && !eq(t.v.misc2, "TERRAIN"))) {
+          if ((rt.isMove(t.v.AttackID, "E1-6", true) && !eq(t.v.misc2, "TERRAIN"))) {
             t.v.misc2 = "ENEMY";
           }
           p_Split_List_Input_Seperator_Level(t, item(t.l.JourneyMode_RunData, "2"), "'", "1");
           if ((eq(t.v.active, "1") && lt(item(G.l.C_Conditions, (num((num(a_HitPlayerID) * 8)) - 5)), "0"))) {
             p_Move_Connect_Hardcoded_Moves(t, a_HitPlayerID, a_direction);
             if (((!eq(item(G.l.C_Conditions, (num((num(a_HitPlayerID) * 8)) - 3)), "shield") || listContains(G.l.Attacks_ShieldBreaking, t.v.AttackID)) || (eq(a_HitPlayerID, "1") && listContains(t.l.temp_SplitList1, "5")))) {
-              if ((eq(t.v.AttackID, "E5-6_Hitbox") && (gt(item(G.l.Percentage, a_HitPlayerID), "99") && gt(item(G.l.C_Conditions, (num((num(a_HitPlayerID) * 8)) - 6)), "0")))) {
+              if ((rt.isMove(t.v.AttackID, "E5-6_Hitbox", true) && (gt(item(G.l.Percentage, a_HitPlayerID), "99") && gt(item(G.l.C_Conditions, (num((num(a_HitPlayerID) * 8)) - 6)), "0")))) {
                 p_Create_Particle_ID_XPos_YPos_Direc_IgnoreHitPause_0_1_Tied_to_Character_Layer_ExtraData(t, "E5-6_Consume", a_HitPly_X, a_HitPly_Y, "90", "0", t.v.cloneID, "3", "");
                 p_CharacterExtraModifier_set_ModID_optional_for_Character_s_ModifierData(t, (String(a_HitPlayerID) + "_dead"), a_HitPlayerID, "dead");
               }
@@ -4261,7 +4261,7 @@ export function build(rt: Runtime) {
                   replaceItem(G.l.COMBOMETER, "1", Math.round(num((num(item(G.l.COMBOMETER, "1")) + num((num(item(t.l.MoveAttributes, "14")) / 5))))));
                 }
               }
-              if ((rt.isMove(t.v.AttackID, "E3-1") && eq(t.costumeName(), "8)E3-1-4"))) {
+              if ((rt.isMove(t.v.AttackID, "E3-1", true) && eq(t.costumeName(), "8)E3-1-4"))) {
                 rt.startSound(t, "Heal");
                 if (lt(item(G.l.Percentage, t.v.cloneID), "30")) {
                   replaceItem(G.l.Percentage, t.v.cloneID, "0");
@@ -4365,6 +4365,7 @@ export function build(rt: Runtime) {
 
   /** define hitboxClone_load move data */
   function p_hitboxClone_load_move_data(t: T): void {
+    rt.ownHitbox(t);
     t.v.clone_AttackCharging = "0";
     deleteAll(t.l.MoveAttributes);
     t.v.data = "";
@@ -4579,7 +4580,7 @@ export function build(rt: Runtime) {
     for (let i19 = Math.round(num((G.l.Stage_PlatformData.length / 5))); i19-- > 0; ) {
       t.v.index = num(t.v.index) + 1;
       if (((lt(t.v.ypos, (num(a_Height) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 1))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 3))) / 2)))))) && gt(t.v.ypos, (num((num(a_Height) * -1)) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 1))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 3))) / -2))))))) && (lt(t.v.xpos, (num(a_Width) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 2))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 4))) / 2)))))) && gt(t.v.xpos, (num((num(a_Width) * -1)) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 2))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 4))) / -2))))))))) {
-        if ((eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "1") || ((eq(a_ignSoftPlats, "0") && (eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "4") && (rt.isMove(t.v.AttackID, "E1-6") || !gt(t.v.clone_yVel, "0")))) && !(eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "2") || eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "3"))))) {
+        if ((eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "1") || ((eq(a_ignSoftPlats, "0") && (eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "4") && (rt.isMove(t.v.AttackID, "E1-6", true) || !gt(t.v.clone_yVel, "0")))) && !(eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "2") || eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "3"))))) {
           t.v.collided = "1";
           t.v.clone_collisionPlatformType = item(G.l.Stage_PlatformData, (num(t.v.index) * 5));
         }
@@ -4682,11 +4683,11 @@ export function build(rt: Runtime) {
   /** define Move Connect (Hardcoded Moves) %s %s */
   function p_Move_Connect_Hardcoded_Moves(t: T, a_HitPlayerID: Value, a_direction: Value): void {
     rt.gimmick("hit", t, [a_HitPlayerID, a_direction]);
-    if (rt.isMove(t.v.AttackID, "DownAirPunch-3")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-3", true)) {
       replaceItem(G.l.C_Velocity, (num(t.v.cloneID) * 2), "10");
       replaceItem(G.l.C_CostumeFrameBuffer, t.v.cloneID, "3");
     }
-    if (rt.isMove(t.v.AttackID, "DownAirPunch-5")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-5", true)) {
       t.v.misc1 = "1";
     }
   }
@@ -4769,23 +4770,23 @@ export function build(rt: Runtime) {
 
   /** define DeleteClone On Player Hit (Hardcoded Moves) */
   function p_DeleteClone_On_Player_Hit_Hardcoded_Moves(t: T): void {
-    if ((eq(t.v.AttackID, "Fireball") || eq(t.v.AttackID, "FireStationary"))) {
+    if ((rt.isMove(t.v.AttackID, "Fireball", true) || rt.isMove(t.v.AttackID, "FireStationary", true))) {
       t.v.AttackID = "FireballImpact";
       rt.createClone(t, "_myself_");
     }
-    if (rt.isMove(t.v.AttackID, "E1-2")) {
+    if (rt.isMove(t.v.AttackID, "E1-2", true)) {
       t.v.AttackID = "E1-2_Circle";
       rt.createClone(t, "_myself_");
       replaceItem(t.l.MoveAttributes, "12", "3");
       t.v.AttackID = "E1-2_Impact";
       rt.createClone(t, "_myself_");
     }
-    if (rt.isMove(t.v.AttackID, "E1-4")) {
+    if (rt.isMove(t.v.AttackID, "E1-4", true)) {
       replaceItem(t.l.MoveAttributes, "12", "1");
       t.v.AttackID = "E1-4_Impact";
       rt.createClone(t, "_myself_");
     }
-    if ((rt.isMove(t.v.AttackID, "E1-5") || (eq(t.v.AttackID, "E5-5_Jump") || eq(t.v.AttackID, "E5-5_Run")))) {
+    if ((rt.isMove(t.v.AttackID, "E1-5", true) || (rt.isMove(t.v.AttackID, "E5-5_Jump", true) || eq(t.v.AttackID, "E5-5_Run")))) {
       t.v.AttackID = "E1-5_Impact";
       rt.createClone(t, "_myself_");
     }
@@ -4793,7 +4794,7 @@ export function build(rt: Runtime) {
 
   /** define QuickMoveSwitch */
   function p_QuickMoveSwitch(t: T): void {
-    if (rt.isMove(t.v.AttackID, "E1-7")) {
+    if (rt.isMove(t.v.AttackID, "E1-7", true)) {
       t.v.xdp = "0";
       t.v.ydp = "7";
       replaceItem(t.l.MoveAttributes, "1", "60");
@@ -4998,6 +4999,20 @@ export function build(rt: Runtime) {
       replaceItem(t.l.MoveAttributes, "18", "10");
     }
   }
+  rt.hitboxProcs.create = (t: Target, a0: Value, a1: Value, a2: Value, a3: Value, a4: Value) => p_Create_Hitbox_Manual_For_Character_Num_AttackID_X_YPos_Direc(t as T, a0, a1, a2, a3, a4);
+  rt.hitboxProcs.move = (t: Target, a0: Value, a1: Value, a2: Value, a3: Value, a4: Value) => p_move_x_y_use_displacement_0_1_Collision_0_1_IgnoreSoftPlats_0_1(t as T, a0, a1, a2, a3, a4);
+  rt.hitboxProcs.remove = (t: Target) => p_Delete_clone(t as T);
+  rt.hitboxProcs.steps = (t: Target, a0: Value, a1: Value, a2: Value, a3: Value) => p_move_steps_in_dir_Collision_0_1_Ignore_SoftPlats_0_1(t as T, a0, a1, a2, a3);
+  rt.hitboxProcs.pointAt = (t: Target, a0: Value, a1: Value) => p_PointTowards_X_Y(t as T, a0, a1);
+  rt.hitboxProcs.toGround = (t: Target, a0: Value) => p_SetYToGround(t as T, a0);
+  rt.hitboxProcs.closestEnemy = (t: Target) => p_DetermineClosestEnemy_List_item_1_counted_enemies_2_distance_to_closest_enemy_3_closest_enemy_ID(t as T);
+  rt.hitboxProcs.release = (t: Target) => p_cleargrab(t as T);
+  rt.hitboxProcs.phase = (t: Target, a0: Value, a1: Value) => p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t as T, a0, a1);
+  rt.hitboxProcs.charge = (t: Target, a0: Value) => p_ChargeAttack(t as T, a0);
+  rt.hitboxProcs.showFrame = (t: Target, a0: Value) => p_resetframe_to(t as T, a0);
+  rt.hitboxProcs.statModifier = (t: Target, a0: Value, a1: Value, a2: Value, a3: Value, a4: Value, a5: Value, a6: Value, a7: Value, a8: Value, a9: Value, a10: Value, a11: Value, a12: Value, a13: Value, a14: Value, a15: Value, a16: Value, a17: Value, a18: Value, a19: Value, a20: Value, a21: Value) => p_CharacterStatModifier_set_ModID_optional_for_Character_s_Type_in_one_Character_number_multiple_seperated_by_or_all_Change_Data_Plus_value_Speed_Friction_JumpHeight_FallSpeed_Weight_JumpAmount_AirSpeed_hitboxWidth_hitboxHeight_CrouchAdjustPixels_knockbackMultiplier(t as T, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21);
+  rt.hitboxProcs.extraModifier = (t: Target, a0: Value, a1: Value, a2: Value) => p_CharacterExtraModifier_set_ModID_optional_for_Character_s_ModifierData(t as T, a0, a1, a2);
+  rt.hitboxProcs.collision = (t: Target, a0: Value, a1: Value, a2: Value, a3: Value) => p_CollisionCheck_IgnoreSoftPlats_0_1(t as T, a0, a1, a2, a3);
 
   const scripts: ScriptDef[] = [
     { hat: 'broadcast', msg: "START_MATCH", top: "cof", unit: S0 },

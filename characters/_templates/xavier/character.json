@@ -586,6 +586,176 @@
       "hitSound": null,
       "sound": null,
       "cues": []
+    },
+    "E1-4_Impact": {
+      "attributes": {
+        "hitboxWidth": 24,
+        "hitboxHeight": 24,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": 5,
+        "iframes": 10,
+        "hitstun": 15,
+        "damage": 2,
+        "hitsBeforeDeletion": 1,
+        "rotateStyle": "all",
+        "comboGain": 1,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 2,
+        "diScaling": 4,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E1-4_Impact/01.png",
+          "speed": 2,
+          "center": [
+            16,
+            16
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 10,
+      "sound": {
+        "file": "sounds/E1-4_Impact.wav",
+        "rate": 48000,
+        "sampleCount": 44278
+      },
+      "cues": []
+    },
+    "E3-4_Impact": {
+      "attributes": {
+        "hitboxWidth": 20,
+        "hitboxHeight": 5,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 12,
+        "knockbackY": 0,
+        "iframes": 4,
+        "hitstun": 12,
+        "damage": 0,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "lr",
+        "comboGain": 5,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 0,
+        "diScaling": 6,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E3-4_Impact/01.png",
+          "speed": 1,
+          "center": [
+            10,
+            2
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 10,
+      "sound": null,
+      "cues": []
+    },
+    "XavRune": {
+      "attributes": {
+        "hitboxWidth": 16,
+        "hitboxHeight": 16,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": -10,
+        "iframes": 5,
+        "hitstun": 17,
+        "damage": 5,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "all",
+        "comboGain": 5,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": -6,
+        "hitstunScaling": 3,
+        "diScaling": 2,
+        "cloneType": 1
+      },
+      "hitboxes": [],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": null,
+      "cues": []
+    },
+    "E5-4_Planet": {
+      "attributes": {
+        "hitboxWidth": 0,
+        "hitboxHeight": 0,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": 0,
+        "iframes": 0,
+        "hitstun": 0,
+        "damage": 0,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "all",
+        "comboGain": 0,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 0,
+        "diScaling": 4,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E5-4_Planet/01.png",
+          "speed": 1,
+          "center": [
+            34,
+            34
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": null,
+      "cues": []
     }
   },
   "animations": [

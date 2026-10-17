@@ -3,6 +3,7 @@
 // resumable unit: a switch over resume labels with its state in a plain-data frame.
 import type { Expr, Lit, ProcIR, ScriptIR, Stmt, StoreRef, TargetIR } from './ir.ts';
 import { sanitize } from './ir.ts';
+import { EXTRA_HITBOXES } from '../../src/game/pack-format.ts';
 
 type Mode = 'N' | 'W' | 'D';
 type Ty = 'nn' | 'num' | 'str' | 'bool' | 'any';
@@ -177,8 +178,39 @@ const GIMMICK_HOOKS: { sprite: string; proc: string; event: string; atEnd?: bool
   { sprite: 'Particles', proc: 'resetframe', event: 'particle' },
 ];
 
+/** Procedures the runtime calls for gimmick scripts (see Runtime.hitboxProcs), by the name it knows them by. */
+const EXPORTED_PROCS: { sprite: string; proc: string; as: string }[] = [
+  { sprite: 'Hitboxes', proc: 'Create Hitbox (Manual) For Character#: %s AttackID: %s X/YPos: %s %s Direc: %s', as: 'create' },
+  { sprite: 'Hitboxes', proc: 'move x %s y %s use displacement? (0/1) %s Collision? (0/1) %s IgnoreSoftPlats? (0/1) %s', as: 'move' },
+  { sprite: 'Hitboxes', proc: 'Delete clone', as: 'remove' },
+  { sprite: 'Hitboxes', proc: 'move steps %s in dir: %s Collision? (0/1) %s Ignore SoftPlats? (0/1) %s', as: 'steps' },
+  { sprite: 'Hitboxes', proc: 'PointTowards (X/Y:) %s %s', as: 'pointAt' },
+  { sprite: 'Hitboxes', proc: 'SetYToGround %s', as: 'toGround' },
+  { sprite: 'Hitboxes', proc: 'DetermineClosestEnemy (List item 1: counted enemies, 2: distance to closest enemy, 3: closest enemy ID)', as: 'closestEnemy' },
+  { sprite: 'Hitboxes', proc: 'cleargrab', as: 'release' },
+  { sprite: 'Hitboxes', proc: 'HitboxCheck repeat for the next %s lifetime frames | ID: %s', as: 'phase' },
+  { sprite: 'Hitboxes', proc: 'ChargeAttack %s', as: 'charge' },
+  { sprite: 'Hitboxes', proc: 'resetframe to %s', as: 'showFrame' },
+  {
+    sprite: 'Hitboxes',
+    proc: 'CharacterStatModifier | set (ModID optional): %s for Character(s): %s (Type in one Character number, multiple seperated by °, or all)  ||  Change Data ( + | - | * | / ) (value) : Speed: %s %s Friction: %s %s JumpHeight: %s %s FallSpeed/Weight: %s %s JumpAmount: %s %s AirSpeed: %s %s hitboxWidth: %s %s hitboxHeight: %s %s CrouchAdjustPixels: %s %s knockbackMultiplier: %s %s',
+    as: 'statModifier',
+  },
+  { sprite: 'Hitboxes', proc: 'CharacterExtraModifier | set (ModID optional): %s for Character(s): %s ModifierData: %s', as: 'extraModifier' },
+  { sprite: 'Hitboxes', proc: 'CollisionCheck %s %s %s IgnoreSoftPlats? (0/1) %s', as: 'collision' },
+];
+
+/** Procedures that first let a pack character's own copy of an extra hitbox take the hitbox's place (see Runtime.ownHitbox). */
+const OWN_HITBOX_HOOKS = [{ sprite: 'Hitboxes', proc: 'hitboxClone_load move data' }];
+
 /** A move of one character, such as "NPunch-1" or "E1-3". */
 const MOVE_ID = /^[A-Za-z][A-Za-z0-9]*-[1-9]\d*$/;
+
+/** Extra hitboxes the original characters' moves create, such as "Fireball", which packs can have their own copies of. */
+const EXTRA_IDS = new Set(EXTRA_HITBOXES.map((x) => x.name));
+
+/** A literal the move tests compare with: a move of one character or an extra hitbox. */
+const isMoveLit = (v: unknown) => typeof v === 'string' && (MOVE_ID.test(v) || EXTRA_IDS.has(v));
 
 /** True for `item (…) of CHARACTERS`: a fighter's character number. */
 function isCharacterOf(e: Expr | undefined): boolean {
@@ -399,12 +431,15 @@ export class SpriteGen {
         if (e.op === 'operator_equals' && isCharacterOf(e.in.OPERAND1) && B.lit && /^[1-9]\d*$/.test(String(B.lit.v))) {
           return r(`rt.isCharacter(${A.c}, ${B.c})`, 'bool');
         }
-        // A test for one character's move ("NPunch-1") also accepts the same move of characters made from it.
-        if (e.op === 'operator_equals' && B.lit && typeof B.lit.v === 'string' && MOVE_ID.test(B.lit.v)) {
-          return r(`rt.isMove(${A.c}, ${B.c})`, 'bool');
+        // A test for one character's move ("NPunch-1") also accepts the same move of characters made from it,
+        // and a test for an extra hitbox ("Fireball") also accepts a pack's own copy of it. Outside the move
+        // scripts, it also accepts a pack's move that follows that move's built-in rules.
+        const rules = this.inMoveScript ? '' : ', true';
+        if (e.op === 'operator_equals' && B.lit && isMoveLit(B.lit.v)) {
+          return r(`rt.isMove(${A.c}, ${B.c}${rules})`, 'bool');
         }
-        if (e.op === 'operator_equals' && A.lit && typeof A.lit.v === 'string' && MOVE_ID.test(A.lit.v)) {
-          return r(`rt.isMove(${B.c}, ${A.c})`, 'bool');
+        if (e.op === 'operator_equals' && A.lit && isMoveLit(A.lit.v)) {
+          return r(`rt.isMove(${B.c}, ${A.c}${rules})`, 'bool');
         }
         const fn = e.op === 'operator_equals' ? 'eq' : e.op === 'operator_lt' ? 'lt' : 'gt';
         return r(`${fn}(${A.c}, ${B.c})`, 'bool');
@@ -427,6 +462,9 @@ export class SpriteGen {
         const head = e.in.STRING1;
         if (head?.k === 'lit' && typeof head.v === 'string' && /^[A-Za-z][A-Za-z0-9]*-$/.test(head.v) && isCharacterOf(tail)) {
           return r(`rt.moveName(${JSON.stringify(head.v.slice(0, -1))}, ${this.ex(tail, cx).c})`, 'str');
+        }
+        if (head?.k === 'op' && head.op === 'operator_join' && head.in.STRING2?.k === 'lit' && head.in.STRING2.v === '-' && isCharacterOf(tail)) {
+          return r(`rt.moveName(${this.ex(head.in.STRING1, cx).c}, ${this.ex(tail, cx).c})`, 'str');
         }
         const [A, B] = bin('STRING1', 'STRING2');
         if (A.lit && B.lit) return lit(String(A.lit.v) + String(B.lit.v));
@@ -753,6 +791,21 @@ export class SpriteGen {
     return `${this.plainName(p)}(${['t', ...args].join(', ')})`;
   }
 
+  /** Hands the runtime the procedures listed in EXPORTED_PROCS for this sprite. */
+  exportedProcs(): string {
+    const out: string[] = [];
+    for (const x of EXPORTED_PROCS.filter((e) => e.sprite === this.t.name)) {
+      const p = this.t.procs.get(x.proc);
+      if (!p) {
+        this.errors.push(`exported procedure "${x.proc}" is not in ${this.t.name}`);
+        continue;
+      }
+      const params = p.argNames.map((_, i) => `a${i}: Value`);
+      out.push(`  rt.hitboxProcs.${x.as} = (t: Target${params.map((q) => `, ${q}`).join('')}) => ${this.plainName(p)}(t as T${p.argNames.map((_, i) => `, a${i}`).join('')});`);
+    }
+    return out.length ? `${out.join('\n')}\n` : '';
+  }
+
   plainName(p: ProcIR): string {
     return `p_${p.fname}`;
   }
@@ -761,9 +814,12 @@ export class SpriteGen {
 
   /** Procedure whose body is being generated, for the few blocks generated differently. */
   currentProc: string | null = null;
+  /** Whether the code being generated is one of the characters' move scripts ("Moves_Gnaw" and the like). */
+  inMoveScript = false;
 
   genPlainProc(p: ProcIR): string {
     this.currentProc = p.proccode;
+    this.inMoveScript = p.proccode.startsWith('Moves_');
     const used = new Set<string>(['t']);
     const params: string[] = [];
     const args = new Map<string, string>();
@@ -775,6 +831,7 @@ export class SpriteGen {
     const out: string[] = [];
     const hook = GIMMICK_HOOKS.find((h) => h.sprite === this.t.name && h.proc === p.proccode);
     const call = hook ? `    rt.gimmick(${JSON.stringify(hook.event)}, t, [${params.join(', ')}]);` : '';
+    if (OWN_HITBOX_HOOKS.some((h) => h.sprite === this.t.name && h.proc === p.proccode)) out.push('    rt.ownHitbox(t);');
     if (hook && !hook.atEnd) out.push(call);
     this.simpleSeq(p.body, { args }, 'W', 'return;', '    ', out);
     if (hook?.atEnd) {
@@ -1037,6 +1094,7 @@ export class SpriteGen {
 
     t.scripts.forEach((s: ScriptIR, i: number) => {
       const title = s.hat === 'flag' ? 'when flag clicked' : s.hat === 'clone' ? 'when I start as a clone' : `when I receive ${s.msg}`;
+      this.inMoveScript = false;
       if (this.suspends(s.body, 'N')) {
         const name = `S${i}`;
         body.push(this.genUnit(name, `${title} #${i}`, s.body, 'N', false, { args: null }));
@@ -1063,6 +1121,7 @@ export class SpriteGen {
           progress = true;
           const args = new Map<string, string>();
           p.argNames.forEach((n, i) => args.set(n, `f.a[${i}]`));
+          this.inMoveScript = p.proccode.startsWith('Moves_');
           body.push(this.genUnit(name, `define ${p.proccode} (${ctx === 'N' ? 'non-warp' : 'warp'} context)`, p.body, this.unitMode(p, ctx), true, { args }));
         }
       }
@@ -1145,7 +1204,7 @@ export function build(rt: Runtime) {
   const G = rt.stage as ${stageType};
   void G; void KILLED; void PC_FALL_OFF;
 
-${fileBody}
+${fileBody}${this.exportedProcs()}
   const scripts: ScriptDef[] = [
 ${scriptDefs.map((d) => `    ${d},`).join('\n')}
   ];

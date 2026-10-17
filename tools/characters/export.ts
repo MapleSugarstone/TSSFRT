@@ -4,7 +4,7 @@
 // Usage: npx tsx tools/characters/export.ts
 import fs from 'node:fs';
 import path from 'node:path';
-import { ART, HITBOX_SPRITE, MOVE_FIELDS, MOVE_NAMES, PACK_FORMAT, PLAYER_SPRITE, STAT_FIELDS, type CharacterPack, type Frame, type Image, type Move, type Scalar } from '../../src/game/pack-format.ts';
+import { ART, EXTRA_HITBOXES, HITBOX_SPRITE, MOVE_FIELDS, MOVE_NAMES, PACK_FORMAT, PLAYER_SPRITE, STAT_FIELDS, type CharacterPack, type Frame, type Image, type Move, type Scalar } from '../../src/game/pack-format.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const SB3 = path.join(ROOT, 'sb3');
@@ -85,8 +85,9 @@ function exportCharacter(id: number): void {
 
   const hitboxes = sprite(HITBOX_SPRITE);
   const moves: Record<string, Move> = {};
-  for (const m of MOVE_NAMES) {
-    const moveId = `${m}-${id}`;
+  // The character's moves ("E1" is "E1-<id>" in the game), then the extra hitboxes its moves create.
+  const exported = [...MOVE_NAMES.map((m) => [m, `${m}-${id}`]), ...EXTRA_HITBOXES.filter((x) => x.character === name).map((x) => [x.name, x.name])];
+  for (const [m, moveId] of exported) {
     const di = L.moveData.indexOf(`${moveId}'`);
     // Hitbox frames are the run of costumes named "<move>-<id>-<frame>".
     const frames: Frame[] = [];

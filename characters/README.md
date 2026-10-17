@@ -20,24 +20,51 @@ Choose **New character**, pick the original character to start from, and change 
 
 Red Gnaw is a finished example: Gnaw recolored with angry eyebrows, new stats, reworked hitboxes and timings, and a gimmick that marks targets with Red and bursts them at three stacks. [Its tutorial](_examples/red-gnaw/README.md) makes him step by step, and shows how to add him as a mod, share him and play him online. In the mod maker, choose **New character** and pick Red Gnaw under Examples to start from him.
 
+## Examples made from scratch
+
+Five examples have no template, so every move is their own data and a gimmick script does what the original characters' move scripts do. Their art is placeholder shapes.
+
+- [Gnaw From Scratch](_examples/gnaw-from-scratch) is Gnaw rebuilt from three squares with dot eyes and square feet. His [script](_examples/gnaw-from-scratch/gimmick.ts) charges NPunch, arcs fireballs that leave fire on the ground, grabs and heals with the bite, and fires the barrage. He plays the same as Gnaw frame for frame.
+- [Arc Phantom](_examples/arc-phantom) is a big diamond with four small ones holding a sharp triangle, made half of Arc and half of Phantom, with their stats averaged. Arc's NPunch, RunPunch, DownPunch, Taunt and Judgement come from Arc, and UpPunch, DownAirPunch, Dodge, Shadowflame Charge and Shadow Trick from Phantom. Each move plays the same as the original's.
+- [Xavier From Scratch](_examples/xavier-from-scratch) is a triangle with a round head and an orb. His [script](_examples/xavier-from-scratch/gimmick.ts) throws the orb, dives and sends out shockwaves and runes, and raises the planet that makes enemies fall twice as fast. He follows Xavier's built-in rules for the hover, and plays the same as Xavier frame for frame.
+- [Rikaal From Scratch](_examples/rikaal-from-scratch) is a trapezoid with a horned square head and two big fists. His [script](_examples/rikaal-from-scratch/gimmick.ts) grabs and throws four ways, slides after his dive, roars with super armor, and aims and fires the red beam. He follows Rikaal's built-in rules for the heavy landing, and plays the same as Rikaal frame for frame.
+- [Darc From Scratch](_examples/darc-from-scratch) is a dark hooded square with glowing eyes, a trailing scarf and a thin blade. His [script](_examples/darc-from-scratch/gimmick.ts) spins the blade, swings the scarves, grapples fighters and walls, opens the portals and raises the zone. His E1 follows the built-in rules of Darc's grapple and his zone hitbox those of Darc's zone, and he plays the same as Darc frame for frame.
+
 ## How a character works
 
 A new character is made from an original character, its template. The template decides how every move behaves: charging, projectiles, grabs, and any other scripted behavior. Your character decides how the moves look, sound and hit. Each move on the Moves tab is either the same as the template's or customized with its own numbers, hitbox, effect frames and sounds. Every check the game makes for the template character also applies to yours, so it keeps the template's built-in mechanics.
 
 A character with no template has no scripted moves, and every move is a plain hitbox made from its data.
 
+Five original characters also have rules in the fighter engine itself rather than in their moves. A character follows its template's rules, and **Built-in rules** on the Overview tab gives a character one original character's rules on their own:
+
+| Rules | What they do |
+| --- | --- |
+| Gnaw | Landing after a jump sets gimmick slot 1 to 1. |
+| Xavier | Holding up while falling hovers, using fuel in gimmick slot 1. The fuel refills to 50 on the ground, on a ledge and on respawn. |
+| Edward | The first jump is 8 high and uses 0.3 of a jump. In the air, jump adds jump height while rising and uses 0.1 of a jump, or jumps 6 high while falling and uses 0.3 of a jump. |
+| Darc | When the computer plays the character, it charges combo moves the way it does for Darc. |
+| Rikaal | Landing after a jump is a heavy landing that stops the fighter and shakes the camera. Air jumps are two thirds as strong. Gimmick slot 5 is 1 after touching the ground. |
+
+The game also treats some original moves specially outside their move scripts. **Built-in rules** on the Moves tab makes a move or hitbox of your own get the same treatment:
+
+| Rules | What they do |
+| --- | --- |
+| Darc's grapple | A line is drawn from it to its fighter. When `moveSteps` runs it into a wall or the ground, it stays in it rather than moving back, and it lands on platforms fighters can jump through even while rising. Touching a fighter that nobody holds sets its slot 2 to `"ENEMY"` unless the slot is `"TERRAIN"`. |
+| Darc's zone | A hit on a fighter at more than 99 percent that is still in hitstun knocks the fighter out. |
+
 ## The editor tabs
 
-- **Overview**: name, template, character select text, and the gimmick script.
+- **Overview**: name, template, built-in rules, character select text, and the gimmick script.
 - **Stats**: speed, jumps, weight, hurtbox size and the other stats.
 - **Animations**: one row per action the fighter plays an animation for. Paint a row's frames, upload frames, or download all of them as a zip. Hover over a frame to download it as an image or to upload an image in its place. Drag a row onto another to swap the two animations. Hold Ctrl while dropping to copy one over the other. **Recolor character** changes colors in every frame and the art at once.
-- **Moves**: the hitbox drawn over the fighter (drag it to move it, drag a corner to resize it), a timeline of the fighter's frames and the effect frames, the frames the hitbox can hit on, and sounds.
+- **Moves**: the hitbox drawn over the fighter (drag it to move it, drag a corner to resize it), a timeline of the fighter's frames and the effect frames, the frames the hitbox can hit on, and sounds. **Extra hitboxes** at the bottom of the move list are the other hitboxes the template's moves create, such as Gnaw's fireball, its explosion and the fire it leaves on the ground. Customize one to change its numbers, effect frames and sounds. The template's script still decides where it goes and when it appears. **Own hitboxes** are hitboxes only this character has, which its gimmick script creates and moves (see [Hitboxes of your own](#hitboxes-of-your-own)). **Built-in rules** gives a move an original move's special treatment (see [How a character works](#how-a-character-works)).
 - **Art**: menu and match intro images.
 - **Particles**: animations a gimmick script shows, such as a mark over a fighter.
 - **CPU**: how the computer player uses the character.
 - **Check and build** (**Check and play** on the site): problems that stop the build, and files the character no longer uses.
 
-**Export character** downloads a character as a zip, and **Import character** adds one from a zip. Players add the same zip to the game's page with **Mods** on the main menu, without the project, so a zip is all a player needs. A zip from the project carries the gimmick script compiled to JavaScript for that. Both mod makers export and import the same zip.
+**Export character** downloads a character as a `.sfrt` file, and **Import character** adds one from a `.sfrt` file. A `.sfrt` file is a zip archive of the character's folder. Players add the same file to the game's page with **Mods** on the main menu, without the project, so the file is all a player needs. A `.sfrt` file from the project carries the gimmick script compiled to JavaScript for that. Both mod makers export and import the same file, and both still accept character files exported as `.zip` before.
 
 The paint editor draws at the character's own pixel size and scales the frames up to the game's image size when it saves. It keeps layers in the character's `paint` folder. Left click draws, right click picks a color, F fills under the pointer, and Shift click draws a line from the last point. Ctrl+Z undoes. Hover over a button to see its name.
 
@@ -56,7 +83,7 @@ The paint editor draws at the character's own pixel size and scales the frames u
 
 ## How the game reads the data
 
-**Animation frames.** The fighter plays the frames whose names start with its current action, such as `idle`, `run`, `jump`, `NPunch` or `E1`, in the order they appear. A frame with `NL` in its name holds until the action changes. The jump starts when the `jcharge` animation reaches a frame named `jchargeNL`. Each frame has a speed code that sets how long it shows:
+**Animation frames.** The fighter plays the frames whose names start with its current action, such as `idle`, `run`, `jump`, `NPunch` or `E1`, in the order they appear. A frame with `NL` in its name holds until the action changes. The game starts an animation at the first frame whose name begins with the action, ignoring case, so an action's frames must come before those of a longer action that begins with its name, such as `run` before `RunPunch`. The Check tab warns when they do not. The jump starts when the `jcharge` animation reaches a frame named `jchargeNL`. Each frame has a speed code that sets how long it shows:
 
 | Speed | Game frames |
 | --- | --- |
@@ -90,16 +117,54 @@ A gimmick script runs code for one character at fixed moments. Add one from the 
 | `hit(fighter, target, hitbox)` | When one of the fighter's hitboxes connects with another fighter (shielded hits too), before knockback and damage. |
 | `tick(fighter, hitbox)` | Every frame of each of the fighter's hitboxes, except during hit pause. |
 
-`fighter` and `target` have `x`, `y`, `vx`, `vy`, `percent`, `invincibility`, `hitstun` and `comboMeter` to read and change. They also have `direction`, `state` (such as `idle` or `jump`), `action` (such as `NPunch` or `shield`), `character`, `width`, `height` (the hurtbox) and `time` (game frames since the start) to read. `slot(n)` and `setSlot(n, value)` read and change the fighter's five gimmick slots. `all()` lists every fighter in the match. `particle(name, x, y)` shows one of the character's particles, or one of the game's own such as `02_Expl`, at the fighter. `random(from, to)` returns a whole number. `hitbox` has `move` (such as `NPunch-8`), `frame`, `active`, `playSound(name)`, and `attribute(name)` and `setAttribute(name, value)` for the move data on the Moves tab. `src/game/gimmick-api.ts` documents each one.
+`fighter` and `target` are fighters. `hitbox` is one hitbox of the character's. `src/game/gimmick-api.ts` documents each member. A fighter has:
 
-Two rules keep online games in sync, because every player's computer runs the script and rollback replays frames:
+| Member | What it is |
+| --- | --- |
+| `x`, `y`, `vx`, `vy` | Position and speed, to read and change. |
+| `percent`, `invincibility`, `hitstun`, `comboMeter`, `jumps` | Damage, frames of invincibility and hitstun left, the combo meter, and jumps left, to read and change. |
+| `direction`, `state`, `action` | Facing (90 is right) to read and change, the movement state such as `idle` or `jump`, and what it is doing such as `NPunch` or `shield`. |
+| `character`, `index`, `team`, `width`, `height`, `time`, `buttons` | Its character number, its place in the match, its team (`''` for none), its hurtbox, game frames since the start, and the buttons its player holds. |
+| `slot(n)`, `setSlot(n, value)` | Its five gimmick slots. |
+| `all()` | Every fighter in the match. |
+| `random(from, to)` | A whole number from the game's seeded random source. |
+| `math` | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `ln`, `log` and `exp` in degrees, as the game computes them. |
+| `particle(name, x, y, layer, direction)` | Shows one of the character's particles, or one of the game's own such as `02_Expl`, at the fighter. |
+| `tint(color, frames)` | Paints the fighter in a color such as `'#e8242c'` for that many frames, keeping its outlines and shading. |
+| `drawOffsetX`, `drawOffsetY`, `shakeCamera(frames, strength)` | How far the fighter is drawn from its position, such as for a shake, and a camera shake. |
+| `spawn(name, x, y, vx, vy)` | Creates one of the character's hitboxes at the fighter (see [Hitboxes of your own](#hitboxes-of-your-own)). |
+| `switchTo(action)` | Sets its state and action, such as `idle` when a move ends. |
 
-- Keep state only in the game: the gimmick slots or the fighter's values. A variable in the script is not rewound by rollback.
+A hitbox has:
+
+| Member | What it is |
+| --- | --- |
+| `name`, `move` | Its name on the Moves tab, and the game's name for it such as `NPunch-8` or `Fireball@8`. |
+| `frame`, `active` | Frames of its life from 0, and whether it can hit, to change. |
+| `attribute(name)`, `setAttribute(name, value)` | The move data from the Moves tab, such as `damage`. |
+| `x`, `y`, `vx`, `vy`, `direction`, `rotation` | Position, speed (vx forward along its facing), facing, and the angle it is drawn at. |
+| `offsetX`, `offsetY`, `follows` | Where a hitbox that follows its fighter sits, and whether it follows or stays where it is. |
+| `moveBy(x, y, collide, throughPlatforms)`, `moveSteps(steps, direction, collide, throughPlatforms)`, `toGround(steps)`, `pointAt(x, y)`, `heading` | Moves it now, stopping at walls and floors unless `collide` is false, sets it on the ground below, or turns it toward a place. |
+| `hitWall`, `hitGround` | Whether its last move ran into a wall or a floor. |
+| `spawn(name, x, y, vx, vy)`, `copy(name)`, `remove()` | Creates another hitbox where it is, creates one as a copy of it, or ends it. |
+| `phase(n, frames)`, `phaseLeft(n)`, `endPhase(n)` | Runs a move in phases, as the original characters' move scripts do. |
+| `charge()` | Charges the move while attack is held, as the original characters' NPunch does. |
+| `slot(n)`, `slotText(n)`, `setSlot(n, value)` | Its four slots for the script, which a copy starts with, as a number or as text. |
+| `survivesHits`, `endsOnLanding`, `platform()` | Whether it lasts when its fighter is hit, whether it ends when its fighter lands, and the kind of platform it overlaps. |
+| `grabs`, `holding`, `holdAt(x, y, direction)`, `release()`, `closestEnemy()`, `knockbackAdds` | Grabbing and holding a fighter, finding the nearest enemy, and knockback that adds to a target's speed. |
+| `armor`, `noHitPause` | Super armor for its fighter while it lasts, and hits that do not pause the game. |
+| `changeStats(who, changes)`, `addModifier(who, modifier)` | Changes fighters' stats, such as `{ fallSpeed: ['*', 2] }`, or gives them one of the game's extra modifiers, while it lasts. |
+| `ghost`, `size`, `hidden`, `behind`, `animation`, `showFrame(n)`, `paused`, `windowed`, `particle(...)`, `playSound(name)` | How it is drawn and in front of what, which hitbox's effect frames it plays, stopping its animation and Can hit window, particles, and sounds. |
+
+Three rules keep online games in sync, because every player's computer runs the script and rollback replays frames:
+
+- Keep state only in the game: the gimmick slots, a hitbox's slots, or the fighter's values. A variable in the script is not rewound by rollback.
 - Use `fighter.random` for randomness. Never use `Math.random`, the clock, or anything from the page.
+- Use `fighter.math` for trigonometry and logarithms. `Math.sin` and the others can give different results on different computers.
 
-The original characters use gimmick slots 1 and 5, so a character that keeps its template's mechanics should use slots 2 to 4.
+The original characters and their built-in rules use gimmick slots 1 and 5, so a character that keeps its template's mechanics or follows built-in rules should use slots 2 to 4. A template's move scripts also use a hitbox's slots for its moves.
 
-When a character is a mod on the game's page, its script runs in a sandbox. The script sees only the fighters and hitboxes the game hands it, plus a `console` for messages. It has no page, network, storage or timers, and `Math.random`, `Date.now` and `new Date()` throw there. It can't import anything, and the sandbox refuses a script that calls `eval` directly. A script that follows the rules above runs the same in the sandbox. Players turn on the script of a mod from someone else themselves, after reading it on the Mods screen. Scripts of characters built into the site from this folder run as part of the site, outside the sandbox.
+When a character is a mod on the game's page, its script runs in a sandbox. The script sees only the fighters and hitboxes the game hands it, plus a `console` for messages. It has no page, network, storage or timers, and `Math.random`, `Date.now` and `new Date()` throw there. It can't import anything, and the sandbox refuses a script that calls `eval` directly. A script that follows the rules above runs the same in the sandbox. When a player adds a mod with a script on the Mods screen, the game asks whether to turn the script on and can show it first. The Script button on the Mods screen turns it on or off later. Scripts of characters built into the site from this folder run as part of the site, outside the sandbox.
 
 This example builds heat with each hit, makes hits stronger with more heat, and lets the fighter vent heat by taunting:
 
@@ -118,11 +183,42 @@ export default {
 } satisfies Gimmick;
 ```
 
+### Hitboxes of your own
+
+A script can throw projectiles and make other hitboxes that no template has. On the Moves tab, choose **New hitbox** under **Own hitboxes**, name it, and give it numbers, effect frames and sounds like any move. A new hitbox is a projectile that hits once. The script creates it with `fighter.spawn(name, x, y)`, which puts it at the fighter, x forward and y up, facing the way the fighter faces. The script's `move` runs for it once its data loads, and `hitbox.name` tells it apart from the character's moves.
+
+The game moves a hitbox of your own by `vx` and `vy` every frame after `tick`. It stops at walls and floors, and `hitWall` and `hitGround` say so. It ends when it runs out of hits, when its fighter is knocked out, when it leaves the stage area, or when the script calls `remove()`. Without one of these it lasts forever, so give it a lifetime. This example fires a bolt on attack, at most once every 20 frames, and removes it after 45 frames or at a wall:
+
+```ts
+import type { Gimmick } from '@characters/api';
+
+export default {
+  frame(fighter, buttons) {
+    const wait = fighter.slot(2);
+    if (wait > 0) fighter.setSlot(2, wait - 1);
+    else if (buttons.attack) {
+      fighter.spawn('Bolt', 12, 10);
+      fighter.setSlot(2, 20);
+    }
+  },
+  move(fighter, hitbox) {
+    if (hitbox.name === 'Bolt') hitbox.vx = 7;
+  },
+  tick(fighter, hitbox) {
+    if (hitbox.name === 'Bolt' && (hitbox.frame > 45 || hitbox.hitWall)) hitbox.remove();
+  },
+} satisfies Gimmick;
+```
+
+An entry named after an action the script switches the fighter to with `switchTo`, such as Arc Phantom's `Dslsh`, gives that action its Unique animation and Can't move flags, as the original characters' slash actions have.
+
+`spawn` also creates the character's own moves and customized extra hitboxes by name. `vx` and `vy` move the original characters' projectiles too, such as a customized fireball, because their scripts fly them by the same values.
+
 ### Scripts on the site
 
 The site's mod maker runs JavaScript and does not compile TypeScript. A compiler in the page would add several megabytes to download, and the script box has no type checking to gain from it. A JavaScript script is the TypeScript one without its types, so the example above works on the site without its first line and without `satisfies Gimmick`. The mod maker loads the script each time you save it, and the Check and play tab shows the error if it does not load.
 
-The two kinds of script move between the mod makers without changes. Importing a zip from the project on the site keeps the JavaScript copy the zip carries. The project's build accepts a `gimmick.js` as it is, and its type checking skips it.
+The two kinds of script move between the mod makers without changes. Importing a `.sfrt` file from the project on the site keeps the JavaScript copy the file carries. The project's build accepts a `gimmick.js` as it is, and its type checking skips it.
 
 ## Coming from the original project
 
@@ -136,7 +232,10 @@ The two kinds of script move between the mod makers without changes. Importing a
 | The character data list entry | Stats tab |
 | Menu and intro costumes in each menu sprite | Art tab |
 | Character names, descriptions and CPU lists | Overview and CPU tabs |
+| Hitboxes a move script creates with a name of their own, such as `Fireball` | Extra hitboxes on the Moves tab |
 | Move scripts that check the attack name | The template's scripts, or a gimmick script |
+| Checks for one character in the fighter engine, such as Xavier's hover | The template, or Built-in rules on the Overview tab |
+| Checks for one move outside the move scripts, such as Darc's grapple | The template, or Built-in rules on the Moves tab |
 
 ## Without the editor
 

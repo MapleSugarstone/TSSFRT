@@ -63,7 +63,7 @@ export async function unpackMod(zip: Blob): Promise<Unpacked> {
   const { default: JSZip } = await import('jszip');
   const z = await JSZip.loadAsync(zip);
   const found = Object.keys(z.files).find((n) => /(^|\/)character\.json$/.test(n) && n.split('/').length <= 2);
-  if (!found) throw new Error('The zip has no character.json. Export the character from the mod maker.');
+  if (!found) throw new Error('The file has no character.json. Export the character from the mod maker.');
   const prefix = found.slice(0, found.length - 'character.json'.length);
   const files = new Map<string, Uint8Array>();
   for (const [name, entry] of Object.entries(z.files)) {

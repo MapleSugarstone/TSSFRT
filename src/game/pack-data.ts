@@ -10,6 +10,10 @@ export interface BuiltCharacter {
   name: string;
   /** Template character number, or null. */
   template: number | null;
+  /** Number of the original character whose built-in fighter engine rules it also follows, or null. */
+  rules?: number | null;
+  /** The original move whose built-in rules each of its moves follows, by move name. */
+  moveRules?: Record<string, string>;
   /** Moves with the character's own data; others use the template's move names. */
   owns: string[];
   /** Path of the gimmick script under characters/, or null. src/game/pack-gimmicks.ts imports it. */

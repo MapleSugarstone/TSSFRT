@@ -1,8 +1,8 @@
 // The Moves tab: each move's hitbox drawn over the fighter (drag it to move or resize it), a timeline of
 // the fighter's frames, the effect frames, the frames the hitbox can hit on, and sound cues, and the
 // move's data.
-import { Brush, Download, Eye, Music, Play, Square, Trash2, Undo2, Upload, Volume2, ZoomIn, ZoomOut } from 'lucide';
-import { MOVE_FIELDS, MOVE_NAMES, type Frame, type Move, type Scalar } from '../../../src/game/pack-format.ts';
+import { Brush, Download, Eye, Music, Play, Plus, Square, Trash2, Undo2, Upload, Volume2, ZoomIn, ZoomOut } from 'lucide';
+import { EXTRA_HITBOXES, isMoveName, isOwnHitbox, MOVE_FIELDS, MOVE_NAMES, MOVE_RULES, OWN_HITBOX_NAME, type Frame, type Move, type Scalar } from '../../../src/game/pack-format.ts';
 import { downloadPackFrames, readAnimation, writeImported } from './export.ts';
 import { findDoc, folderName, groupFrames, knownSlots, sources, writeFrames } from './frames.ts';
 import { app } from './main.ts';
@@ -21,7 +21,6 @@ const MOVE_HELP: Record<string, string> = {
   DownPunch: 'Attack while holding down.',
   RunPunch: 'Attack while running.',
   DownAirPunch: 'Attack while holding down in the air.',
-  downslide: 'Slide.',
   E1: 'Combo move 1.',
   E3: 'Combo move 2.',
   E5: 'Combo move 3.',
@@ -85,6 +84,31 @@ function defaultMove(): Move {
   return { attributes: a, hitboxes: [], active: { start: 2, end: 8 }, aiSpacing: null, cantMove: true, uniqueAnimation: false, shieldBreaking: false, ignoreVelocityLimit: false, freeze: null, hitSound: null, sound: null, cues: [] };
 }
 
+const EXTRA_HELP = "Hitboxes the template's moves create besides their own, such as projectiles. The template's script still decides where each one goes and when it appears.";
+
+const OWN_HELP = "Hitboxes only this character has. Its gimmick script creates one with fighter.spawn('name') and moves it with the hitbox's vx and vy.";
+
+/** The template's extra hitboxes this character can customize, and any it already has, with the moves that create them. */
+function extraHitboxes(): { name: string; moves: readonly string[] }[] {
+  const names = new Set([...Object.keys(app.template?.moves ?? {}), ...Object.keys(app.pack?.moves ?? {})].filter((n) => !isMoveName(n) && !isOwnHitbox(n, app.pack?.template ?? null)));
+  return [...names].map((name) => ({ name, moves: EXTRA_HITBOXES.find((x) => x.name === name)?.moves ?? [] }));
+}
+
+/** What the Moves tab says about a move, an extra hitbox or a hitbox of the character's own. */
+function helpOf(name: string): string {
+  if (MOVE_HELP[name]) return MOVE_HELP[name];
+  if (isOwnHitbox(name, app.pack?.template ?? null)) return `A hitbox of this character's own. Its gimmick script creates it with fighter.spawn('${name}') and moves it with the hitbox's vx and vy.`;
+  const by = EXTRA_HITBOXES.find((x) => x.name === name)?.moves ?? [];
+  return `Made by ${by.join(' and ') || 'a move'}. ${EXTRA_HELP}`;
+}
+
+/** A new hitbox of the character's own: a small projectile that hits once. */
+function newOwnHitbox(): Move {
+  const m = defaultMove();
+  Object.assign(m.attributes, { displacementX: 0, hitsBeforeDeletion: 1, rotateStyle: 'lr', cloneType: 1 });
+  return { ...m, active: null, cantMove: false };
+}
+
 /** Copies template files a move uses into the pack, where the pack does not have them yet. */
 async function adoptFiles(files: string[]): Promise<void> {
   if (!app.templateDir) return;
@@ -104,36 +128,74 @@ export function renderMoves(body: HTMLElement): void {
   const effects = (effectsFromTemplate ? tmpl!.hitboxes : m?.hitboxes) ?? [];
   const effectsDir = effectsFromTemplate ? app.templateDir! : dataDir;
   const known = knownSlots();
-  const fighter = groupFrames(p.animations, known).find((g) => g.slot.toLowerCase() === current.toLowerCase())?.frames ?? [];
+  // An extra hitbox shows over the animation of the first move that creates it, and one of the character's own over idle.
+  const ownHitbox = isOwnHitbox(current, p.template);
+  const slot = EXTRA_HITBOXES.find((x) => x.name === current)?.moves[0] ?? (ownHitbox ? 'idle' : current);
+  const fighter = groupFrames(p.animations, known).find((g) => g.slot.toLowerCase() === slot.toLowerCase())?.frames ?? [];
   const attr = (k: string) => Number(m?.attributes[k] ?? 0) || 0;
   const changed = () => {
     app.changed();
     renderMoves(body);
   };
 
-  // Move list.
+  // Move list, then the extra hitboxes the template's moves create.
+  const entry = (name: string, made = '') =>
+    h(
+      'button',
+      {
+        class: name === current ? 'on' : '',
+        onclick: () => {
+          current = name;
+          tick = 0;
+          renderMoves(body);
+        },
+      },
+      h('strong', null, name),
+      h('span', { class: 'hint' }, isOwnHitbox(name, p.template) ? 'Made by the gimmick script' : `${made}${p.moves[name] ? 'Customized' : app.template?.moves[name] ? `Same as ${app.template.name}` : 'No data'}`),
+    );
+  const extras = extraHitboxes();
+  const owned = Object.keys(p.moves).filter((n) => isOwnHitbox(n, p.template));
+  const addOwn = () => {
+    const name = prompt('Name of the new hitbox: letters, digits and _, starting with a letter.', 'Bolt')?.trim();
+    if (!name) return;
+    if (!OWN_HITBOX_NAME.test(name)) return toast('Use letters, digits and _, starting with a letter', true);
+    if (p.moves[name] || isMoveName(name) || EXTRA_HITBOXES.some((x) => x.name === name)) return toast('That name is taken', true);
+    p.moves[name] = newOwnHitbox();
+    current = name;
+    changed();
+  };
   const list = h(
     'div',
     { class: 'move-list' },
-    MOVE_NAMES.map((name) =>
-      h(
-        'button',
-        {
-          class: name === current ? 'on' : '',
-          onclick: () => {
-            current = name;
-            tick = 0;
-            renderMoves(body);
-          },
-        },
-        h('strong', null, name),
-        h('span', { class: 'hint' }, p.moves[name] ? 'Customized' : app.template?.moves[name] ? `Same as ${app.template.name}` : 'No data'),
-      ),
-    ),
+    MOVE_NAMES.map((name) => entry(name)),
+    extras.length ? h('div', { class: 'move-list-heading', title: EXTRA_HELP }, 'Extra hitboxes') : null,
+    extras.map((x) => entry(x.name, `${x.moves.join(', ')}. `)),
+    h('div', { class: 'move-list-heading', title: OWN_HELP }, 'Own hitboxes'),
+    owned.map((name) => entry(name)),
+    app.readOnly ? null : h('button', { class: 'move-list-add', onclick: addOwn, title: 'Add a hitbox the gimmick script creates, such as a projectile' }, icon(Plus), 'New hitbox'),
   );
 
   const sameLabel = tmpl ? `Same as ${app.template!.name}` : 'No data';
-  const ownToggle = field(
+  const ownToggle = ownHitbox
+    ? h(
+        'div',
+        { class: 'button-row' },
+        h(
+          'button',
+          {
+            disabled: app.readOnly,
+            onclick: () => {
+              if (!confirm(`Delete ${current} from ${p.name}?`)) return;
+              delete p.moves[current];
+              current = 'NPunch';
+              changed();
+            },
+          },
+          icon(Trash2),
+          'Delete hitbox',
+        ),
+      )
+    : field(
     'Move data',
     h(
       'select',
@@ -161,7 +223,7 @@ export function renderMoves(body: HTMLElement): void {
   if (!m) {
     fill(
       body,
-      h('section', { class: 'card move-layout' }, list, h('div', null, h('h2', null, current), h('p', { class: 'hint' }, MOVE_HELP[current]), ownToggle, h('p', null, 'This move has no data. Choose Customized to give it some.'))),
+      h('section', { class: 'card move-layout' }, list, h('div', null, h('h2', null, current), h('p', { class: 'hint' }, helpOf(current)), ownToggle, h('p', null, 'This move has no data. Choose Customized to give it some.'))),
     );
     return;
   }
@@ -484,7 +546,18 @@ export function renderMoves(body: HTMLElement): void {
           }),
           'Which of the game\'s hit sounds plays on a hit',
         ),
+        field(
+          'Built-in rules',
+          select(String(m.rules ?? ''), [['', 'None'], ...Object.entries(MOVE_RULES).map(([id, r]) => [id, r.label] as [string, string])], (v) => {
+            if (!own) return;
+            own.rules = v || null;
+            changed();
+            renderMoves(body);
+          }),
+          'Special handling the game gives one original move outside its move script',
+        ),
       ),
+      m.rules && MOVE_RULES[m.rules] ? h('p', { class: 'hint' }, MOVE_RULES[m.rules].description) : null,
       flag('cantMove', 'Fighter cannot move during it', 'The fighter stops while the move plays'),
       flag('uniqueAnimation', 'Animation keeps playing after the hitbox ends', 'The fighter animation does not end with the hitbox'),
       flag('shieldBreaking', 'Breaks shields', ''),
@@ -597,7 +670,7 @@ export function renderMoves(body: HTMLElement): void {
       h(
         'div',
         { class: 'move-main' },
-        h('div', { class: 'move-title' }, h('h2', null, current), h('span', { class: 'hint' }, MOVE_HELP[current]), ownToggle),
+        h('div', { class: 'move-title' }, h('h2', null, current), h('span', { class: 'hint' }, helpOf(current)), ownToggle),
         !own ? h('p', { class: 'banner' }, `${current} uses ${app.template?.name ?? 'the template'}'s numbers, hitbox, effect and sounds. Set Move data to Customized to change them.`) : null,
         h('div', { class: 'move-stage' }, preview),
         h(

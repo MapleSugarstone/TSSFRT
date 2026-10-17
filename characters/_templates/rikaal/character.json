@@ -498,6 +498,59 @@
       "hitSound": null,
       "sound": null,
       "cues": []
+    },
+    "RedBeam": {
+      "attributes": {
+        "hitboxWidth": 40,
+        "hitboxHeight": 40,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": 0,
+        "iframes": 0,
+        "hitstun": 10,
+        "damage": 3,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "all",
+        "comboGain": 0,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 4,
+        "diScaling": 4,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/RedBeam/01.png",
+          "speed": 6,
+          "center": [
+            34,
+            22
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/RedBeam/02.png",
+          "speed": 6,
+          "center": [
+            30,
+            14
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": true,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 18,
+      "sound": null,
+      "cues": []
     }
   },
   "animations": [

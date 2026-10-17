@@ -3,7 +3,7 @@
 // to the Mods screen's store, the same one a player's uploaded zips go to.
 import JSZip from 'jszip';
 import { addMod, unpackMod } from '../../../src/client/mod-store.ts';
-import type { CharacterPack } from '../../../src/game/pack-format.ts';
+import { CHARACTER_FILE, type CharacterPack } from '../../../src/game/pack-format.ts';
 import { checkPack, type Problem } from '../../../src/game/pack-validate.ts';
 import { INDEX_FILE, SLUG, STARTER_GIMMICK_JS, slugify, unusedFiles, type SiteCharacter, type SiteIndex } from '../pack-files.ts';
 import type { Store } from './util.ts';
@@ -163,7 +163,7 @@ async function zipOf(dir: string): Promise<File> {
   zip.file(`${slug}/character.json`, `${JSON.stringify(pack, null, 2)}\n`);
   if (c) for (const [path, url] of Object.entries(c.files)) zip.file(`${slug}/${path}`, await fetchBlob(url));
   else for (const [path, f] of await load(dir)) zip.file(`${slug}/${path}`, f.blob);
-  return new File([await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })], `${slug}.zip`, { type: 'application/zip' });
+  return new File([await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })], `${slug}${CHARACTER_FILE}`, { type: 'application/octet-stream' });
 }
 
 export const browserStore: Store = {

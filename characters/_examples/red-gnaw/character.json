@@ -675,6 +675,200 @@
       "hitSound": null,
       "sound": null,
       "cues": []
+    },
+    "Fireball": {
+      "attributes": {
+        "hitboxWidth": 20,
+        "hitboxHeight": 20,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 17,
+        "knockbackY": 18,
+        "iframes": 10,
+        "hitstun": 10,
+        "damage": 12,
+        "hitsBeforeDeletion": 1,
+        "rotateStyle": "all",
+        "comboGain": 10,
+        "knockbackScalingX": 27,
+        "knockbackScalingY": 24,
+        "hitstunScaling": 10,
+        "diScaling": 4,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/Fireball/01.png",
+          "speed": 5,
+          "center": [
+            20,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/Fireball/02.png",
+          "speed": 5,
+          "center": [
+            22,
+            10
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": 0.05,
+      "hitSound": 4,
+      "sound": {
+        "file": "sounds/Fireball.wav",
+        "rate": 48000,
+        "sampleCount": 47229
+      },
+      "cues": []
+    },
+    "FireStationary": {
+      "attributes": {
+        "hitboxWidth": 20,
+        "hitboxHeight": 20,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 15,
+        "pushbackY": 18,
+        "knockbackX": -10,
+        "knockbackY": 8,
+        "iframes": 5,
+        "hitstun": 10,
+        "damage": 4,
+        "hitsBeforeDeletion": 1,
+        "rotateStyle": "all",
+        "comboGain": 5,
+        "knockbackScalingX": 4,
+        "knockbackScalingY": 6,
+        "hitstunScaling": 7,
+        "diScaling": 2,
+        "cloneType": ""
+      },
+      "hitboxes": [
+        {
+          "file": "moves/FireStationary/01.png",
+          "speed": 4,
+          "center": [
+            12,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/FireStationary/02.png",
+          "speed": 4,
+          "center": [
+            12,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/FireStationary/03.png",
+          "speed": 4,
+          "center": [
+            12,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/FireStationary/04.png",
+          "speed": 4,
+          "center": [
+            12,
+            10
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 3,
+      "sound": {
+        "file": "sounds/FireStationary.wav",
+        "rate": 48000,
+        "sampleCount": 62349
+      },
+      "cues": []
+    },
+    "FireballImpact": {
+      "attributes": {
+        "hitboxWidth": 20,
+        "hitboxHeight": 20,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 15,
+        "pushbackY": 18,
+        "knockbackX": 9,
+        "knockbackY": 5,
+        "iframes": 10,
+        "hitstun": 5,
+        "damage": 8,
+        "hitsBeforeDeletion": 1,
+        "rotateStyle": "all",
+        "comboGain": 20,
+        "knockbackScalingX": 8,
+        "knockbackScalingY": 8,
+        "hitstunScaling": 8,
+        "diScaling": 4,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/FireballImpact/01.png",
+          "speed": 5,
+          "center": [
+            8,
+            8
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/FireballImpact/02.png",
+          "speed": 5,
+          "center": [
+            10,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/FireballImpact/03.png",
+          "speed": 5,
+          "center": [
+            12,
+            12
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": null,
+      "cues": []
     }
   },
   "animations": [

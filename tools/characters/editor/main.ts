@@ -1,7 +1,7 @@
 // The mod maker page: pick or create a character pack, edit it in tabs, save, and play it in the
 // game. The store in util.ts decides whether packs live in the project's folders or in this browser.
 import { BookOpen, FolderInput, FolderOutput, Sparkles, Bot, Check, FilePlus, Film, Hammer, Image as ImageIcon, Info, Play, Save, SlidersHorizontal, Swords, Trash2, Unlink, UserPlus, X } from 'lucide';
-import { STAT_FIELDS, type CharacterPack } from '../../../src/game/pack-format.ts';
+import { CHARACTER_FILE_TYPES, RULES, STAT_FIELDS, type CharacterPack } from '../../../src/game/pack-format.ts';
 import { slugify } from '../pack-files.ts';
 import { renderAnimations } from './animations.ts';
 import { renderArt } from './art.ts';
@@ -107,8 +107,8 @@ function header(): void {
     h('strong', null, 'Mod maker'),
     select,
     h('button', { onclick: () => newCharacter() }, icon(UserPlus), 'New character'),
-    h('button', { onclick: () => void importCharacter(), title: 'Add a character from a zip someone shared' }, icon(FolderInput), 'Import character'),
-    h('button', { onclick: () => void exportCharacter(), disabled: !app.pack, title: 'Download this character as a zip to share' }, icon(FolderOutput), 'Export character'),
+    h('button', { onclick: () => void importCharacter(), title: 'Add a character from a .sfrt file someone shared' }, icon(FolderInput), 'Import character'),
+    h('button', { onclick: () => void exportCharacter(), disabled: !app.pack, title: 'Download this character as a .sfrt file to share' }, icon(FolderOutput), 'Export character'),
     api.browser ? h('button', { onclick: () => void deleteCharacter(), disabled: !app.pack || app.readOnly, title: 'Delete this character from this browser' }, icon(Trash2), 'Delete character') : null,
     api.browser ? h('button', { onclick: () => window.open(GUIDE_URL, '_blank', 'noopener'), title: 'How characters, moves and gimmick scripts work' }, icon(BookOpen), 'Guide') : null,
     h('span', { class: 'grow' }),
@@ -154,7 +154,7 @@ async function open(dir: string, tab: Tab = 'overview'): Promise<void> {
 }
 
 async function importCharacter(): Promise<void> {
-  const [file] = await pickFile('.zip');
+  const [file] = await pickFile(CHARACTER_FILE_TYPES);
   if (!file) return;
   try {
     const { slug } = await api.importZip(file);
@@ -309,6 +309,20 @@ function overview(body: HTMLElement): void {
     h('option', { value: '', selected: !p.template }, 'None'),
     app.templates.map((t) => h('option', { value: t.name, selected: t.name === p.template }, t.name)),
   );
+  const rulesHint = h('p', { class: 'hint' }, p.rules ? RULES[p.rules] : '');
+  const rules = h(
+    'select',
+    {
+      onchange: (e: Event) => {
+        const v = (e.target as HTMLSelectElement).value;
+        p.rules = v || null;
+        rulesHint.textContent = p.rules ? RULES[p.rules] : '';
+        app.changed();
+      },
+    },
+    h('option', { value: '', selected: !p.rules }, 'None'),
+    Object.keys(RULES).map((name) => h('option', { value: name, selected: name === p.rules }, name)),
+  );
   const combo = (i: 0 | 1 | 2) =>
     h(
       'div',
@@ -354,6 +368,8 @@ function overview(body: HTMLElement): void {
       h('h2', null, 'Character'),
       field('Name', textInput(p.name, (v) => set(() => (p.name = v))())),
       field('Made from', template, 'Moves without their own data, and every scripted behavior, come from this character'),
+      field('Built-in rules', rules, "Rules of an original character's fighter engine that this character also follows. A character made from another already follows that one's rules."),
+      rulesHint,
       h('p', { class: 'hint' }, api.browser ? 'This browser keeps your characters. Export character saves a copy you can keep or share.' : `Folder: characters/${app.dir}`),
     ),
     h(
@@ -519,7 +535,7 @@ function check(body: HTMLElement): void {
       { class: 'card' },
       h('h2', null, api.browser ? 'Play' : 'Build'),
       api.browser
-        ? h('p', null, 'Play saves the character, adds it to the Mods list on the game\'s main menu in this browser, and opens the game. It replaces the version added before. To share the character, export it and send the zip. Players add it with Add mod on the Mods screen.')
+        ? h('p', null, 'Play saves the character, adds it to the Mods list on the game\'s main menu in this browser, and opens the game. It replaces the version added before. To share the character, export it and send the .sfrt file. Players add it with Add mod on the Mods screen.')
         : h('p', null, 'Build and play saves, adds every character in characters/ to the game, and opens the game. The game page reloads by itself after each build.'),
       h('button', { class: 'primary', onclick: () => void buildAndPlay(), disabled: app.readOnly }, icon(Play), PLAY_LABEL),
       app.buildOutput ? h('pre', { class: 'output' }, app.buildOutput) : null,

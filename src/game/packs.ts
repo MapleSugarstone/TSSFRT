@@ -7,9 +7,10 @@ import type { Runtime } from '../engine/runtime.ts';
 import { allCostumes, skins, sounds } from './assets.ts';
 import { modules } from './generated/index.ts';
 import { def as stageDef } from './generated/Stage_.ts';
-import { gimmickHandler, type GimmickScript } from './gimmick-api.ts';
+import { fighterTint, gimmickHandler, type GimmickScript } from './gimmick-api.ts';
 import type { GameTables } from './pack-build.ts';
 import { LISTS, type BuiltPacks } from './pack-data.ts';
+import { isMoveName } from './pack-format.ts';
 import { gimmicks } from './pack-gimmicks.ts';
 import { installSkinSilhouettes } from './silhouettes.ts';
 import silhouetteData from './silhouettes-data.json' with { type: 'json' };
@@ -25,7 +26,16 @@ export const packCharacters = built.characters ?? [];
 
 function install(b: BuiltPacks): void {
   skins.push(...b.skins);
-  for (const [t, list] of Object.entries(b.costumes)) allCostumes[Number(t)].push(...list);
+  for (const [t, list] of Object.entries(b.costumes)) {
+    const into = allCostumes[Number(t)];
+    // The game has an empty placeholder named for an eighth character's sprite, and a sprite shows the first costume of a name.
+    const names = new Map(into.map((c, i) => [c.name, i]));
+    for (const c of list) {
+      const i = names.get(c.name);
+      if (i === undefined) into.push(c);
+      else into[i] = c;
+    }
+  }
   for (const [t, list] of Object.entries(b.sounds)) sounds(Number(t)).push(...list);
   const lists = stageDef.lists as Record<string, Value[]>;
   for (const [prop, values] of Object.entries(b.lists)) lists[prop].push(...(values as Value[]));
@@ -76,7 +86,14 @@ export function installPacks(): void {
 export function registerPackCharacters(rt: Runtime): void {
   const all = mods ? [built, mods.built] : [built];
   for (const b of all) {
-    for (const c of b.characters ?? []) rt.characters.set(String(c.id), { template: String(c.template ?? 0), owns: new Set(c.owns) });
+    for (const c of b.characters ?? [])
+      rt.characters.set(String(c.id), {
+        template: String(c.template ?? 0),
+        rules: c.rules ? String(c.rules) : undefined,
+        moveRules: new Map(Object.entries(c.moveRules ?? {})),
+        owns: new Set(c.owns),
+        named: new Set(c.owns.filter((m) => !isMoveName(m))),
+      });
     installSkinSilhouettes(rt, b.silhouettes ?? {});
   }
   // The site's own packs are project code and run as it is. Mod scripts come already sandboxed.
@@ -84,4 +101,5 @@ export function registerPackCharacters(rt: Runtime): void {
   const cues = Object.assign({}, ...all.map((b) => b.cues ?? {}));
   const particles = Object.assign({}, ...all.map((b) => b.particles ?? {}));
   if (Object.keys(scripts).length || Object.keys(cues).length || Object.keys(particles).length) rt.gimmickHandler = gimmickHandler(rt, scripts, cues, particles);
+  if (Object.keys(scripts).length) rt.tintOf = fighterTint(rt);
 }

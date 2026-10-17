@@ -8,6 +8,7 @@ export const EFFECT_BITS = {
   mosaic: 1 << 4,
   brightness: 1 << 5,
   ghost: 1 << 6,
+  tint: 1 << 7,
 } as const;
 
 export const VERTEX = `
@@ -74,6 +75,9 @@ uniform float u_mosaic;
 #endif
 #ifdef ENABLE_ghost
 uniform float u_ghost;
+#endif
+#ifdef ENABLE_tint
+uniform vec4 u_tint;
 #endif
 #ifdef LINE
 uniform vec4 u_lineColor;
@@ -146,7 +150,7 @@ void main() {
   }
 #endif
   gl_FragColor = texture2D(u_skin, uv);
-#if defined(ENABLE_color) || defined(ENABLE_brightness)
+#if defined(ENABLE_color) || defined(ENABLE_brightness) || defined(ENABLE_tint)
   gl_FragColor.rgb = clamp(gl_FragColor.rgb / (gl_FragColor.a + epsilon), 0.0, 1.0);
 #ifdef ENABLE_color
   {
@@ -163,6 +167,14 @@ void main() {
 #endif
 #ifdef ENABLE_brightness
   gl_FragColor.rgb = clamp(gl_FragColor.rgb + vec3(u_brightness), vec3(0), vec3(1));
+#endif
+#ifdef ENABLE_tint
+  // Paints the pixel in the tint color, darker where the pixel is darker, so shading stays and black still shows the color.
+  {
+    float light = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 painted = u_tint.rgb * (0.4 + 0.6 * clamp(light * 1.4, 0.0, 1.0));
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, painted, u_tint.a);
+  }
 #endif
   gl_FragColor.rgb *= gl_FragColor.a + epsilon;
 #endif

@@ -3,6 +3,11 @@
 
 export const PACK_FORMAT = 1;
 
+/** The extension of a character file, a zip archive of one character's folder. */
+export const CHARACTER_FILE = '.sfrt';
+/** File picker types for a character file. Files exported before .sfrt end in .zip. */
+export const CHARACTER_FILE_TYPES = '.sfrt,.zip';
+
 /** The project's character stats, in the order of its character data list. */
 export const STAT_FIELDS = [
   ['speed', 'Speed', 'Ground speed.'],
@@ -16,6 +21,28 @@ export const STAT_FIELDS = [
   ['crouchOffset', 'Crouch offset', 'Pixels the sprite is moved vertically to line up with the ground.'],
   ['knockbackMultiplier', 'Knockback taken', 'Multiplier on knockback this fighter receives.'],
 ] as const;
+
+/** Original characters whose fighter engine has rules of their own that another character can follow, and what the rules do. */
+export const RULES: Record<string, string> = {
+  Gnaw: 'Landing after a jump sets gimmick slot 1 to 1.',
+  Xavier: 'Holding up while falling hovers, using fuel in gimmick slot 1. The fuel refills to 50 on the ground, on a ledge and on respawn.',
+  Edward: 'The first jump is 8 high and uses 0.3 of a jump. In the air, jump adds jump height while rising and uses 0.1 of a jump, or jumps 6 high while falling and uses 0.3 of a jump.',
+  Darc: 'When the computer plays the character, it charges combo moves the way it does for Darc.',
+  Rikaal: 'Landing after a jump is a heavy landing that stops the fighter and shakes the camera. Air jumps are two thirds as strong. Gimmick slot 5 is 1 after touching the ground.',
+};
+
+/**
+ * Original moves that the game treats specially outside their move scripts, by the game's name for them,
+ * with a label and what the rules do. A pack's move or hitbox that follows one gets the same treatment.
+ */
+export const MOVE_RULES: Record<string, { label: string; description: string }> = {
+  'E1-6': {
+    label: "Darc's grapple",
+    description:
+      'A line is drawn from it to its fighter. When moveSteps runs it into a wall or the ground, it stays in it rather than moving back, and it lands on platforms fighters can jump through even while rising. Touching a fighter that nobody holds sets its slot 2 to "ENEMY" unless the slot is "TERRAIN".',
+  },
+  'E5-6_Hitbox': { label: "Darc's zone", description: 'A hit on a fighter at more than 99 percent that is still in hitstun knocks the fighter out.' },
+};
 
 /** The 19 attributes of a move's hitbox, in the order of the move data list. */
 export const MOVE_FIELDS = [
@@ -44,12 +71,61 @@ export const MOVE_FIELDS = [
 export const SPEEDS: Record<number, number> = { 1: 0.05, 2: 0.15, 3: 0.25, 4: 0.5, 5: 1, 6: 2, 7: 0.015, 8: 0.1 };
 
 /** Moves a character can have, from the game's attack states. E1, E3 and E5 are the combo moves. */
-export const MOVE_NAMES = ['NPunch', 'UpPunch', 'DownPunch', 'RunPunch', 'DownAirPunch', 'downslide', 'E1', 'E3', 'E5', 'Taunt', 'Dodge'] as const;
+export const MOVE_NAMES = ['NPunch', 'UpPunch', 'DownPunch', 'RunPunch', 'DownAirPunch', 'E1', 'E3', 'E5', 'Taunt', 'Dodge'] as const;
+export type MoveName = (typeof MOVE_NAMES)[number];
 
 /**
  * Animations the fighter engine plays, by the action it is in. It plays the frames whose names start
  * with the action (ignoring case) in order, and a frame with NL in its name holds until the action changes.
  */
+/**
+ * Hitboxes the original characters' move scripts create besides each move's own hitbox, such as Gnaw's
+ * fireballs: the name the scripts give each one, the character that has it, and the moves that create it.
+ * A pack keeps its own copy of one in `moves` under this name.
+ */
+export const EXTRA_HITBOXES: readonly { name: string; character: string; moves: readonly MoveName[] }[] = [
+  { name: 'Fireball', character: 'Gnaw', moves: ['E1', 'E5'] },
+  { name: 'FireStationary', character: 'Gnaw', moves: ['E1', 'E5'] },
+  { name: 'FireballImpact', character: 'Gnaw', moves: ['E1', 'E5'] },
+  { name: 'E3-1_Grab', character: 'Gnaw', moves: ['E3'] },
+  { name: 'E1-2_Impact', character: 'Phantom', moves: ['E1', 'E3'] },
+  { name: 'E1-2_Circle', character: 'Phantom', moves: ['E1', 'E3'] },
+  { name: 'E5-2_Hand', character: 'Phantom', moves: ['E5'] },
+  { name: 'E5-2_Spark', character: 'Phantom', moves: ['E5'] },
+  { name: 'DownPunch-3_Spike', character: 'Arc', moves: ['DownPunch'] },
+  { name: 'DownAirPunch-3_Impact', character: 'Arc', moves: ['DownAirPunch'] },
+  { name: 'E3-3_Spike', character: 'Arc', moves: ['E3'] },
+  { name: 'E1-4_Impact', character: 'Xavier', moves: ['E1'] },
+  { name: 'E3-4_Impact', character: 'Xavier', moves: ['E3', 'E5'] },
+  { name: 'XavRune', character: 'Xavier', moves: ['E3', 'E5'] },
+  { name: 'E5-4_Planet', character: 'Xavier', moves: ['E5'] },
+  { name: 'E1-5_Impact', character: 'Edward', moves: ['E1'] },
+  { name: 'E3-5_Bullet', character: 'Edward', moves: ['E3'] },
+  { name: 'E5-5_Jump', character: 'Edward', moves: ['E5'] },
+  { name: 'E1-6_Impact', character: 'Darc', moves: ['E1'] },
+  { name: 'DownPunch-6_Scarf', character: 'Darc', moves: ['DownPunch'] },
+  { name: 'DownAirPunch-6_Scarf', character: 'Darc', moves: ['DownAirPunch'] },
+  { name: 'E3-6_Spawner', character: 'Darc', moves: ['E3'] },
+  { name: 'E3-6_Hitbox', character: 'Darc', moves: ['E3'] },
+  { name: 'E5-6_', character: 'Darc', moves: ['E5'] },
+  { name: 'E5-6_Hitbox', character: 'Darc', moves: ['E5'] },
+  { name: 'RedBeam', character: 'Rikaal', moves: ['E5'] },
+];
+
+export const isMoveName = (name: string): name is MoveName => (MOVE_NAMES as readonly string[]).includes(name);
+
+/** A name for a hitbox of a pack's own, which its gimmick script spawns: letters, digits and _, starting with a letter. */
+export const OWN_HITBOX_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+/** Whether a name in a pack's moves is a hitbox of its own rather than a move or one of its template's extra hitboxes. */
+export const isOwnHitbox = (name: string, template: string | null) => !isMoveName(name) && !EXTRA_HITBOXES.some((x) => x.name === name && x.character === template);
+
+/** The game's name for a pack's own copy of a move ("E1-8") or of an extra hitbox ("Fireball@8"). */
+export const packHitboxId = (move: string, id: number | string) => (isMoveName(move) ? `${move}-${id}` : `${move}@${id}`);
+
+/** The game's name for the template's version of a move ("E1-1") or extra hitbox ("Fireball"). */
+export const templateHitboxId = (move: string, template: number | string) => (isMoveName(move) ? `${move}-${template}` : move);
+
 export const ANIMATION_STATES = ['idle', 'run', 'jcharge', 'jump', 'Djump', 'fall', 'crouch', 'hurt', 'shield', 'Dodge', 'stunned', 'ledge', 'Taunt', 'NPunch', 'RunPunch', 'UpPunch', 'DownPunch', 'DownAirPunch', 'E1', 'E3', 'E5'];
 
 export type Scalar = string | number;
@@ -98,6 +174,8 @@ export interface Move {
   freeze: Scalar | null;
   /** Which of the game's hit sounds (1 to 20) plays on hit, or null. */
   hitSound: number | null;
+  /** An original move (a key of MOVE_RULES) whose built-in rules outside its move script this one follows, or null. */
+  rules?: string | null;
   /** Sound played when the move starts, or null. */
   sound: SoundFile | null;
   /** More sounds, each played on a frame of the hitbox's life (from 0). */
@@ -118,10 +196,15 @@ export interface CharacterPack {
    * applies to this character.
    */
   template: string | null;
+  /** An original character (by name, one of RULES) whose built-in fighter engine rules this one also follows, or null. */
+  rules?: string | null;
   stats: Record<string, Scalar>;
   text: { lore: string; mechanics: string; combo: [ComboText, ComboText, ComboText] };
   cpu: { behaviour: [Scalar, Scalar, Scalar] | null; comboUsage: Scalar | null; combos: string[] };
-  /** Moves with this character's own data, by move name from MOVE_NAMES. */
+  /**
+   * Moves with this character's own data, by move name from MOVE_NAMES, the template's extra hitboxes
+   * (EXTRA_HITBOXES) by their names, and hitboxes of its own (OWN_HITBOX_NAME) that its gimmick script spawns.
+   */
   moves: Record<string, Move>;
   /** Animation frames in play order. */
   animations: Frame[];
@@ -144,8 +227,8 @@ export interface ComboText {
 export const ART: Record<string, { costume: string; label: string }> = {
   portrait: { costume: 'MainMenu_CharacterSelect_Char-#', label: 'Character select portrait' },
   nameplate: { costume: 'MainMenu_CharacterSelect_Name#', label: 'Character select name' },
-  icon: { costume: 'MainMenu_CharacterSelect_CharSprite-#', label: 'Roster icon' },
-  selectFrame: { costume: 'CharSelect_CharFrame-#', label: 'Roster frame' },
+  icon: { costume: 'MainMenu_CharacterSelect_CharSprite-#', label: 'Character select sprite' },
+  selectFrame: { costume: 'CharSelect_CharFrame-#', label: 'Roster icon' },
   stockIcon: { costume: 'CCDD_StockIcon_#', label: 'Stock icon' },
   stockIconColor: { costume: 'CCDD_StockIconC_#', label: 'Stock icon, colored' },
   matchArt: { costume: 'Character#', label: 'Match intro art' },

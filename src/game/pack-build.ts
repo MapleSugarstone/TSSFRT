@@ -4,7 +4,7 @@
 import type { Value } from '../engine/cast.ts';
 import type { CostumeDef, SkinDef, SoundDef } from '../engine/defs.ts';
 import { LISTS, type BuiltCharacter, type BuiltPacks } from './pack-data.ts';
-import { ART, HITBOX_SPRITE, MOVE_FIELDS, PLAYER_SPRITE, STAT_FIELDS, type CharacterPack, type Image, type Scalar } from './pack-format.ts';
+import { ART, HITBOX_SPRITE, MOVE_FIELDS, packHitboxId, PLAYER_SPRITE, STAT_FIELDS, templateHitboxId, type CharacterPack, type Image, type Scalar } from './pack-format.ts';
 
 /** A 1-bit touch mask, LSB first, in the game's silhouette format. */
 export interface Mask {
@@ -143,7 +143,8 @@ export function addPack(out: BuiltPacks, pack: CharacterPack, id: number, slug: 
   const owns: string[] = [];
   for (const [move, m] of Object.entries(pack.moves)) {
     owns.push(move);
-    const moveId = `${move}-${id}`;
+    const moveId = packHitboxId(move, id);
+    const templateId = template ? templateHitboxId(move, template) : null;
     addList(LISTS.moveData, `${moveId}'`, `${MOVE_FIELDS.map(([key]) => m.attributes[key] ?? '').join(':')}:`);
     if (m.active) addList(LISTS.frameData, moveId, m.active.start, m.active.end);
     if (m.aiSpacing) addList(LISTS.spacing, moveId, ...m.aiSpacing);
@@ -157,9 +158,9 @@ export function addPack(out: BuiltPacks, pack: CharacterPack, id: number, slug: 
       groups[m.hitSound] = `${groups[m.hitSound] ?? ''}${moveId}'`;
     }
     m.hitboxes.forEach((f, n) => addCostume(hitboxes, { name: `${f.speed})${moveId}-${n + 1}`, skin: skin(f) }));
-    if (!m.hitboxes.length && template) {
+    if (!m.hitboxes.length && templateId) {
       // The template's hitbox frames, renamed, so its move script finds frames for this move.
-      const re = new RegExp(`^(\\d)\\)?${move}-${template}-(\\d+)$`);
+      const re = new RegExp(`^(\\d)\\)?${templateId}-(\\d+)$`);
       for (const c of game.costumes[hitboxes]) {
         const mm = re.exec(c.name);
         if (mm) addCostume(hitboxes, { name: `${mm[1]})${moveId}-${mm[2]}`, skin: c.skin });
@@ -171,8 +172,8 @@ export function addPack(out: BuiltPacks, pack: CharacterPack, id: number, slug: 
       (out.cues[moveId] ??= []).push([Number(c.frame), name]);
     });
     if (m.sound) addSound(hitboxes, { name: moveId, file: src.publish(m.sound.file), rate: m.sound.rate, sampleCount: m.sound.sampleCount });
-    else if (template) {
-      const s = game.sounds(hitboxes).find((x) => x.name === `${move}-${template}`);
+    else if (templateId) {
+      const s = game.sounds(hitboxes).find((x) => x.name === templateId);
       if (s) addSound(hitboxes, { ...s, name: moveId });
     }
   }
@@ -182,7 +183,9 @@ export function addPack(out: BuiltPacks, pack: CharacterPack, id: number, slug: 
     (out.particles[id] ??= []).push(name);
   }
 
-  const c: BuiltCharacter = { id, slug, name: pack.name, template, owns, gimmick: pack.gimmick ? `${slug}/${pack.gimmick}` : null };
+  const rules = pack.rules ? game.names.indexOf(pack.rules) + 1 : null;
+  const moveRules = Object.fromEntries(Object.entries(pack.moves ?? {}).flatMap(([move, m]) => (m.rules ? [[move, m.rules]] : [])));
+  const c: BuiltCharacter = { id, slug, name: pack.name, template, rules, moveRules, owns, gimmick: pack.gimmick ? `${slug}/${pack.gimmick}` : null };
   out.characters.push(c);
   return c;
 }

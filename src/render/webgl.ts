@@ -2,7 +2,7 @@
 // rasterized at power-of-two scales, bitmaps sample with nearest filtering, the pen layer is a
 // 480x360 texture shown with nearest filtering, and effects run in the fragment shader.
 import type { SkinDef } from '../engine/defs.ts';
-import type { PenCmd, Runtime } from '../engine/runtime.ts';
+import type { PenCmd, Runtime, Tint } from '../engine/runtime.ts';
 import { RenderModel } from '../engine/render-model.ts';
 import { cos, sin } from '../engine/dmath.ts';
 import type { Effects } from '../engine/target.ts';
@@ -31,6 +31,7 @@ export interface DrawState {
   sy: number;
   dir: number;
   fx: Effects;
+  tint?: Tint | null;
 }
 
 function ortho(left: number, right: number, bottom: number, top: number): Float32Array {
@@ -261,7 +262,7 @@ export class WebGLRenderer {
     const scaleX = d.sx * fbScaleX;
     const scaleY = d.sy * fbScaleY;
     const tex = this.skinTexture(d.skin, scaleX, scaleY);
-    const bits = effectBits(d.fx);
+    const bits = effectBits(d.fx) | (d.tint ? EFFECT_BITS.tint : 0);
     const p = this.program(false, bits);
     gl.useProgram(p.prog);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPos);
@@ -289,6 +290,7 @@ export class WebGLRenderer {
     if (bits & EFFECT_BITS.mosaic) gl.uniform1f(this.loc(p, 'u_mosaic'), Math.max(1, Math.min(Math.round((Math.abs(fx.mosaic) + 10) / 10), 512)));
     if (bits & EFFECT_BITS.brightness) gl.uniform1f(this.loc(p, 'u_brightness'), Math.max(-100, Math.min(fx.brightness, 100)) / 100);
     if (bits & EFFECT_BITS.ghost) gl.uniform1f(this.loc(p, 'u_ghost'), 1 - Math.max(0, Math.min(fx.ghost, 100)) / 100);
+    if (d.tint) gl.uniform4f(this.loc(p, 'u_tint'), d.tint[0], d.tint[1], d.tint[2], d.tint[3]);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
@@ -326,7 +328,7 @@ export class WebGLRenderer {
       this.drawLine(cmd, s);
       return;
     }
-    const d: DrawState = { skin: cmd.skin, x: cmd.x, y: cmd.y, sx: cmd.sx, sy: cmd.sy, dir: cmd.dir, fx: cmd.fx };
+    const d: DrawState = { skin: cmd.skin, x: cmd.x, y: cmd.y, sx: cmd.sx, sy: cmd.sy, dir: cmd.dir, fx: cmd.fx, tint: cmd.tint };
     if (this.smoothSkins.has(cmd.skin)) {
       const p = this.ease(cmd.skin, cmd.x, cmd.y);
       d.x = p.x;
@@ -413,7 +415,7 @@ export class WebGLRenderer {
     if (rt.penCreated) this.drawPenLayer(sxF, syF);
     for (const t of rt.drawList) {
       if (!t.visible) continue;
-      this.drawSprite(drawStateOf(t), this.stageProj, sxF, syF);
+      this.drawSprite(drawStateOf(t, rt.tintOf?.(t)), this.stageProj, sxF, syF);
     }
   }
 
@@ -452,7 +454,7 @@ export class WebGLRenderer {
   }
 }
 
-export function drawStateOf(t: import('../engine/target.ts').Target): DrawState {
+export function drawStateOf(t: import('../engine/target.ts').Target, tint: Tint | null = null): DrawState {
   return {
     skin: t.sprite.costumes[t.currentCostume].skin,
     x: t.drawX,
@@ -461,6 +463,7 @@ export function drawStateOf(t: import('../engine/target.ts').Target): DrawState 
     sy: Math.fround(t.size),
     dir: t.renderedDirection(),
     fx: t.effects,
+    tint,
   };
 }
 

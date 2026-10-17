@@ -1000,6 +1000,16 @@ body {
   background: rgba(0, 0, 0, 0.35);
 }
 
+.mod-code-fold summary {
+  cursor: pointer;
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.mod-code-fold[open] summary {
+  margin-bottom: 0.4em;
+}
+
 /* The panel over the stage while an online game waits for a player. */
 .hud-wait {
   position: absolute;

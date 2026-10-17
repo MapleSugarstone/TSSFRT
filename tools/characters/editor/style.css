@@ -427,6 +427,14 @@ pre.code {
   color: #20283f;
 }
 
+.move-list-heading {
+  margin: 10px 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: help;
+}
+
 .move-main {
   min-width: 0;
 }

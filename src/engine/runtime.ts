@@ -22,8 +22,11 @@ const DECAY_MS = 25;
 /** Thrown to abandon the current thread after it deleted its own clone. */
 export const KILLED = { killed: true };
 
+/** A color to paint a sprite in: red, green and blue from 0 to 1, then the strength from 0 to 1. */
+export type Tint = readonly [number, number, number, number];
+
 export type PenCmd =
-  | { op: 'stamp'; skin: number; x: number; y: number; sx: number; sy: number; dir: number; fx: Effects }
+  | { op: 'stamp'; skin: number; x: number; y: number; sx: number; sy: number; dir: number; fx: Effects; tint?: Tint }
   | { op: 'line'; c4: [number, number, number, number]; d: number; x0: number; y0: number; x1: number; y1: number; point: boolean };
 
 export interface PenLayer {
@@ -630,10 +633,21 @@ export class Runtime {
    * Characters added by packs, by character number: the original character each was made from, and
    * the moves it has its own data for. Empty for the original roster.
    */
-  characters = new Map<string, { template: string; owns: Set<string> }>();
+  characters = new Map<string, { template: string; owns: Set<string>; named?: Set<string>; rules?: string; moveRules?: Map<string, string> }>();
 
   /** Runs pack characters' gimmick scripts (set by src/game/gimmicks.ts); null when no pack has one. */
   gimmickHandler: ((event: string, t: Target, args: Value[]) => void) | null = null;
+
+  /** The hitbox sprite's procedures that gimmick scripts reach through their API: create, move and remove a hitbox. */
+  hitboxProcs: Partial<
+    Record<
+      'create' | 'move' | 'remove' | 'steps' | 'pointAt' | 'toGround' | 'closestEnemy' | 'release' | 'phase' | 'charge' | 'showFrame' | 'statModifier' | 'extraModifier' | 'collision',
+      (t: Target, ...args: Value[]) => void
+    >
+  > = {};
+
+  /** The color a sprite and its pen stamps are painted in, from game state, or null. Only drawing reads it. */
+  tintOf: ((t: Target) => Tint | null) | null = null;
 
   /** Called by the fighter engine at fixed moments (see the transpiler's gimmick hooks). */
   gimmick(event: string, t: Target, args: Value[]): void {
@@ -643,6 +657,8 @@ export class Runtime {
   /** The game's "<move>-<character>" name. A pack character uses its template's name for moves it does not own. */
   moveName(move: Value, character: Value): string {
     const c = this.characters.get(String(character));
+    // A pack's own entry that is not one of the standard moves, such as an action its script switches to, is "Dslsh@8".
+    if (c?.named?.has(String(move))) return `${String(move)}@${String(character)}`;
     const id = c && !c.owns.has(String(move)) ? c.template : String(character);
     return `${String(move)}-${id}`;
   }
@@ -650,20 +666,46 @@ export class Runtime {
   /**
    * The game's test for one character's move, such as "NPunch-1". The same move of a pack character
    * made from that character also matches, so the template's move script runs on the pack's own data.
+   * With `rules`, the game's tests outside the move scripts also match a pack's move that follows that
+   * move's built-in rules.
    */
-  isMove(value: Value, move: Value): boolean {
+  isMove(value: Value, move: Value, rules = false): boolean {
     if (compare(value, move) === 0) return true;
     if (this.characters.size === 0 || typeof value !== 'string') return false;
+    // A pack's own copy of a template's extra hitbox, such as "Fireball@8", passes the template's test for "Fireball".
+    const at = value.lastIndexOf('@');
+    if (at > 0 && this.characters.has(value.slice(at + 1))) {
+      if (compare(value.slice(0, at), move) === 0) return true;
+      return rules && this.followsRules(value.slice(at + 1), value.slice(0, at), move);
+    }
     const m = /^(.+)-(\d+)$/.exec(value);
     const c = m ? this.characters.get(m[2]) : undefined;
-    return c !== undefined && compare(`${m![1]}-${c.template}`, move) === 0;
+    if (c === undefined) return false;
+    if (compare(`${m![1]}-${c.template}`, move) === 0) return true;
+    return rules && this.followsRules(m![2], m![1], move);
   }
 
-  /** The game's test for one particular character. A pack character also counts as its template. */
+  private followsRules(character: string, name: string, move: Value): boolean {
+    const of = this.characters.get(character)?.moveRules?.get(name);
+    return of !== undefined && compare(of, move) === 0;
+  }
+
+  /**
+   * Called as a hitbox loads its move data. When the hitbox's fighter is a pack character with its own
+   * copy of a template's extra hitbox (such as "Fireball"), the hitbox becomes that copy ("Fireball@8").
+   */
+  ownHitbox(t: Target): void {
+    if (this.characters.size === 0) return;
+    const character = String((this.stage.l.CHARACTERS as Value[])[toNumber(t.v.cloneID) - 1] ?? '');
+    const id = String(t.v.AttackID);
+    if (this.characters.get(character)?.owns.has(id)) t.v.AttackID = `${id}@${character}`;
+  }
+
+  /** The game's test for one particular character. A pack character also counts as its template and as the character whose movement rules it follows. */
   isCharacter(character: Value, n: Value): boolean {
     if (compare(character, n) === 0) return true;
     const c = this.characters.get(String(character));
-    return c !== undefined && compare(c.template, n) === 0;
+    return c !== undefined && (compare(c.template, n) === 0 || (c.rules !== undefined && compare(c.rules, n) === 0));
   }
 
   // ---------------------------------------------------------------- operators
@@ -713,6 +755,8 @@ export class Runtime {
         dir: t.renderedDirection(),
         fx: { ...t.effects },
       };
+      const tint = this.tintOf?.(t);
+      if (tint) cmd.tint = tint;
       this.pen.cmds.push(cmd);
       if (this.logPen) this.frameLog.pen.push(stampLog(this, t, cmd));
     }

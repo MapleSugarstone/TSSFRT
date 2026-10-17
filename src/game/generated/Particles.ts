@@ -487,7 +487,7 @@ export function build(rt: Runtime) {
       }
     }
     if (eq(t.v.particleID, "SmokeCloud")) {
-      if (rt.isMove(t.v.extraData, "E5-2")) {
+      if (rt.isMove(t.v.extraData, "E5-2", true)) {
         if (eq(item(G.l.C_Skin, t.v.cloneID), "g")) {
           t.setEffect("color", Infinity);
         } else {

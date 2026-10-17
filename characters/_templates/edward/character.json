@@ -556,6 +556,169 @@
       "hitSound": null,
       "sound": null,
       "cues": []
+    },
+    "E1-5_Impact": {
+      "attributes": {
+        "hitboxWidth": 0,
+        "hitboxHeight": 0,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": 0,
+        "iframes": 0,
+        "hitstun": 0,
+        "damage": 0,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "all",
+        "comboGain": 0,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 0,
+        "diScaling": 4,
+        "cloneType": 2
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E1-5_Impact/01.png",
+          "speed": 1,
+          "center": [
+            8,
+            8
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": {
+        "file": "sounds/E1-5_Impact.wav",
+        "rate": 48000,
+        "sampleCount": 15498
+      },
+      "cues": []
+    },
+    "E3-5_Bullet": {
+      "attributes": {
+        "hitboxWidth": 10,
+        "hitboxHeight": 10,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 5,
+        "knockbackY": 6,
+        "iframes": 2,
+        "hitstun": 18,
+        "damage": 4,
+        "hitsBeforeDeletion": 5,
+        "rotateStyle": "lr",
+        "comboGain": 5,
+        "knockbackScalingX": 2,
+        "knockbackScalingY": 2,
+        "hitstunScaling": 2,
+        "diScaling": 4,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E3-5_Bullet/01.png",
+          "speed": 5,
+          "center": [
+            8,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/E3-5_Bullet/02.png",
+          "speed": 5,
+          "center": [
+            6,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/E3-5_Bullet/03.png",
+          "speed": 5,
+          "center": [
+            4,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/E3-5_Bullet/04.png",
+          "speed": 5,
+          "center": [
+            6,
+            10
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": false,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 3,
+      "sound": null,
+      "cues": []
+    },
+    "E5-5_Jump": {
+      "attributes": {
+        "hitboxWidth": 20,
+        "hitboxHeight": 24,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 10,
+        "knockbackY": 10,
+        "iframes": 10,
+        "hitstun": 10,
+        "damage": 18,
+        "hitsBeforeDeletion": 1,
+        "rotateStyle": "lr",
+        "comboGain": 0,
+        "knockbackScalingX": 20,
+        "knockbackScalingY": 20,
+        "hitstunScaling": 10,
+        "diScaling": 4,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E5-5_Jump/01.png",
+          "speed": 5,
+          "center": [
+            14,
+            14
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": null,
+      "cues": []
     }
   },
   "animations": [

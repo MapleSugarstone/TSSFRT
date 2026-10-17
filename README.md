@@ -72,7 +72,7 @@ The free hosting tier covers room setup comfortably. Relayed games (players whos
 
 ## New characters
 
-Players add characters to the game's page with **Mods** on the main menu, from zips made with the mod maker. Mods stay in that browser, and players meet online only with the same mods turned on.
+Players add characters to the game's page with **Mods** on the main menu, from `.sfrt` character files made with the mod maker. Mods stay in that browser, and players meet online only with the same mods turned on.
 
 `characters/README.md` explains how to make characters. Start the mod maker with:
 

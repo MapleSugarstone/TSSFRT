@@ -5,9 +5,6 @@ import { ANIMATION_STATES, type Frame, type Image } from '../../../src/game/pack
 import type { PaintDocJson, PaintOutput, SourceFrame } from './paint.ts';
 import { api, bumpVersion, fileUrl, pad2, randomId } from './util.ts';
 
-/** Actions the engine also plays that not every character has frames for. */
-export const OPTIONAL_STATES = ['land'];
-
 const FRAME_SUFFIX = /^(?:NL|\d|-)*$/i;
 
 /** The slot of a frame name, given the slot names already known. */
@@ -35,7 +32,7 @@ export function groupFrames(frames: Frame[], known: string[]): Group[] {
   return out;
 }
 
-export const knownSlots = (extra: string[] = []) => [...new Set([...ANIMATION_STATES, ...OPTIONAL_STATES, ...extra])];
+export const knownSlots = (extra: string[] = []) => [...new Set([...ANIMATION_STATES, ...extra])];
 
 /** A frame name moved from one slot to another, keeping its frame number and NL. */
 export function renameFrame(name: string, from: string, to: string): string {

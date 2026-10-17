@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import type { Plugin } from 'vite';
-import type { CharacterPack } from '../../src/game/pack-format.ts';
+import { CHARACTER_FILE, type CharacterPack } from '../../src/game/pack-format.ts';
 import { SLUG, STARTER_GIMMICK_TS, unusedFiles } from './pack-files.ts';
 import { validatePack } from './validate.ts';
 
@@ -192,14 +192,14 @@ export function characterEditor(): Plugin {
         const { code } = await transform(fs.readFileSync(path.join(dir, pack.gimmick), 'utf8'), { loader: 'ts', format: 'esm', target: 'es2022' });
         zip.file(`${slug}/${pack.gimmick.replace(/\.ts$/i, '.js')}`, code);
       }
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', `attachment; filename="${slug}.zip"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${slug}${CHARACTER_FILE}"`);
       return res.end(await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
     }
     if (route === 'POST /import') {
       const zip = await JSZip.loadAsync(await body(req));
       const found = Object.keys(zip.files).find((n) => /(^|\/)character\.json$/.test(n) && n.split('/').length <= 2);
-      if (!found) throw new HttpError(400, 'the zip has no character.json');
+      if (!found) throw new HttpError(400, 'the character file has no character.json');
       const prefix = found.slice(0, found.length - 'character.json'.length);
       const slug = q('slug') || prefix.replace(/\/$/, '') || 'imported';
       if (!SLUG.test(slug)) throw new HttpError(400, `bad folder name "${slug}"`);
