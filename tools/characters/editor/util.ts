@@ -176,6 +176,14 @@ export function toBlob(c: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('could not encode image'))), 'image/png'));
 }
 
+/** Saves a pack file to the user's computer as it is, under a readable name with the file's extension. */
+export async function downloadFile(dir: string, path: string, name: string): Promise<void> {
+  const ext = /\.[a-z]+$/i.exec(path)?.[0] ?? '.png';
+  const url = URL.createObjectURL(await (await fetch(fileUrl(dir, path))).blob());
+  h('a', { href: url, download: `${name.replace(/[^A-Za-z0-9_-]+/g, '-')}${ext}` }).click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 /** Picks a file from the user's computer. */
 export function pickFile(accept: string, multiple = false): Promise<File[]> {
   return new Promise((resolve) => {

@@ -4,7 +4,7 @@ import { ART, type Image } from '../../../src/game/pack-format.ts';
 import { findDoc, sources, writeFrames } from './frames.ts';
 import { app } from './main.ts';
 import { openPaint } from './paint.ts';
-import { api, bumpVersion, field, fileUrl, fill, h, loadImage, numberInput, pickFile, randomId, toast, icon } from './util.ts';
+import { api, bumpVersion, downloadFile, field, fileUrl, fill, h, loadImage, numberInput, pickFile, randomId, toast, icon } from './util.ts';
 
 export function renderArt(body: HTMLElement): void {
   const p = app.pack!;
@@ -31,13 +31,8 @@ export function renderArt(body: HTMLElement): void {
       p.art[key] = { file: path, center: [img.naturalWidth / 2, img.naturalHeight / 2], resolution: svg ? 1 : 2 };
       await changed(true);
     };
-    /** Saves the image as it is, named after the character and the art slot. */
     const download = async () => {
-      if (!shown || !dir) return;
-      const ext = /\.[a-z]+$/i.exec(shown.file)?.[0] ?? '.png';
-      const url = URL.createObjectURL(await (await fetch(fileUrl(dir, shown.file))).blob());
-      h('a', { href: url, download: `${p.name.replace(/[^A-Za-z0-9_-]+/g, '-')}-${key}${ext}` }).click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      if (shown && dir) await downloadFile(dir, shown.file, `${p.name}-${key}`);
     };
     const paint = async () => {
       await openPaint({

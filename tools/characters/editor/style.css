@@ -345,13 +345,42 @@ pre.code {
   display: flex;
   gap: 4px;
   align-items: flex-end;
-  overflow: hidden;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.anim-frame {
+  position: relative;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  min-width: 52px;
+  background: #12141a;
 }
 
 .anim-strip img {
   height: 44px;
   image-rendering: pixelated;
-  background: #12141a;
+}
+
+.anim-frame-tools {
+  position: absolute;
+  inset: auto 0 0;
+  display: none;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px;
+  background: rgb(0 0 0 / 65%);
+}
+
+.anim-frame:hover .anim-frame-tools,
+.anim-frame:focus-within .anim-frame-tools {
+  display: flex;
+}
+
+.anim-frame-tools button {
+  padding: 1px 3px;
+  line-height: 0;
 }
 
 .anim-actions {

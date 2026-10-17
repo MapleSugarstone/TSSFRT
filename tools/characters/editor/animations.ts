@@ -1,13 +1,13 @@
 // The Animations tab: one row per action the fighter plays, with its frames. Rows drag onto other rows
 // to swap animations between actions, or to copy one over another.
-import { Brush, Copy, Download, Eye, Plus, Trash2, Upload, Palette } from 'lucide';
+import { Brush, Copy, Download, Eye, FolderDown, Plus, Trash2, Upload, Palette } from 'lucide';
 import type { Frame } from '../../../src/game/pack-format.ts';
 import { downloadPackFrames, readAnimation, writeImported } from './export.ts';
 import { findDoc, folderName, groupFrames, knownSlots, renameFrame, slotOf, sources, writeFrames } from './frames.ts';
 import { app } from './main.ts';
 import { openRecolor } from './recolor.ts';
 import { openPaint } from './paint.ts';
-import { api, fileUrl, fill, frameTicks, FRAME_MS, h, loadImage, pad2, pickFile, randomId, toast, icon } from './util.ts';
+import { api, bumpVersion, downloadFile, fileUrl, fill, frameTicks, FRAME_MS, h, loadImage, pad2, pickFile, randomId, toast, icon } from './util.ts';
 
 const DESCRIPTIONS: Record<string, string> = {
   idle: 'Standing still.',
@@ -120,6 +120,29 @@ export function renderAnimations(body: HTMLElement): void {
     g.frames = replace ? added : [...g.frames, ...added];
     await commit(true);
   };
+  /** Puts an image file in place of one frame. The center scales with the image, so a same-size image keeps it. */
+  const replaceFrame = async (slot: string, i: number) => {
+    const [file] = await pickFile('image/png,image/svg+xml');
+    if (!file) return;
+    const g = find(slot);
+    const old = g.frames[i];
+    if ((await findDoc(app.dir, g.frames.map((f) => f.file))) && !confirm(`The paint layers of ${slot} merge into one when a frame is replaced. Replace it?`)) return;
+    const svg = file.name.toLowerCase().endsWith('.svg');
+    const url = URL.createObjectURL(file);
+    const [before, after] = await Promise.all([image(fileUrl(app.dir, old.file)), loadImage(url)]);
+    URL.revokeObjectURL(url);
+    const scale = (v: number, from: number, to: number) => (!from || from === to ? v : Math.round((v * to) / from));
+    const path = `animations/${folderName(slot)}/${randomId()}-${pad2(i + 1)}${svg ? '.svg' : '.png'}`;
+    await api.put(app.dir, path, file);
+    bumpVersion();
+    g.frames[i] = {
+      ...old,
+      file: path,
+      center: [scale(old.center[0], before.naturalWidth, after.naturalWidth), scale(old.center[1], before.naturalHeight, after.naturalHeight)],
+      resolution: svg ? 1 : 2,
+    };
+    await commit(true);
+  };
   const newDraft = () => {
     let n = 1;
     while (groups.some((g) => g.slot === `draft${n}`)) n++;
@@ -190,15 +213,26 @@ export function renderAnimations(body: HTMLElement): void {
       h(
         'div',
         { class: 'anim-strip' },
-        g.frames.slice(0, 12).map((f) => h('img', { src: fileUrl(app.dir, f.file), title: `${f.name}, speed ${f.speed}`, draggable: false })),
-        g.frames.length > 12 ? h('span', { class: 'hint' }, `+${g.frames.length - 12}`) : null,
+        g.frames.map((f, i) =>
+          h(
+            'div',
+            { class: 'anim-frame', title: `${f.name}, speed ${f.speed}` },
+            h('img', { src: fileUrl(app.dir, f.file), draggable: false }),
+            h(
+              'div',
+              { class: 'anim-frame-tools' },
+              h('button', { onclick: () => void downloadFile(app.dir, f.file, `${p.name}-${f.name || `${g.slot}${i + 1}`}`), title: 'Download this frame as an image' }, icon(Download), 'Download'),
+              !app.readOnly ? h('button', { onclick: () => void replaceFrame(g.slot, i).catch((e: Error) => toast(e.message, true)), title: 'Upload an image to replace this frame' }, icon(Upload), 'Upload') : null,
+            ),
+          ),
+        ),
       ),
       h(
         'div',
         { class: 'anim-actions' },
         h('button', { onclick: () => void paint(g.slot) }, icon(app.readOnly ? Eye : Brush), app.readOnly ? 'View' : g.frames.length ? 'Paint' : 'Draw'),
-        !app.readOnly ? h('button', { onclick: () => void importFrames(g.slot).catch((e: Error) => toast(e.message, true)), title: 'Add frames from image files or an exported zip' }, icon(Upload), 'Import') : null,
-        g.frames.length ? h('button', { onclick: () => void downloadPackFrames(app.dir, g.slot, g.frames), title: 'Download the frames as a zip' }, icon(Download), 'Export') : null,
+        !app.readOnly ? h('button', { onclick: () => void importFrames(g.slot).catch((e: Error) => toast(e.message, true)), title: 'Upload frames from image files or a downloaded zip' }, icon(Upload), 'Upload') : null,
+        g.frames.length ? h('button', { onclick: () => void downloadPackFrames(app.dir, g.slot, g.frames), title: 'Download all of the frames as a zip, with their names, speeds and centers' }, icon(FolderDown), 'Download all') : null,
         !g.frames.length && templateHas && !app.readOnly ? h('button', { onclick: () => void fromTemplate(g.slot) }, icon(Copy), `Copy ${app.template!.name}'s`) : null,
         g.frames.length && !app.readOnly
           ? h(
@@ -245,7 +279,7 @@ export function renderAnimations(body: HTMLElement): void {
         h(
           'div',
           { class: 'button-row' },
-          h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: copyMode, onchange: (e: Event) => (copyMode = (e.target as HTMLInputElement).checked) }), 'Dropping copies'),
+          h('label', { class: 'check', title: 'When this is on, dropping a row onto another row copies its animation over the other one instead of swapping the two. Holding Ctrl while dropping does the same.' }, h('input', { type: 'checkbox', checked: copyMode, onchange: (e: Event) => (copyMode = (e.target as HTMLInputElement).checked) }), 'Dropping copies'),
           h('button', { onclick: newDraft, disabled: app.readOnly }, icon(Plus), 'New animation'),
           h('button', { onclick: () => void openRecolor(() => renderAnimations(body)), disabled: app.readOnly, title: 'Change colors in every frame and the art' }, icon(Palette), 'Recolor character'),
         ),

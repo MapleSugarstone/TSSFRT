@@ -30,7 +30,7 @@ A character with no template has no scripted moves, and every move is a plain hi
 
 - **Overview**: name, template, character select text, and the gimmick script.
 - **Stats**: speed, jumps, weight, hurtbox size and the other stats.
-- **Animations**: one row per action the fighter plays an animation for. Paint, import or export a row's frames, and drag a row onto another to swap the two animations. Hold Ctrl while dropping to copy one over the other. **Recolor character** changes colors in every frame and the art at once.
+- **Animations**: one row per action the fighter plays an animation for. Paint a row's frames, upload frames, or download all of them as a zip. Hover over a frame to download it as an image or to upload an image in its place. Drag a row onto another to swap the two animations. Hold Ctrl while dropping to copy one over the other. **Recolor character** changes colors in every frame and the art at once.
 - **Moves**: the hitbox drawn over the fighter (drag it to move it, drag a corner to resize it), a timeline of the fighter's frames and the effect frames, the frames the hitbox can hit on, and sounds.
 - **Art**: menu and match intro images.
 - **Particles**: animations a gimmick script shows, such as a mark over a fighter.
