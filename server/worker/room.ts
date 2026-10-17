@@ -6,6 +6,7 @@ import { readClient, type FromRoom } from '../../src/net/protocol';
 import { newRoom, RoomRules, type Out, type RoomData } from '../../src/net/room-rules';
 import type { Env } from './env';
 import { log } from './log';
+import { checkName } from './scratch-name';
 
 interface Tag {
   seat: number | null;
@@ -79,6 +80,19 @@ export class Room extends DurableObject<Env> {
       log('room-bad-message', { room: this.id(), seat: tag.seat, why: read.why });
       shut(ws, 1008, read.why);
       return;
+    }
+    if (read.m.type === 'hello' && 'name' in read.m && tag.seat === null) {
+      const named = await checkName(read.m.name);
+      if (!named.ok) {
+        log('room-name-refused', { room: this.id(), why: named.why });
+        send(ws, { type: 'refused', reason: named.reason });
+        shut(ws, 1000, 'closed');
+        return;
+      }
+      if (named.unchecked) log('room-name-unchecked', { room: this.id(), error: named.unchecked });
+      // Other messages run while the check waits, so a second hello from this socket may have taken a seat.
+      if (this.tagOf(ws).seat !== null) return;
+      read.m.name = named.name;
     }
     const d = await this.load();
     const rules = new RoomRules(d);

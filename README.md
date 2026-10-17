@@ -22,7 +22,7 @@ Open http://localhost:5173 and choose **Play on this computer**. Player 1 uses W
 
 Controllers work too, in the standard layout: the left stick or the D-pad moves, A attacks and confirms in menus, B is the combo button and goes back in menus, X and Y jump, the shoulder buttons and triggers shield, Back taunts and Start pauses. On one computer the first controller plays Player 1 and the second plays Player 2. Online, every controller plays your own seat.
 
-On touch screens a joystick and four buttons appear once a game starts: beside the stage when the screen is wide, below it when the screen is tall. The joystick centers wherever your thumb lands. The controls hide while a controller is in use and come back at the next touch.
+On touch screens a joystick and six buttons appear once a game starts: beside the stage when the screen is wide, below it when the screen is tall. The joystick centers wherever your thumb lands. The controls hide while a controller is in use and come back at the next touch. While the touch controls are on, **Controls** in the lobby shows the buttons in their places, and tapping two of them swaps what they do.
 
 ## Online play
 
@@ -31,6 +31,8 @@ Online games are peer to peer. Every player runs the whole game, and inputs trav
 1. One player chooses **Host an online game** and shares the six-character room code.
 2. Up to three others enter the code and choose **Join**.
 3. The host picks the input delay and starts the game. Everyone sees the same game from the title screen on, and each player controls their own seat (P1 to P4).
+
+Your online name is your Scratch username. The name box takes letters, numbers, `_` and `-`, up to 20 characters, and the room seats a name only when a Scratch account has it, with that account's capitalization. It refuses the names of Scratch Team members. A made-up name of `player` and 2 to 7 digits needs no account, and the lobby starts with one. The room accepts any name when it cannot reach the account service.
 
 Each player sets their own keys, "Up is Jump" and "Combo use" with **Controls** in the lobby. They start as the Player 1 defaults and are saved in that browser. On one computer they become Player 1's controls when the game starts, and the in-game controls menu can still change them. Online, a player's keys control their own seat, so players can choose the same keys, and their two options apply to their own seat when the game starts. Only the first seat moves the mouse pointer in menus.
 

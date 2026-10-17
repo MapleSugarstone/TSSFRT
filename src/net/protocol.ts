@@ -2,9 +2,9 @@
 // direction. The Worker and the game share this file. Gameplay inputs do not pass through
 // here: they travel peer to peer (see wire.ts), or through the room's relay only as a fallback.
 
-export const PROTOCOL = 2;
+export const PROTOCOL = 3;
 export const SEATS = 4;
-export const NAME_MAX = 16;
+export const NAME_MAX = 20;
 export const FRAME_MAX = 16_384;
 export const SIGNAL_MAX = 12_000;
 export const RELAY_MAX = 2_048;
@@ -100,11 +100,20 @@ export const isBuild = (v: unknown): v is string => typeof v === 'string' && /^[
 export const isToken = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(v);
 const isSeat = (v: unknown): v is number => whole(v, 0, SEATS - 1);
 
+/** A player name holds what a Scratch username may: letters, digits, `_` and `-`. */
+const NAME = new RegExp(`^[A-Za-z0-9_-]{1,${NAME_MAX}}$`);
+
 export function readName(v: unknown): string | undefined {
-  if (typeof v !== 'string') return NO;
-  const s = v.replace(/[\u0000-\u001f\u007f]/g, '').trim();
-  return s.length >= 1 && s.length <= NAME_MAX ? s : NO;
+  return typeof v === 'string' && NAME.test(v) ? v : NO;
 }
+
+/** The name with the characters a name may not hold removed, cut to `NAME_MAX`. */
+export function cleanName(s: string): string {
+  return s.replace(/[^A-Za-z0-9_-]/g, '').slice(0, NAME_MAX);
+}
+
+/** A made-up name, `player` and 2 to 7 digits, which needs no Scratch account. */
+export const isGeneratedName = (s: string): boolean => /^player\d{2,7}$/i.test(s);
 
 function readSeats(v: unknown): SeatInfo[] | undefined {
   if (!Array.isArray(v) || v.length > SEATS) return NO;

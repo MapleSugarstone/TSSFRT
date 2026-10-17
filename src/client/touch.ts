@@ -1,7 +1,9 @@
 // On-screen controls for touch screens: a joystick for movement and controller-style buttons for
 // the rest. They show on touch devices while a game runs, beside the stage in landscape and below
-// it in portrait, and hide while a controller is in use.
-import { ATTACK, COMBO, CROUCH, JUMP, LEFT, PAUSE, RIGHT, SHIELD, TAUNT, UP, type Pads } from './pads.ts';
+// it in portrait, and hide while a controller is in use. Players choose which button does what in
+// the lobby's controls menu.
+import { ACTIONS, loadTouchButtons } from './controls.ts';
+import { CROUCH, LEFT, RIGHT, UP, type Pads } from './pads.ts';
 
 /** Share of the joystick's radius the thumb must move before it counts as a direction. */
 const STICK_DEADZONE = 0.3;
@@ -47,6 +49,8 @@ export class TouchControls {
   private choice = loadChoice();
   private playing = false;
   private dirs = new Set<number>();
+  /** The buttons in place order, each with the action it presses. */
+  private slots: { b: HTMLButtonElement; action: number }[] = [];
   /** Called whenever the controls switch on or off, for the lobby's toggle. */
   onChange: (on: boolean) => void = () => {};
   /** True while the game shows a menu, where the joystick gives one direction at a time. */
@@ -55,6 +59,7 @@ export class TouchControls {
   constructor(parent: HTMLElement, private pads: Pads, private relayout: () => void) {
     this.root = el('div', 'touch');
     this.root.append(this.stick(), this.face(), this.small());
+    this.setButtons(loadTouchButtons());
     parent.append(this.root);
     window.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'touch' && !this.touchDevice) {
@@ -187,19 +192,35 @@ export class TouchControls {
     return zone;
   }
 
-  private button(label: string, action: number, cls: string): HTMLButtonElement {
-    const b = el('button', `touch-btn ${cls}`, label);
+  /** Gives the buttons their actions, in the place order of `DEFAULT_TOUCH_BUTTONS`. */
+  setButtons(names: string[]): void {
+    this.pads.releaseAll();
+    this.slots.forEach((s, i) => {
+      s.action = ACTIONS.indexOf(names[i]);
+      s.b.textContent = names[i];
+      s.b.classList.remove('down');
+    });
+  }
+
+  private button(cls: string): HTMLButtonElement {
+    const b = el('button', `touch-btn ${cls}`);
     b.tabIndex = -1;
+    const slot = { b, action: -1 };
+    this.slots.push(slot);
+    // The action pressed is the one released, even when the buttons change in between.
+    let held = -1;
     const up = (e: PointerEvent) => {
       e.stopPropagation();
-      this.pads.release(action);
+      if (held >= 0) this.pads.release(held);
+      held = -1;
       b.classList.remove('down');
     };
     b.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       capture(b, e.pointerId);
-      this.pads.press(action);
+      held = slot.action;
+      this.pads.press(held);
       b.classList.add('down');
     });
     b.addEventListener('pointermove', (e) => e.stopPropagation());
@@ -213,18 +234,13 @@ export class TouchControls {
   /** Four buttons in a diamond, like a controller's face buttons. */
   private face(): HTMLElement {
     const face = el('div', 'touch-face');
-    face.append(
-      this.button('Jump', JUMP, 'top'),
-      this.button('Shield', SHIELD, 'left'),
-      this.button('Combo', COMBO, 'right'),
-      this.button('Attack', ATTACK, 'bottom'),
-    );
+    face.append(this.button('top'), this.button('left'), this.button('right'), this.button('bottom'));
     return face;
   }
 
   private small(): HTMLElement {
     const row = el('div', 'touch-small');
-    row.append(this.button('Taunt', TAUNT, 'pill'), this.button('Pause', PAUSE, 'pill'));
+    row.append(this.button('pill'), this.button('pill'));
     return row;
   }
 }

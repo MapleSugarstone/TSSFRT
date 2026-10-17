@@ -746,6 +746,86 @@ body {
   font-size: 0.85em;
 }
 
+/* The controls menu's copy of the touch buttons in their on-screen places. */
+.touch-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+.touch-edit-pad {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.6em;
+}
+
+.touch-edit-face {
+  position: relative;
+  flex: none;
+  width: 10em;
+  height: 10em;
+}
+
+.touch-edit-small {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+.lobby .touch-edit button {
+  padding: 0;
+  font-size: 0.75em;
+  letter-spacing: 0.04em;
+}
+
+.lobby .touch-edit-face button {
+  position: absolute;
+  width: 38%;
+  height: 38%;
+  clip-path: circle(50%);
+}
+
+.lobby .touch-edit-face button::before {
+  clip-path: circle(50%);
+}
+
+.touch-edit-face .top {
+  left: 31%;
+  top: 0;
+}
+
+.touch-edit-face .left {
+  left: 0;
+  top: 31%;
+}
+
+.touch-edit-face .right {
+  left: 62%;
+  top: 31%;
+}
+
+.touch-edit-face .bottom {
+  left: 31%;
+  top: 62%;
+}
+
+.lobby .touch-edit-small button {
+  min-width: 7em;
+  padding: 0.7em 1.2em;
+  clip-path: inset(0 round 999px);
+}
+
+.lobby .touch-edit-small button::before {
+  clip-path: inset(0 round 999px);
+}
+
+.lobby .touch-edit button.picked {
+  --stroke: var(--p1);
+  --fill: #3a2727;
+  color: #ffffff;
+}
+
 /* ------------------------------------------------------------------ online HUD */
 
 .hud {

@@ -11,7 +11,7 @@ import { actionKeys, Pads } from './pads.ts';
 import { TouchControls } from './touch.ts';
 import { runTestScene } from './test-scene.ts';
 import type { Value } from '../engine/cast.ts';
-import { hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
+import { cancelRoom, hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import type { SeatInfo, StartInfo } from '../net/protocol.ts';
 
@@ -104,6 +104,7 @@ window.addEventListener('pagehide', () => online?.leave());
 let seats: SeatInfo[] = [];
 let host = 0;
 let code = '';
+let hosting = false;
 
 const lobby = new Lobby(overlay, {
   local() {
@@ -125,6 +126,7 @@ const lobby = new Lobby(overlay, {
       return;
     }
     code = r.code ?? '';
+    hosting = true;
     connect(r.room, name);
   },
   async join(name, c) {
@@ -139,6 +141,7 @@ const lobby = new Lobby(overlay, {
       return;
     }
     code = c;
+    hosting = false;
     connect(r.room, name);
   },
   prefs(p) {
@@ -149,6 +152,9 @@ const lobby = new Lobby(overlay, {
   },
   touchControls(on) {
     touch.setChoice(on);
+  },
+  touchButtons(names) {
+    touch.setButtons(names);
   },
   start(delay) {
     // Every seat gets Player 1's row, so each player's own controls have a full row to map onto.
@@ -226,6 +232,8 @@ function connect(roomId: string, name: string): void {
         begin(m.start);
         break;
       case 'refused':
+        // A room refused to its own host has nobody in it, so its code is withdrawn.
+        if (hosting && code) void cancelRoom(code);
         lobby.setStatus(m.reason);
         lobby.showMenu();
         break;

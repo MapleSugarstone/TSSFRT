@@ -9,8 +9,31 @@ export const ACTIONS = ['Right', 'Left', 'Up', 'Crouch', 'Shield', 'Attack', 'Co
 /** Player 1's row and the Pause key from the project's controls table. */
 export const DEFAULT_CONTROLS = ['D', 'A', 'W', 'S', 'B', 'V', 'C', 'space', 'F', 'P'];
 
+/** The touch controls' buttons in place order: the face buttons top, left, right and bottom, then the two small ones. */
+export const DEFAULT_TOUCH_BUTTONS = ['Jump', 'Shield', 'Combo', 'Attack', 'Taunt', 'Pause'];
+
 const STORE_KEY = 'sfrt.controls';
 const PREFS_KEY = 'sfrt.prefs';
+const TOUCH_KEY = 'sfrt.touchButtons';
+
+/** Which action each touch button has, from `DEFAULT_TOUCH_BUTTONS` in the player's order. */
+export function loadTouchButtons(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(TOUCH_KEY) ?? 'null');
+    if (Array.isArray(v) && v.length === DEFAULT_TOUCH_BUTTONS.length && DEFAULT_TOUCH_BUTTONS.every((a) => v.includes(a))) return v;
+  } catch {
+    // Storage may be blocked.
+  }
+  return [...DEFAULT_TOUCH_BUTTONS];
+}
+
+export function saveTouchButtons(buttons: string[]): void {
+  try {
+    localStorage.setItem(TOUCH_KEY, JSON.stringify(buttons));
+  } catch {
+    // Storage may be blocked.
+  }
+}
 
 /** This player's "Up is Jump" and "Combo Use" choices for online games. */
 export function loadPrefs(): Prefs {

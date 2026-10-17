@@ -3,8 +3,8 @@ import type { SeatInfo } from '../net/protocol.ts';
 import type { LinkState } from '../net/mesh.ts';
 import { browserKeyToName } from '../engine/io.ts';
 import { CHARACTER_FILE_TYPES } from '../game/pack-format.ts';
-import { DEFAULT_PREFS, type Prefs } from '../net/protocol.ts';
-import { ACTIONS, DEFAULT_CONTROLS, loadControls, loadPrefs, saveControls, savePrefs } from './controls.ts';
+import { cleanName, DEFAULT_PREFS, NAME_MAX, type Prefs } from '../net/protocol.ts';
+import { ACTIONS, DEFAULT_CONTROLS, DEFAULT_TOUCH_BUTTONS, loadControls, loadPrefs, loadTouchButtons, saveControls, savePrefs, saveTouchButtons } from './controls.ts';
 import { addMod, deleteMod, listMods, modScript, setModEnabled, setModScriptAllowed, type ModInfo, type ModLoad } from './mods.ts';
 import { installUiAssets, playerBadge } from './ui-assets.ts';
 
@@ -33,6 +33,13 @@ function keyLabel(name: string): string {
   return name ? name[0].toUpperCase() + name.slice(1) : 'None';
 }
 
+/** A made-up name, which online play accepts without a Scratch account. */
+function randomName(): string {
+  return `player${String(Math.floor(Math.random() * 10_000)).padStart(4, '0')}`;
+}
+
+const NAME_RULE = 'Names use letters, numbers, _ and -, as Scratch usernames do.';
+
 function load(key: string, fallback: string): string {
   try {
     return localStorage.getItem(key) ?? fallback;
@@ -58,6 +65,8 @@ export interface LobbyHandlers {
   hqPen(on: boolean): void;
   /** The player switched the touch controls on or off. */
   touchControls(on: boolean): void;
+  /** The player changed which touch button does what, in the place order of `DEFAULT_TOUCH_BUTTONS`. */
+  touchButtons(names: string[]): void;
   leave(): void;
 }
 
@@ -94,6 +103,11 @@ export class Lobby {
   private prefs = loadPrefs();
   private upJumpBtn!: HTMLButtonElement;
   private comboBtn!: HTMLButtonElement;
+  private touchEdit: HTMLDivElement;
+  private touchPicks: HTMLButtonElement[] = [];
+  private touchButtons = loadTouchButtons();
+  /** The touch button tapped first, waiting for the one to swap with, or -1. */
+  private picked = -1;
   private capturing = -1;
   private backTo: 'menu' | 'room' = 'menu';
   private loading = true;
@@ -110,8 +124,22 @@ export class Lobby {
     const nameRow = el('label', 'lobby-field');
     nameRow.append(el('span', '', 'Name'));
     this.nameIn = el('input');
-    this.nameIn.maxLength = 16;
-    this.nameIn.value = load(NAME_KEY, `Player${Math.floor(Math.random() * 900 + 100)}`);
+    this.nameIn.maxLength = NAME_MAX;
+    this.nameIn.spellcheck = false;
+    this.nameIn.autocomplete = 'off';
+    this.nameIn.autocapitalize = 'off';
+    this.nameIn.title = 'Your Scratch username, or player and a number';
+    this.nameIn.value = cleanName(load(NAME_KEY, '')) || randomName();
+    // Characters a Scratch username cannot hold are dropped as they are typed or pasted.
+    this.nameIn.addEventListener('input', () => {
+      const v = this.nameIn.value;
+      const clean = cleanName(v);
+      if (clean === v) return;
+      const at = cleanName(v.slice(0, this.nameIn.selectionStart ?? v.length)).length;
+      this.nameIn.value = clean;
+      this.nameIn.setSelectionRange(at, at);
+      this.setStatus(NAME_RULE);
+    });
     nameRow.append(this.nameIn);
     const localBtn = el('button', 'primary', 'Play on this computer');
     const hostBtn = el('button', '', 'Host an online game');
@@ -175,6 +203,20 @@ export class Lobby {
     };
     this.upJumpBtn = option('Up is Jump', () => this.setPrefs({ ...this.prefs, upJump: !this.prefs.upJump }));
     this.comboBtn = option('Combo use', () => this.setPrefs({ ...this.prefs, combo: this.prefs.combo === 'Charge' ? 'Best' : 'Charge' }));
+    // The touch buttons in their places on the screen, shown while the touch controls are on.
+    this.touchEdit = el('div', 'touch-edit');
+    const touchFace = el('div', 'touch-edit-face');
+    const touchSmall = el('div', 'touch-edit-small');
+    ['top', 'left', 'right', 'bottom', 'pill', 'pill'].forEach((place, i) => {
+      const b = el('button', place);
+      b.addEventListener('click', () => this.pickTouch(i));
+      this.touchPicks.push(b);
+      (i < 4 ? touchFace : touchSmall).append(b);
+    });
+    const touchPad = el('div', 'touch-edit-pad');
+    touchPad.append(touchFace, touchSmall);
+    this.touchEdit.append(el('div', 'lobby-heading', 'Touch buttons'), el('p', 'lobby-note', 'Tap two buttons to swap them.'), touchPad);
+    this.renderTouch();
     const actions = el('div', 'lobby-actions');
     const resetBtn = el('button', '', 'Reset to default');
     const backBtn = el('button', 'primary', 'Done');
@@ -184,12 +226,14 @@ export class Lobby {
       el('p', 'lobby-note', 'On this computer these are Player 1\'s controls. Online they control your own seat, and other players can use the same keys.'),
       grid,
       options,
+      this.touchEdit,
       actions,
     );
     resetBtn.addEventListener('click', () => {
       this.controls = [...DEFAULT_CONTROLS];
       saveControls(this.controls);
       this.setPrefs({ ...DEFAULT_PREFS });
+      this.setTouchButtons([...DEFAULT_TOUCH_BUTTONS]);
       this.capture(-1);
     });
     backBtn.addEventListener('click', () => this.closeControls());
@@ -277,7 +321,8 @@ export class Lobby {
     window.addEventListener('keydown', (e) => this.onCaptureKey(e), true);
 
     const name = () => {
-      const n = this.nameIn.value.trim() || 'Player';
+      const n = cleanName(this.nameIn.value) || randomName();
+      this.nameIn.value = n;
       store(NAME_KEY, n);
       return n;
     };
@@ -330,6 +375,8 @@ export class Lobby {
   private show(view: 'menu' | 'room' | 'controls' | 'mods'): void {
     if (view === 'menu' || view === 'room') this.backTo = view;
     this.capture(-1);
+    this.picked = -1;
+    this.renderTouch();
     this.menu.hidden = view !== 'menu';
     this.room.hidden = view !== 'room';
     this.controlsView.hidden = view !== 'controls';
@@ -472,6 +519,35 @@ export class Lobby {
   setTouch(on: boolean): void {
     this.touchOn = on;
     renderOption(this.touchBtn, 'Touch controls', on);
+    this.touchEdit.hidden = !on;
+  }
+
+  /** Picks the first touch button of a swap, or swaps its action with the one picked before. */
+  private pickTouch(i: number): void {
+    if (this.picked < 0 || this.picked === i) {
+      this.picked = this.picked === i ? -1 : i;
+      this.renderTouch();
+      return;
+    }
+    const next = [...this.touchButtons];
+    [next[this.picked], next[i]] = [next[i], next[this.picked]];
+    this.setTouchButtons(next);
+  }
+
+  private setTouchButtons(names: string[]): void {
+    this.touchButtons = names;
+    this.picked = -1;
+    saveTouchButtons(names);
+    this.h.touchButtons([...names]);
+    this.renderTouch();
+  }
+
+  private renderTouch(): void {
+    this.touchPicks.forEach((b, i) => {
+      b.textContent = this.touchButtons[i];
+      b.classList.toggle('picked', i === this.picked);
+      b.setAttribute('aria-pressed', String(i === this.picked));
+    });
   }
 
   private setPrefs(p: Prefs): void {
