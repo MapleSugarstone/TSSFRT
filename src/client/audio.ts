@@ -62,7 +62,8 @@ export class AudioOut {
         const job = queue.shift();
         if (!job) return;
         try {
-          const res = await fetch(`${base}${job.file}`);
+          // Mods give full URLs, and everything else a path under the assets folder.
+          const res = await fetch(/^(blob|data|https?):/.test(job.file) ? job.file : `${base}${job.file}`);
           const data = await res.arrayBuffer();
           this.buffers[job.si][job.i] = await this.ctx.decodeAudioData(data);
         } catch {

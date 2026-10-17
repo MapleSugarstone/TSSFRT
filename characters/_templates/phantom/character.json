@@ -1,0 +1,1254 @@
+{
+  "format": 1,
+  "name": "Phantom",
+  "template": "Phantom",
+  "stats": {
+    "speed": 1.5,
+    "friction": 0.78,
+    "jumpHeight": 10,
+    "fallSpeed": 0.9,
+    "jumps": 2,
+    "airSpeed": 1.9,
+    "hurtboxWidth": 18,
+    "hurtboxHeight": 24,
+    "crouchOffset": -1,
+    "knockbackMultiplier": 1.34
+  },
+  "text": {
+    "lore": "A lost soul left behind, not sure of his purpose, just that the Super Fighter Tournament will bring him closer to finding out where he belongs.",
+    "mechanics": "Phantom is a nimble fighter, using fast punches and magic to keep opponents on their toes.",
+    "combo": [
+      {
+        "name": "Shadowflame Charge",
+        "description": "Fire a quick moving shadowflame ball that explodes on contact, or if you press the attack button!"
+      },
+      {
+        "name": "Shadow Trick",
+        "description": "Teleport to the opponent, leaving an explosion behind. The direction you hold determines your exact teleporting position!"
+      },
+      {
+        "name": "Shadow Grip",
+        "description": "Call upon a giant hand that floats towards the opponent to grab them, leaving them slowed down heavily and unable to attack or defend!"
+      }
+    ]
+  },
+  "cpu": {
+    "behaviour": [
+      "0#20#0#9#1000#9#",
+      "always",
+      "always"
+    ],
+    "comboUsage": 405010,
+    "combos": []
+  },
+  "moves": {
+    "NPunch": {
+      "attributes": {
+        "hitboxWidth": 18,
+        "hitboxHeight": 32,
+        "displacementX": 12,
+        "displacementY": 9,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 2,
+        "knockbackY": 14,
+        "iframes": 10,
+        "hitstun": 10,
+        "damage": 7,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "lr",
+        "comboGain": 20,
+        "knockbackScalingX": 4,
+        "knockbackScalingY": 17,
+        "hitstunScaling": 8,
+        "diScaling": 4,
+        "cloneType": 2
+      },
+      "hitboxes": [
+        {
+          "file": "moves/NPunch/01.png",
+          "speed": 4,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/NPunch/02.png",
+          "speed": 5,
+          "center": [
+            12,
+            16
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/NPunch/03.png",
+          "speed": 4,
+          "center": [
+            10,
+            16
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": {
+        "start": 6,
+        "end": 12
+      },
+      "aiSpacing": null,
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": true,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 8,
+      "sound": null,
+      "cues": []
+    },
+    "UpPunch": {
+      "attributes": {
+        "hitboxWidth": 20,
+        "hitboxHeight": 20,
+        "displacementX": 0,
+        "displacementY": 10,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": 1,
+        "iframes": 1,
+        "hitstun": 15,
+        "damage": 1,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "all",
+        "comboGain": 5,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 0,
+        "diScaling": 0,
+        "cloneType": 2
+      },
+      "hitboxes": [
+        {
+          "file": "moves/UpPunch/01.png",
+          "speed": 2,
+          "center": [
+            6,
+            6
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/UpPunch/02.png",
+          "speed": 4,
+          "center": [
+            8,
+            8
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/UpPunch/03.png",
+          "speed": 4,
+          "center": [
+            10,
+            10
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": {
+        "start": 4,
+        "end": 16
+      },
+      "aiSpacing": [
+        "000",
+        "015"
+      ],
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 5,
+      "sound": {
+        "file": "sounds/UpPunch.wav",
+        "rate": 48000,
+        "sampleCount": 21525
+      },
+      "cues": []
+    },
+    "DownPunch": {
+      "attributes": {
+        "hitboxWidth": 22,
+        "hitboxHeight": 30,
+        "displacementX": 0,
+        "displacementY": 10,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 7,
+        "knockbackY": 13,
+        "iframes": 4,
+        "hitstun": 15,
+        "damage": 3,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "lr",
+        "comboGain": 20,
+        "knockbackScalingX": 6,
+        "knockbackScalingY": 7,
+        "hitstunScaling": 7,
+        "diScaling": 4,
+        "cloneType": 2
+      },
+      "hitboxes": [
+        {
+          "file": "moves/DownPunch/01.png",
+          "speed": 2,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownPunch/02.png",
+          "speed": 4,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownPunch/03.png",
+          "speed": 5,
+          "center": [
+            10,
+            18
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownPunch/04.png",
+          "speed": 5,
+          "center": [
+            10,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownPunch/05.png",
+          "speed": 5,
+          "center": [
+            10,
+            -2
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": {
+        "start": 10,
+        "end": 18
+      },
+      "aiSpacing": null,
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 6,
+      "sound": {
+        "file": "sounds/DownPunch.wav",
+        "rate": 48000,
+        "sampleCount": 20558
+      },
+      "cues": []
+    },
+    "RunPunch": {
+      "attributes": {
+        "hitboxWidth": 30,
+        "hitboxHeight": 18,
+        "displacementX": 20,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 16,
+        "knockbackY": 12,
+        "iframes": 8,
+        "hitstun": 10,
+        "damage": 5,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "lr",
+        "comboGain": 20,
+        "knockbackScalingX": 22,
+        "knockbackScalingY": 8,
+        "hitstunScaling": 7,
+        "diScaling": 4,
+        "cloneType": 2
+      },
+      "hitboxes": [
+        {
+          "file": "moves/RunPunch/01.png",
+          "speed": 3,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/RunPunch/02.png",
+          "speed": 5,
+          "center": [
+            16,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/RunPunch/03.png",
+          "speed": 5,
+          "center": [
+            16,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/RunPunch/04.png",
+          "speed": 1,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": {
+        "start": 5,
+        "end": 10
+      },
+      "aiSpacing": null,
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 8,
+      "sound": {
+        "file": "sounds/RunPunch.wav",
+        "rate": 48000,
+        "sampleCount": 20513
+      },
+      "cues": []
+    },
+    "DownAirPunch": {
+      "attributes": {
+        "hitboxWidth": 19,
+        "hitboxHeight": 50,
+        "displacementX": 0,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": -2,
+        "knockbackY": 4,
+        "iframes": 3,
+        "hitstun": 10,
+        "damage": 3,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "lr",
+        "comboGain": 10,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 7,
+        "diScaling": 2,
+        "cloneType": 2
+      },
+      "hitboxes": [
+        {
+          "file": "moves/DownAirPunch/01.png",
+          "speed": 6,
+          "center": [
+            6,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/02.png",
+          "speed": 6,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/03.png",
+          "speed": 6,
+          "center": [
+            6,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/04.png",
+          "speed": 6,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/05.png",
+          "speed": 6,
+          "center": [
+            4,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/06.png",
+          "speed": 6,
+          "center": [
+            0,
+            0
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/07.png",
+          "speed": 6,
+          "center": [
+            6,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/08.png",
+          "speed": 6,
+          "center": [
+            14,
+            28
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/09.png",
+          "speed": 6,
+          "center": [
+            8,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/10.png",
+          "speed": 6,
+          "center": [
+            8,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/11.png",
+          "speed": 6,
+          "center": [
+            6,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/12.png",
+          "speed": 6,
+          "center": [
+            12,
+            24
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/DownAirPunch/13.png",
+          "speed": 6,
+          "center": [
+            16,
+            16
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": {
+        "start": 4,
+        "end": 12
+      },
+      "aiSpacing": null,
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 10,
+      "sound": {
+        "file": "sounds/DownAirPunch.wav",
+        "rate": 48000,
+        "sampleCount": 25545
+      },
+      "cues": []
+    },
+    "E1": {
+      "attributes": {
+        "hitboxWidth": 10,
+        "hitboxHeight": 10,
+        "displacementX": 10,
+        "displacementY": 0,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 20,
+        "knockbackY": 7,
+        "iframes": 10,
+        "hitstun": 8,
+        "damage": 10,
+        "hitsBeforeDeletion": 1,
+        "rotateStyle": "all",
+        "comboGain": 15,
+        "knockbackScalingX": 28,
+        "knockbackScalingY": 12,
+        "hitstunScaling": 7,
+        "diScaling": 1,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E1/01.png",
+          "speed": 2,
+          "center": [
+            8,
+            8
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": 6,
+      "sound": {
+        "file": "sounds/E1.wav",
+        "rate": 48000,
+        "sampleCount": 47622
+      },
+      "cues": []
+    },
+    "E3": {
+      "attributes": {
+        "hitboxWidth": 20,
+        "hitboxHeight": 20,
+        "displacementX": 0,
+        "displacementY": 10,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": 0,
+        "iframes": 0,
+        "hitstun": 0,
+        "damage": 0,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "all",
+        "comboGain": 0,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 0,
+        "diScaling": 0,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E3/01.png",
+          "speed": 3,
+          "center": [
+            10,
+            10
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/E3/02.png",
+          "speed": 3,
+          "center": [
+            8,
+            8
+          ],
+          "resolution": 2
+        },
+        {
+          "file": "moves/E3/03.png",
+          "speed": 3,
+          "center": [
+            6,
+            6
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": false,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": null,
+      "cues": []
+    },
+    "E5": {
+      "attributes": {
+        "hitboxWidth": 0,
+        "hitboxHeight": 0,
+        "displacementX": 0,
+        "displacementY": -10,
+        "pushbackX": 0,
+        "pushbackY": 0,
+        "knockbackX": 0,
+        "knockbackY": 0,
+        "iframes": 0,
+        "hitstun": 0,
+        "damage": 0,
+        "hitsBeforeDeletion": 0,
+        "rotateStyle": "lr",
+        "comboGain": 0,
+        "knockbackScalingX": 0,
+        "knockbackScalingY": 0,
+        "hitstunScaling": 0,
+        "diScaling": 0,
+        "cloneType": 1
+      },
+      "hitboxes": [
+        {
+          "file": "moves/E5/01.png",
+          "speed": 1,
+          "center": [
+            16,
+            2
+          ],
+          "resolution": 2
+        }
+      ],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": {
+        "file": "sounds/E5.wav",
+        "rate": 48000,
+        "sampleCount": 26673
+      },
+      "cues": []
+    },
+    "Taunt": {
+      "attributes": {
+        "hitboxWidth": "",
+        "hitboxHeight": "",
+        "displacementX": "",
+        "displacementY": "",
+        "pushbackX": "",
+        "pushbackY": "",
+        "knockbackX": "",
+        "knockbackY": "",
+        "iframes": "",
+        "hitstun": "",
+        "damage": "",
+        "hitsBeforeDeletion": "",
+        "rotateStyle": "",
+        "comboGain": "",
+        "knockbackScalingX": "",
+        "knockbackScalingY": "",
+        "hitstunScaling": "",
+        "diScaling": "",
+        "cloneType": ""
+      },
+      "hitboxes": [],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": {
+        "file": "sounds/Taunt.wav",
+        "rate": 48000,
+        "sampleCount": 44313
+      },
+      "cues": []
+    },
+    "Dodge": {
+      "attributes": {
+        "hitboxWidth": "",
+        "hitboxHeight": "",
+        "displacementX": "",
+        "displacementY": "",
+        "pushbackX": "",
+        "pushbackY": "",
+        "knockbackX": "",
+        "knockbackY": "",
+        "iframes": "",
+        "hitstun": "",
+        "damage": "",
+        "hitsBeforeDeletion": "",
+        "rotateStyle": "",
+        "comboGain": "",
+        "knockbackScalingX": "",
+        "knockbackScalingY": "",
+        "hitstunScaling": "",
+        "diScaling": "",
+        "cloneType": ""
+      },
+      "hitboxes": [],
+      "active": null,
+      "aiSpacing": null,
+      "cantMove": true,
+      "uniqueAnimation": true,
+      "shieldBreaking": false,
+      "ignoreVelocityLimit": false,
+      "freeze": null,
+      "hitSound": null,
+      "sound": null,
+      "cues": []
+    }
+  },
+  "animations": [
+    {
+      "name": "idle1",
+      "file": "animations/01_idle1.png",
+      "speed": 1,
+      "center": [
+        14,
+        16
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "idle2",
+      "file": "animations/02_idle2.png",
+      "speed": 1,
+      "center": [
+        14,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "run1",
+      "file": "animations/03_run1.png",
+      "speed": 4,
+      "center": [
+        14,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "run2",
+      "file": "animations/04_run2.png",
+      "speed": 4,
+      "center": [
+        14,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "hurtNL",
+      "file": "animations/05_hurtNL.png",
+      "speed": 1,
+      "center": [
+        10,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "stunnedNL",
+      "file": "animations/06_stunnedNL.png",
+      "speed": 1,
+      "center": [
+        12,
+        16
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "jcharge1",
+      "file": "animations/07_jcharge1.png",
+      "speed": 5,
+      "center": [
+        18,
+        6
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "jchargeNL",
+      "file": "animations/08_jchargeNL.png",
+      "speed": 5,
+      "center": [
+        18,
+        6
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "jumpNL",
+      "file": "animations/09_jumpNL.png",
+      "speed": 5,
+      "center": [
+        10,
+        18
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DjumpNL",
+      "file": "animations/10_DjumpNL.png",
+      "speed": 5,
+      "center": [
+        10,
+        18
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "NPunch1",
+      "file": "animations/11_NPunch1.png",
+      "speed": 4,
+      "center": [
+        14,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "NPunch2",
+      "file": "animations/12_NPunch2.png",
+      "speed": 2,
+      "center": [
+        10,
+        18
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "RunPunch1",
+      "file": "animations/13_RunPunch1.png",
+      "speed": 4,
+      "center": [
+        12,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "RunPunch2",
+      "file": "animations/14_RunPunch2.png",
+      "speed": 2,
+      "center": [
+        20,
+        12
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "UpPunch1",
+      "file": "animations/15_UpPunch1.png",
+      "speed": 4,
+      "center": [
+        14,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "UpPunch2",
+      "file": "animations/16_UpPunch2.png",
+      "speed": 2,
+      "center": [
+        14,
+        18
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "fallNL",
+      "file": "animations/17_fallNL.png",
+      "speed": 5,
+      "center": [
+        10,
+        18
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "crouch1",
+      "file": "animations/18_crouch1.png",
+      "speed": 1,
+      "center": [
+        12,
+        10
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "ledge1",
+      "file": "animations/19_ledge1.png",
+      "speed": 1,
+      "center": [
+        8,
+        12
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "shield1",
+      "file": "animations/20_shield1.png",
+      "speed": 1,
+      "center": [
+        12,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DodgeNL",
+      "file": "animations/21_DodgeNL.png",
+      "speed": 2,
+      "center": [
+        16,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "E3-2-1",
+      "file": "animations/22_E3-2-1.png",
+      "speed": 5,
+      "center": [
+        10,
+        16
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "E3-2-2",
+      "file": "animations/23_E3-2-2.png",
+      "speed": 5,
+      "center": [
+        10,
+        10
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "E3-2-3",
+      "file": "animations/24_E3-2-3.png",
+      "speed": 5,
+      "center": [
+        0,
+        0
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "E1-2-1",
+      "file": "animations/25_E1-2-1.png",
+      "speed": 5,
+      "center": [
+        14,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "E1-2-2",
+      "file": "animations/26_E1-2-2.png",
+      "speed": 4,
+      "center": [
+        10,
+        12
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "E5-2-1",
+      "file": "animations/27_E5-2-1.png",
+      "speed": 2,
+      "center": [
+        14,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "E5-2-2",
+      "file": "animations/28_E5-2-2.png",
+      "speed": 1,
+      "center": [
+        14,
+        18
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownPunch2-0",
+      "file": "animations/29_DownPunch2-0.png",
+      "speed": 5,
+      "center": [
+        10,
+        16
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownPunch2-1",
+      "file": "animations/30_DownPunch2-1.png",
+      "speed": 5,
+      "center": [
+        10,
+        10
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownPunch2-2",
+      "file": "animations/31_DownPunch2-2.png",
+      "speed": 2,
+      "center": [
+        0,
+        0
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownPunch2-4",
+      "file": "animations/32_DownPunch2-4.png",
+      "speed": 6,
+      "center": [
+        10,
+        12
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownPunch2-5",
+      "file": "animations/33_DownPunch2-5.png",
+      "speed": 6,
+      "center": [
+        10,
+        20
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownPunch2-6",
+      "file": "animations/34_DownPunch2-6.png",
+      "speed": 3,
+      "center": [
+        12,
+        22
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownAirPunch2-1",
+      "file": "animations/35_DownAirPunch2-1.png",
+      "speed": 4,
+      "center": [
+        14,
+        22
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownAirPunch2-2",
+      "file": "animations/36_DownAirPunch2-2.png",
+      "speed": 5,
+      "center": [
+        12,
+        34
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownAirPunch2-3",
+      "file": "animations/37_DownAirPunch2-3.png",
+      "speed": 5,
+      "center": [
+        0,
+        0
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownAirPunch2-4",
+      "file": "animations/38_DownAirPunch2-4.png",
+      "speed": 4,
+      "center": [
+        0,
+        0
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "DownAirPunch2-5",
+      "file": "animations/39_DownAirPunch2-5.png",
+      "speed": 4,
+      "center": [
+        14,
+        22
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "Taunt1",
+      "file": "animations/40_Taunt1.png",
+      "speed": 4,
+      "center": [
+        12,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "Taunt2",
+      "file": "animations/41_Taunt2.png",
+      "speed": 4,
+      "center": [
+        12,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "Taunt3",
+      "file": "animations/42_Taunt3.png",
+      "speed": 2,
+      "center": [
+        12,
+        14
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "Taunt4",
+      "file": "animations/43_Taunt4.png",
+      "speed": 1,
+      "center": [
+        18,
+        18
+      ],
+      "resolution": 2
+    },
+    {
+      "name": "Taunt5",
+      "file": "animations/44_Taunt5.png",
+      "speed": 4,
+      "center": [
+        14,
+        16
+      ],
+      "resolution": 2
+    }
+  ],
+  "art": {
+    "portrait": {
+      "file": "art/portrait.png",
+      "center": [
+        228,
+        228
+      ],
+      "resolution": 2
+    },
+    "nameplate": {
+      "file": "art/nameplate.png",
+      "center": [
+        480,
+        360
+      ],
+      "resolution": 2
+    },
+    "icon": {
+      "file": "art/icon.png",
+      "center": [
+        13,
+        26
+      ],
+      "resolution": 2
+    },
+    "selectFrame": {
+      "file": "art/selectFrame.svg",
+      "center": [
+        86.15260826872537,
+        87.9769287007863
+      ],
+      "resolution": 1
+    },
+    "stockIcon": {
+      "file": "art/stockIcon.png",
+      "center": [
+        9,
+        9
+      ],
+      "resolution": 2
+    },
+    "stockIconColor": {
+      "file": "art/stockIconColor.png",
+      "center": [
+        11,
+        11
+      ],
+      "resolution": 2
+    },
+    "matchArt": {
+      "file": "art/matchArt.png",
+      "center": [
+        228,
+        228
+      ],
+      "resolution": 2
+    },
+    "matchName": {
+      "file": "art/matchName.png",
+      "center": [
+        480,
+        360
+      ],
+      "resolution": 2
+    },
+    "aura": {
+      "file": "art/aura.png",
+      "center": [
+        210,
+        304
+      ],
+      "resolution": 2
+    }
+  },
+  "gimmick": null
+}

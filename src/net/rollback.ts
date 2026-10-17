@@ -99,6 +99,8 @@ export class RollbackSession {
   stats: SessionStats = { frame: 0, rollbacks: 0, rolledFrames: 0, stalls: 0, pings: {}, advantage: 0, waitingFor: [], silentFor: {}, desync: null };
   /** Called after each frame is simulated, with whether it was a re-simulation. */
   onFrame: ((frame: number, resim: boolean, sounds: SoundEvent[]) => void) | null = null;
+  /** A player said they are leaving the game. */
+  onBye: ((seat: number) => void) | null = null;
 
   constructor(o: SessionOptions) {
     this.rt = o.rt;
@@ -161,6 +163,10 @@ export class RollbackSession {
     const p = decodePacket(data);
     if (!p || !this.seats.includes(p.from) || p.from === this.local) return;
     this.peerHeard.set(p.from, this.now());
+    if (p.kind === Kind.Bye) {
+      this.onBye?.(p.from);
+      return;
+    }
     if (p.kind === Kind.Ping) {
       this.transport.send(p.from, encodePacket({ kind: Kind.Pong, from: this.local, t: p.t }));
       return;
@@ -352,6 +358,11 @@ export class RollbackSession {
       }
     }
     return true;
+  }
+
+  /** The packet that tells the other players this one is leaving. */
+  goodbye(): ArrayBuffer {
+    return encodePacket({ kind: Kind.Bye, from: this.local, t: 0 });
   }
 
   /** Sends round-trip probes; call about once a second. */

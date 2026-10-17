@@ -1,7 +1,7 @@
 // The game runtime: targets, clones, the thread scheduler, broadcasts, pen and sound models.
 // Every rule here mirrors the original block runtime closely enough that the same inputs
 // produce the same state frame by frame.
-import { type Value, toNumber, toStr, isInt, clamp, setListRandom } from './cast.ts';
+import { type Value, compare, toNumber, toStr, isInt, clamp, setListRandom } from './cast.ts';
 import { Ctl, type HatKind, type ScriptDef, type SkinDef, type SpriteDef, type UnitFn } from './defs.ts';
 import { IoState, type PlayerInput } from './io.ts';
 import { RenderModel } from './render-model.ts';
@@ -622,6 +622,48 @@ export class Runtime {
     this.answer = text;
     const q = this.questions.shift();
     if (q) this.pending.push(q.thread);
+  }
+
+  // ---------------------------------------------------------------- characters added by packs
+
+  /**
+   * Characters added by packs, by character number: the original character each was made from, and
+   * the moves it has its own data for. Empty for the original roster.
+   */
+  characters = new Map<string, { template: string; owns: Set<string> }>();
+
+  /** Runs pack characters' gimmick scripts (set by src/game/gimmicks.ts); null when no pack has one. */
+  gimmickHandler: ((event: string, t: Target, args: Value[]) => void) | null = null;
+
+  /** Called by the fighter engine at fixed moments (see the transpiler's gimmick hooks). */
+  gimmick(event: string, t: Target, args: Value[]): void {
+    if (this.gimmickHandler) this.gimmickHandler(event, t, args);
+  }
+
+  /** The game's "<move>-<character>" name. A pack character uses its template's name for moves it does not own. */
+  moveName(move: Value, character: Value): string {
+    const c = this.characters.get(String(character));
+    const id = c && !c.owns.has(String(move)) ? c.template : String(character);
+    return `${String(move)}-${id}`;
+  }
+
+  /**
+   * The game's test for one character's move, such as "NPunch-1". The same move of a pack character
+   * made from that character also matches, so the template's move script runs on the pack's own data.
+   */
+  isMove(value: Value, move: Value): boolean {
+    if (compare(value, move) === 0) return true;
+    if (this.characters.size === 0 || typeof value !== 'string') return false;
+    const m = /^(.+)-(\d+)$/.exec(value);
+    const c = m ? this.characters.get(m[2]) : undefined;
+    return c !== undefined && compare(`${m![1]}-${c.template}`, move) === 0;
+  }
+
+  /** The game's test for one particular character. A pack character also counts as its template. */
+  isCharacter(character: Value, n: Value): boolean {
+    if (compare(character, n) === 0) return true;
+    const c = this.characters.get(String(character));
+    return c !== undefined && compare(c.template, n) === 0;
   }
 
   // ---------------------------------------------------------------- operators

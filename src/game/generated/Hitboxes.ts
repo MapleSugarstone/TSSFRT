@@ -407,7 +407,7 @@ export function build(rt: Runtime) {
       if (eq(item(G.l.Game_Settings, "5"), "1")) {
         p_draw_hitbox(t);
       }
-      if ((eq(t.v.AttackID, "E1-6") || eq(t.v.AttackID, "E1-6_Impact"))) {
+      if ((rt.isMove(t.v.AttackID, "E1-6") || eq(t.v.AttackID, "E1-6_Impact"))) {
         t.setXY(num((num((num(t.v.xpos) - num(item(G.l.Camera_Data, "1")))) * num(item(G.l.Camera_Data, "3")))), num((num((num(t.v.ypos) - num(item(G.l.Camera_Data, "2")))) * num(item(G.l.Camera_Data, "3")))));
         t.setPenSize((2 * num(item(G.l.Camera_Data, "3"))));
         t.setPenColorToColor("#461f1f");
@@ -560,7 +560,7 @@ export function build(rt: Runtime) {
         }
         t.v.framecount_lifeTime = num(t.v.framecount_lifeTime) + 1;
         if ((eq(t.v.framecount_lifeTime, "1") && eq(item(G.l.Game_Settings, "8"), "1"))) {
-          if (eq(t.v.AttackID, ("E5-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+          if (eq(t.v.AttackID, rt.moveName("E5", item(G.l.CHARACTERS, t.v.cloneID)))) {
             G.v.Player_WithHypeAndAura = t.v.cloneID;
             rt.broadcast("Visual_AuraMomentFunny100");
           }
@@ -626,13 +626,13 @@ export function build(rt: Runtime) {
     for (;;) {
       switch (f.pc) {
       case 0:
-        if (eq(t.v.AttackID, "Taunt-3")) {
+        if (rt.isMove(t.v.AttackID, "Taunt-3")) {
           p_Delete_clone(t);
         }
-        if (eq(t.v.AttackID, "Dodge-3")) {
+        if (rt.isMove(t.v.AttackID, "Dodge-3")) {
           p_Dodge_for_Frames(t, "6");
         }
-        if (eq(t.v.AttackID, "NPunch-3")) {
+        if (rt.isMove(t.v.AttackID, "NPunch-3")) {
           p_ChargeAttack(t, item(t.l.clone_PlayerInputNumbers, "6"));
           if (!eq(t.v.misc1, "charging")) {
             p_HitboxCheck_lifetime_framecount_from_to(t, t.v.misc1, t.v.misc1);
@@ -646,7 +646,7 @@ export function build(rt: Runtime) {
             }
           }
         }
-        if (eq(t.v.AttackID, "RunPunch-3")) {
+        if (rt.isMove(t.v.AttackID, "RunPunch-3")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.setEffect("ghost", "30");
@@ -660,7 +660,7 @@ export function build(rt: Runtime) {
             p_Delete_clone(t);
           }
         }
-        if (eq(t.v.AttackID, "UpPunch-3")) {
+        if (rt.isMove(t.v.AttackID, "UpPunch-3")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.setEffect("ghost", "30");
@@ -670,7 +670,7 @@ export function build(rt: Runtime) {
             p_Delete_clone(t);
           }
         }
-        if (eq(t.v.AttackID, "DownPunch-3")) {
+        if (rt.isMove(t.v.AttackID, "DownPunch-3")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.setEffect("ghost", "30");
@@ -720,7 +720,7 @@ export function build(rt: Runtime) {
             p_Delete_clone(t);
           }
         }
-        if (eq(t.v.AttackID, "DownAirPunch-3")) {
+        if (rt.isMove(t.v.AttackID, "DownAirPunch-3")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.setEffect("ghost", "30");
@@ -772,7 +772,7 @@ export function build(rt: Runtime) {
             p_Delete_clone(t);
           }
         }
-        if (eq(t.v.AttackID, "E1-3")) {
+        if (rt.isMove(t.v.AttackID, "E1-3")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.setEffect("ghost", "30");
@@ -846,7 +846,7 @@ export function build(rt: Runtime) {
             p_Delete_clone(t);
           }
         }
-        if (eq(t.v.AttackID, "E3-3")) {
+        if (rt.isMove(t.v.AttackID, "E3-3")) {
           p_HitboxCheck_lifetime_framecount_from_to(t, "1", "8");
           if (bool(item(t.l.moveScript_Checks, "1"))) {
             t.setEffect("ghost", "100");
@@ -920,7 +920,7 @@ export function build(rt: Runtime) {
             p_Delete_clone(t);
           }
         }
-        if (!eq(t.v.AttackID, "E5-3")) { f.pc = 1; continue; }
+        if (!rt.isMove(t.v.AttackID, "E5-3")) { f.pc = 1; continue; }
         p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
         if (bool(item(t.l.moveScript_Checks, "1"))) {
           t.v.active = "1";
@@ -1127,11 +1127,11 @@ export function build(rt: Runtime) {
         t.v.cloneID = t.v.counter;
         t.v.direc = item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 1));
         t.v.direc_visual = t.v.direc;
-        t.v.AttackID = (String(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, t.v.cloneID))));
+        t.v.AttackID = rt.moveName(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 3)), item(G.l.CHARACTERS, t.v.cloneID));
         t.v.xpos = item(G.l.C_Pos, (num((num(t.v.cloneID) * 2)) - 1));
         t.v.ypos = item(G.l.C_Pos, (num(t.v.cloneID) * 2));
         rt.createClone(t, "_myself_");
-        if ((!contains(listContents(G.l.UniqueAnimation), (String(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) && lt("0", item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 2))))) {
+        if ((!contains(listContents(G.l.UniqueAnimation), rt.moveName(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 3)), item(G.l.CHARACTERS, t.v.cloneID))) && lt("0", item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 2))))) {
           replaceItem(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 2), "0");
           replaceItem(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 3), item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 4)));
         }
@@ -1353,13 +1353,14 @@ export function build(rt: Runtime) {
 
   /** define Moves_Gnaw */
   function p_Moves_Gnaw(t: T): void {
-    if (eq(t.v.AttackID, "Taunt-1")) {
+    rt.gimmick("tick", t, []);
+    if (rt.isMove(t.v.AttackID, "Taunt-1")) {
       p_Delete_clone(t);
     }
-    if (eq(t.v.AttackID, "Dodge-1")) {
+    if (rt.isMove(t.v.AttackID, "Dodge-1")) {
       p_Dodge_for_Frames(t, "6");
     }
-    if ((eq(t.v.AttackID, "NPunch-1") || eq(t.v.AttackID, "NPunch-1_Strong"))) {
+    if ((rt.isMove(t.v.AttackID, "NPunch-1") || eq(t.v.AttackID, "NPunch-1_Strong"))) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "100");
@@ -1448,7 +1449,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "RunPunch-1")) {
+    if (rt.isMove(t.v.AttackID, "RunPunch-1")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "7", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         p_move_x_y_use_displacement_0_1_Collision_0_1_IgnoreSoftPlats_0_1(t, "4", "0", "1", "", "");
@@ -1468,7 +1469,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "UpPunch-1")) {
+    if (rt.isMove(t.v.AttackID, "UpPunch-1")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "9");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_move_x_y_use_displacement_0_1_Collision_0_1_IgnoreSoftPlats_0_1(t, "0", "2", "1", "", "");
@@ -1478,7 +1479,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownPunch-1")) {
+    if (rt.isMove(t.v.AttackID, "DownPunch-1")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.misc1 = (7 + num((Math.abs(num(item(G.l.C_Velocity, (num((num(t.v.cloneID) * 2)) - 1)))) / 1.5)));
@@ -1496,7 +1497,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownAirPunch-1")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-1")) {
       t.v.clone_DeleteOnGround = "1";
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
@@ -1514,7 +1515,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-1")) {
+    if (rt.isMove(t.v.AttackID, "E1-1")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "3", "3");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.cloneType = "1";
@@ -1584,7 +1585,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-1")) {
+    if (rt.isMove(t.v.AttackID, "E3-1")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.AttackID_ForCreateClone = "E3-1_Grab";
@@ -1631,7 +1632,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-1")) {
+    if (rt.isMove(t.v.AttackID, "E5-1")) {
       t.v.active = "0";
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
@@ -1668,7 +1669,7 @@ export function build(rt: Runtime) {
 
   /** define Moves_Phantom */
   function p_Moves_Phantom(t: T): void {
-    if (eq(t.v.AttackID, "Taunt-2")) {
+    if (rt.isMove(t.v.AttackID, "Taunt-2")) {
       t.v.clone_hasFrameData = "1";
       p_HitboxCheck_lifetime_framecount_from_to(t, "15", "inf");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
@@ -1676,10 +1677,10 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "Dodge-2")) {
+    if (rt.isMove(t.v.AttackID, "Dodge-2")) {
       p_Dodge_for_Frames(t, "6");
     }
-    if (eq(t.v.AttackID, "NPunch-2")) {
+    if (rt.isMove(t.v.AttackID, "NPunch-2")) {
       p_ChargeAttack(t, item(t.l.clone_PlayerInputNumbers, "6"));
       if (!eq(t.v.misc1, "charging")) {
         p_HitboxCheck_lifetime_framecount_from_to(t, t.v.misc1, t.v.misc1);
@@ -1696,7 +1697,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "RunPunch-2")) {
+    if (rt.isMove(t.v.AttackID, "RunPunch-2")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "11");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_change_XVel_based_on_l_r_input(t, "1");
@@ -1706,7 +1707,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "UpPunch-2")) {
+    if (rt.isMove(t.v.AttackID, "UpPunch-2")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.misc1 = "0";
@@ -1738,7 +1739,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownPunch-2")) {
+    if (rt.isMove(t.v.AttackID, "DownPunch-2")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "3");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_move_x_y_use_displacement_0_1_Collision_0_1_IgnoreSoftPlats_0_1(t, "0", "0", "1", "0", "");
@@ -1788,7 +1789,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownAirPunch-2")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-2")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.clone_hasFrameData = "1";
@@ -1820,7 +1821,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-2")) {
+    if (rt.isMove(t.v.AttackID, "E1-2")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.clone_hasFrameData = "0";
@@ -1890,7 +1891,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-2")) {
+    if (rt.isMove(t.v.AttackID, "E3-2")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.active = "0";
@@ -1946,7 +1947,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-2")) {
+    if (rt.isMove(t.v.AttackID, "E5-2")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_CharacterExtraModifier_set_ModID_optional_for_Character_s_ModifierData(t, "", t.v.cloneID, "No100Combo");
@@ -2111,13 +2112,13 @@ export function build(rt: Runtime) {
 
   /** define Moves_Xavier */
   function p_Moves_Xavier(t: T): void {
-    if (eq(t.v.AttackID, "Taunt-4")) {
+    if (rt.isMove(t.v.AttackID, "Taunt-4")) {
       p_Delete_clone(t);
     }
-    if (eq(t.v.AttackID, "Dodge-4")) {
+    if (rt.isMove(t.v.AttackID, "Dodge-4")) {
       p_Dodge_for_Frames(t, "6");
     }
-    if (eq(t.v.AttackID, "NPunch-4")) {
+    if (rt.isMove(t.v.AttackID, "NPunch-4")) {
       p_ChargeAttack(t, item(t.l.clone_PlayerInputNumbers, "6"));
       if (!eq(t.v.misc1, "charging")) {
         p_HitboxCheck_lifetime_framecount_from_to(t, t.v.misc1, t.v.misc1);
@@ -2167,7 +2168,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "RunPunch-4")) {
+    if (rt.isMove(t.v.AttackID, "RunPunch-4")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.setEffect("ghost", "30");
@@ -2201,7 +2202,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "UpPunch-4")) {
+    if (rt.isMove(t.v.AttackID, "UpPunch-4")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.setEffect("ghost", "30");
@@ -2216,7 +2217,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownPunch-4")) {
+    if (rt.isMove(t.v.AttackID, "DownPunch-4")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.setEffect("ghost", "100");
@@ -2238,7 +2239,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownAirPunch-4")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-4")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         p_move_x_y_use_displacement_0_1_Collision_0_1_IgnoreSoftPlats_0_1(t, "0", "-10", "0", "1", "");
@@ -2298,7 +2299,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-4")) {
+    if (rt.isMove(t.v.AttackID, "E1-4")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         if ((bool(item(G.l.Player_CurrentButtonsPressed, item(t.l.clone_PlayerInputNumbers, "4"))) || bool(item(G.l.Player_CurrentButtonsPressed, item(t.l.clone_PlayerInputNumbers, "3"))))) {
@@ -2347,7 +2348,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-4")) {
+    if (rt.isMove(t.v.AttackID, "E3-4")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.misc1 = "20";
@@ -2463,7 +2464,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-4")) {
+    if (rt.isMove(t.v.AttackID, "E5-4")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_CharacterExtraModifier_set_ModID_optional_for_Character_s_ModifierData(t, "", t.v.cloneID, "No100Combo");
@@ -2556,13 +2557,13 @@ export function build(rt: Runtime) {
 
   /** define Moves_Edward */
   function p_Moves_Edward(t: T): void {
-    if (eq(t.v.AttackID, "Taunt-5")) {
+    if (rt.isMove(t.v.AttackID, "Taunt-5")) {
       p_Delete_clone(t);
     }
-    if (eq(t.v.AttackID, "Dodge-5")) {
+    if (rt.isMove(t.v.AttackID, "Dodge-5")) {
       p_Dodge_for_Frames(t, "6");
     }
-    if (eq(t.v.AttackID, "NPunch-5")) {
+    if (rt.isMove(t.v.AttackID, "NPunch-5")) {
       p_ChargeAttack(t, item(t.l.clone_PlayerInputNumbers, "6"));
       if (!eq(t.v.misc1, "charging")) {
         p_HitboxCheck_lifetime_framecount_from_to(t, t.v.misc1, t.v.misc1);
@@ -2589,7 +2590,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "RunPunch-5")) {
+    if (rt.isMove(t.v.AttackID, "RunPunch-5")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "35");
@@ -2613,7 +2614,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "UpPunch-5")) {
+    if (rt.isMove(t.v.AttackID, "UpPunch-5")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "35");
@@ -2634,7 +2635,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownPunch-5")) {
+    if (rt.isMove(t.v.AttackID, "DownPunch-5")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         replaceItem(G.l.C_Velocity, item(t.l.Variables, "9"), (num(item(G.l.C_Velocity, item(t.l.Variables, "9"))) + num((num(t.v.direc) / 13))));
@@ -2649,7 +2650,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownAirPunch-5")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-5")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.active = "1";
@@ -2675,7 +2676,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-5")) {
+    if (rt.isMove(t.v.AttackID, "E1-5")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.clone_deleteOnCharDeath = "0";
@@ -2755,7 +2756,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E3-5")) {
+    if (rt.isMove(t.v.AttackID, "E3-5")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.clone_yVel = "5";
@@ -2815,7 +2816,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-5")) {
+    if (rt.isMove(t.v.AttackID, "E5-5")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_CharacterExtraModifier_set_ModID_optional_for_Character_s_ModifierData(t, "", t.v.cloneID, "No100Combo");
@@ -2942,13 +2943,13 @@ export function build(rt: Runtime) {
 
   /** define Moves_Darc */
   function p_Moves_Darc(t: T): void {
-    if (eq(t.v.AttackID, "Taunt-6")) {
+    if (rt.isMove(t.v.AttackID, "Taunt-6")) {
       p_Delete_clone(t);
     }
-    if (eq(t.v.AttackID, "Dodge-6")) {
+    if (rt.isMove(t.v.AttackID, "Dodge-6")) {
       p_Dodge_for_Frames(t, "6");
     }
-    if (eq(t.v.AttackID, "NPunch-6")) {
+    if (rt.isMove(t.v.AttackID, "NPunch-6")) {
       p_ChargeAttack(t, "");
       if (!eq(t.v.misc1, "charging")) {
         p_HitboxCheck_lifetime_framecount_from_to(t, t.v.misc1, t.v.misc1);
@@ -2973,7 +2974,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "RunPunch-6")) {
+    if (rt.isMove(t.v.AttackID, "RunPunch-6")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "10");
@@ -2997,7 +2998,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "UpPunch-6")) {
+    if (rt.isMove(t.v.AttackID, "UpPunch-6")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         rt.startSound(t, "2darcsword5");
@@ -3034,7 +3035,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownPunch-6")) {
+    if (rt.isMove(t.v.AttackID, "DownPunch-6")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.setEffect("ghost", "30");
@@ -3065,7 +3066,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "DownAirPunch-6")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-6")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.AttackID_ForCreateClone = "DownAirPunch-6_Scarf";
@@ -3091,7 +3092,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-6")) {
+    if (rt.isMove(t.v.AttackID, "E1-6")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         t.v.direc = "90";
@@ -3227,7 +3228,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "E3-6")) {
+    if (rt.isMove(t.v.AttackID, "E3-6")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         replaceItem(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 5), "3");
@@ -3337,7 +3338,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-6")) {
+    if (rt.isMove(t.v.AttackID, "E5-6")) {
       p_HitboxCheck_lifetime_framecount_from_to(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "1"))) {
         p_CharacterExtraModifier_set_ModID_optional_for_Character_s_ModifierData(t, "", t.v.cloneID, "No100Combo");
@@ -3475,7 +3476,7 @@ export function build(rt: Runtime) {
 
   /** define Moves_Guardian */
   function p_Moves_Guardian(t: T): void {
-    if (eq(t.v.AttackID, "Taunt-7")) {
+    if (rt.isMove(t.v.AttackID, "Taunt-7")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "28", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.active = "0";
@@ -3499,10 +3500,10 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "Dodge-7")) {
+    if (rt.isMove(t.v.AttackID, "Dodge-7")) {
       p_Dodge_for_Frames(t, "6");
     }
-    if (eq(t.v.AttackID, "NPunch-7")) {
+    if (rt.isMove(t.v.AttackID, "NPunch-7")) {
       p_ChargeAttack(t, item(t.l.clone_PlayerInputNumbers, "6"));
       if (!eq(t.v.misc1, "charging")) {
         p_HitboxCheck_lifetime_framecount_from_to(t, t.v.misc1, t.v.misc1);
@@ -3517,7 +3518,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "DownPunch-7")) {
+    if (rt.isMove(t.v.AttackID, "DownPunch-7")) {
       p_ChargeAttack(t, item(t.l.clone_PlayerInputNumbers, "6"));
       if (!eq(t.v.misc1, "charging")) {
         p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "6", "1");
@@ -3536,7 +3537,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "RunPunch-7")) {
+    if (rt.isMove(t.v.AttackID, "RunPunch-7")) {
       t.v.AttackGrab = "1";
       t.v.active = "0";
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "7", "1");
@@ -3590,7 +3591,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "DownAirPunch-7")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-7")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.active = "0";
@@ -3643,7 +3644,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "UpPunch-7")) {
+    if (rt.isMove(t.v.AttackID, "UpPunch-7")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "4", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.active = "0";
@@ -3685,7 +3686,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E1-7")) {
+    if (rt.isMove(t.v.AttackID, "E1-7")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.active = "0";
@@ -3822,7 +3823,7 @@ export function build(rt: Runtime) {
         }
       }
     }
-    if (eq(t.v.AttackID, "E3-7")) {
+    if (rt.isMove(t.v.AttackID, "E3-7")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "10", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.Armor = "1";
@@ -3850,7 +3851,7 @@ export function build(rt: Runtime) {
         p_Delete_clone(t);
       }
     }
-    if (eq(t.v.AttackID, "E5-7")) {
+    if (rt.isMove(t.v.AttackID, "E5-7")) {
       p_HitboxCheck_repeat_for_the_next_lifetime_frames_ID(t, "1", "1");
       if (bool(item(t.l.moveScript_Checks, "2"))) {
         t.v.Armor = "1";
@@ -3958,7 +3959,7 @@ export function build(rt: Runtime) {
         if (!eq(t.v.clone_collisionPlatformType, "4")) {
           replaceItem(t.l.collision_ImpactChecks, "1", "true");
           t.v.xpos = num(t.v.xpos) + num((num((num(a_x) * -1)) * num((num(t.v.direc) / 90))));
-          if (eq(t.v.AttackID, "E1-5")) {
+          if (rt.isMove(t.v.AttackID, "E1-5")) {
             t.v.clone_xVel = (num(t.v.clone_xVel) * -1);
           }
         }
@@ -3968,7 +3969,7 @@ export function build(rt: Runtime) {
       if ((eq(t.v.collided, "1") && eq(a_cl, "1"))) {
         replaceItem(t.l.collision_ImpactChecks, "2", "true");
         t.v.ypos = num(t.v.ypos) + num((num(a_y) * -1));
-        if (eq(t.v.AttackID, "E1-5")) {
+        if (rt.isMove(t.v.AttackID, "E1-5")) {
           rt.startSound(t, "SnowyStep");
           t.v.clone_yVel = (num(t.v.clone_yVel) * -0.8);
           if (lt(t.v.clone_yVel, "3")) {
@@ -4089,7 +4090,7 @@ export function build(rt: Runtime) {
     p_CollisionCheck_IgnoreSoftPlats_0_1(t, (num(item(t.l.MoveAttributes, "1")) / 2), (num(item(t.l.MoveAttributes, "2")) / 2), "x", t.v.temp_ignSoftPlats);
     if ((eq(t.v.collided, "1") && eq(a_cl, "1"))) {
       replaceItem(t.l.collision_ImpactChecks, "1", "true");
-      if (eq(t.v.AttackID, "E1-6")) {
+      if (rt.isMove(t.v.AttackID, "E1-6")) {
       } else {
         t.v.xpos = num(t.v.xpos) + num((num((num(a_steps) * num(sin(num(a_dir))))) * -1));
       }
@@ -4098,11 +4099,11 @@ export function build(rt: Runtime) {
     p_CollisionCheck_IgnoreSoftPlats_0_1(t, (num(item(t.l.MoveAttributes, "1")) / 2), (num(item(t.l.MoveAttributes, "2")) / 2), "y", t.v.temp_ignSoftPlats);
     if ((eq(t.v.collided, "1") && eq(a_cl, "1"))) {
       replaceItem(t.l.collision_ImpactChecks, "2", "true");
-      if (eq(t.v.AttackID, "E1-6")) {
+      if (rt.isMove(t.v.AttackID, "E1-6")) {
       } else {
         t.v.ypos = num(t.v.ypos) + num((num((num(a_steps) * num(cos(num(a_dir))))) * -1));
       }
-      if (eq(t.v.AttackID, "E1-5")) {
+      if (rt.isMove(t.v.AttackID, "E1-5")) {
         t.v.clone_yVel = (num(t.v.clone_yVel) * -0.8);
       } else {
         t.v.clone_yVel = "0";
@@ -4205,7 +4206,7 @@ export function build(rt: Runtime) {
         rt.broadcast("Misc.HitboxMessage");
       } else {
         if (!listContains(G.l.C_Grabbed, a_HitPlayerID)) {
-          if ((eq(t.v.AttackID, "E1-6") && !eq(t.v.misc2, "TERRAIN"))) {
+          if ((rt.isMove(t.v.AttackID, "E1-6") && !eq(t.v.misc2, "TERRAIN"))) {
             t.v.misc2 = "ENEMY";
           }
           p_Split_List_Input_Seperator_Level(t, item(t.l.JourneyMode_RunData, "2"), "'", "1");
@@ -4260,7 +4261,7 @@ export function build(rt: Runtime) {
                   replaceItem(G.l.COMBOMETER, "1", Math.round(num((num(item(G.l.COMBOMETER, "1")) + num((num(item(t.l.MoveAttributes, "14")) / 5))))));
                 }
               }
-              if ((eq(t.v.AttackID, "E3-1") && eq(t.costumeName(), "8)E3-1-4"))) {
+              if ((rt.isMove(t.v.AttackID, "E3-1") && eq(t.costumeName(), "8)E3-1-4"))) {
                 rt.startSound(t, "Heal");
                 if (lt(item(G.l.Percentage, t.v.cloneID), "30")) {
                   replaceItem(G.l.Percentage, t.v.cloneID, "0");
@@ -4389,6 +4390,7 @@ export function build(rt: Runtime) {
     } else {
       t.v.cloneType = item(t.l.MoveAttributes, "19");
     }
+    rt.gimmick("move", t, []);
   }
 
   /** define Set Move Attributes to %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s */
@@ -4577,7 +4579,7 @@ export function build(rt: Runtime) {
     for (let i19 = Math.round(num((G.l.Stage_PlatformData.length / 5))); i19-- > 0; ) {
       t.v.index = num(t.v.index) + 1;
       if (((lt(t.v.ypos, (num(a_Height) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 1))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 3))) / 2)))))) && gt(t.v.ypos, (num((num(a_Height) * -1)) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 1))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 3))) / -2))))))) && (lt(t.v.xpos, (num(a_Width) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 2))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 4))) / 2)))))) && gt(t.v.xpos, (num((num(a_Width) * -1)) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 2))) + num((num(item(G.l.Stage_PlatformData, (num((num(t.v.index) * 5)) - 4))) / -2))))))))) {
-        if ((eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "1") || ((eq(a_ignSoftPlats, "0") && (eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "4") && (eq(t.v.AttackID, "E1-6") || !gt(t.v.clone_yVel, "0")))) && !(eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "2") || eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "3"))))) {
+        if ((eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "1") || ((eq(a_ignSoftPlats, "0") && (eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "4") && (rt.isMove(t.v.AttackID, "E1-6") || !gt(t.v.clone_yVel, "0")))) && !(eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "2") || eq(item(G.l.Stage_PlatformData, (num(t.v.index) * 5)), "3"))))) {
           t.v.collided = "1";
           t.v.clone_collisionPlatformType = item(G.l.Stage_PlatformData, (num(t.v.index) * 5));
         }
@@ -4679,11 +4681,12 @@ export function build(rt: Runtime) {
 
   /** define Move Connect (Hardcoded Moves) %s %s */
   function p_Move_Connect_Hardcoded_Moves(t: T, a_HitPlayerID: Value, a_direction: Value): void {
-    if (eq(t.v.AttackID, "DownAirPunch-3")) {
+    rt.gimmick("hit", t, [a_HitPlayerID, a_direction]);
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-3")) {
       replaceItem(G.l.C_Velocity, (num(t.v.cloneID) * 2), "10");
       replaceItem(G.l.C_CostumeFrameBuffer, t.v.cloneID, "3");
     }
-    if (eq(t.v.AttackID, "DownAirPunch-5")) {
+    if (rt.isMove(t.v.AttackID, "DownAirPunch-5")) {
       t.v.misc1 = "1";
     }
   }
@@ -4770,19 +4773,19 @@ export function build(rt: Runtime) {
       t.v.AttackID = "FireballImpact";
       rt.createClone(t, "_myself_");
     }
-    if (eq(t.v.AttackID, "E1-2")) {
+    if (rt.isMove(t.v.AttackID, "E1-2")) {
       t.v.AttackID = "E1-2_Circle";
       rt.createClone(t, "_myself_");
       replaceItem(t.l.MoveAttributes, "12", "3");
       t.v.AttackID = "E1-2_Impact";
       rt.createClone(t, "_myself_");
     }
-    if (eq(t.v.AttackID, "E1-4")) {
+    if (rt.isMove(t.v.AttackID, "E1-4")) {
       replaceItem(t.l.MoveAttributes, "12", "1");
       t.v.AttackID = "E1-4_Impact";
       rt.createClone(t, "_myself_");
     }
-    if ((eq(t.v.AttackID, "E1-5") || (eq(t.v.AttackID, "E5-5_Jump") || eq(t.v.AttackID, "E5-5_Run")))) {
+    if ((rt.isMove(t.v.AttackID, "E1-5") || (eq(t.v.AttackID, "E5-5_Jump") || eq(t.v.AttackID, "E5-5_Run")))) {
       t.v.AttackID = "E1-5_Impact";
       rt.createClone(t, "_myself_");
     }
@@ -4790,7 +4793,7 @@ export function build(rt: Runtime) {
 
   /** define QuickMoveSwitch */
   function p_QuickMoveSwitch(t: T): void {
-    if (eq(t.v.AttackID, "E1-7")) {
+    if (rt.isMove(t.v.AttackID, "E1-7")) {
       t.v.xdp = "0";
       t.v.ydp = "7";
       replaceItem(t.l.MoveAttributes, "1", "60");

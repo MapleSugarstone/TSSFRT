@@ -13,7 +13,7 @@ const api = {
     canvas.height = height;
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
-    game = new Game(canvas, overlay, { seed: sc.seed, t0 });
+    game = new Game(canvas, overlay, { seed: sc.seed, t0, noPacks: true });
     timeline = new InputTimeline(sc.events);
     await game.renderer.loadImages(ASSET_BASE);
   },

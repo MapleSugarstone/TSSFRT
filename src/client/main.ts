@@ -2,6 +2,7 @@ import './style.css';
 import { Game, startFixedLoop } from './game.ts';
 import { LocalInput } from './input.ts';
 import { Hud, Lobby } from './lobby.ts';
+import { loadMods } from './mods.ts';
 import { OnlineGame } from './online.ts';
 import { Mesh } from '../net/mesh.ts';
 import { report } from '../net/report.ts';
@@ -54,6 +55,9 @@ function localT0(): number {
 fitStage();
 window.addEventListener('resize', fitStage);
 
+// Mods build into the game's tables, so they load before the first runtime exists.
+const modLoad = await loadMods();
+
 // One game object per page: assets load once while the menu shows, and the runtime is replaced
 // when an online game starts with the shared seed.
 const game = new Game(canvas, overlay, { seed: crypto.getRandomValues(new Uint32Array(1))[0], t0: localT0() });
@@ -71,6 +75,8 @@ window.addEventListener('keydown', resumeAudio);
 let room: RoomClient | null = null;
 let mesh: Mesh | null = null;
 let online: OnlineGame | null = null;
+// Closing the page says goodbye, so the others go on without this player instead of waiting.
+window.addEventListener('pagehide', () => online?.leave());
 let seats: SeatInfo[] = [];
 let host = 0;
 let code = '';
@@ -151,6 +157,7 @@ const lobby = new Lobby(overlay, {
     lobby.setStatus('');
   },
 });
+lobby.setModLoad(modLoad);
 touch.onChange = (on) => lobby.setTouch(on);
 // Every screen but a running match and the character select's free cursor is a menu.
 touch.menuMode = () => {
@@ -229,10 +236,14 @@ function begin(start: StartInfo): void {
   game.rt = Game.createRuntime({ seed: start.seed, t0: start.t0 });
   const names = new Map(seats.map((s) => [s.seat, s.name]));
   // Leaving reloads the page, which is the simplest way back to a clean menu.
-  const hud = new Hud(page, () => {
-    online?.leave();
-    location.reload();
-  });
+  const hud = new Hud(
+    page,
+    () => {
+      online?.leave();
+      location.reload();
+    },
+    overlay,
+  );
   online = new OnlineGame(game, room, mesh, start, room.seat, names, hud, host);
   (window as unknown as { __online: OnlineGame }).__online = online;
   lobby.hide();

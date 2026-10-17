@@ -586,8 +586,9 @@ body {
 
 .lobby-footer-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.2em;
+  gap: 0.2em 1.8em;
 }
 
 .lobby-return {
@@ -611,13 +612,21 @@ body {
   outline: none;
 }
 
+/* The main menu's Mods button, in the top-left corner. */
+.lobby-top-left {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 0.5em);
+  left: calc(env(safe-area-inset-left, 0px) + 0.6em);
+  z-index: 1;
+}
+
 /* An on/off option in the footer, with its state in a small tag. */
 .lobby-option {
   height: 2.2em;
   padding: 0;
   display: flex;
   align-items: center;
-  gap: 0.6em;
+  gap: 0.45em;
   font: inherit;
   font-size: 0.85em;
   text-transform: uppercase;
@@ -632,6 +641,11 @@ body {
 .lobby-option:focus-visible {
   color: #ffffff;
   outline: none;
+}
+
+/* One line, so a long label never pushes its state away from it. */
+.lobby-option-label {
+  white-space: nowrap;
 }
 
 .lobby-option-state {
@@ -911,4 +925,119 @@ body {
   left: 50%;
   bottom: calc(var(--touch-h) - 3em);
   transform: translateX(-50%);
+}
+
+/* The mods screen: one row per mod with its on/off option. */
+.mod-list,
+.mod-problems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.mod {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.2em 0.4em;
+  background: var(--ui-field);
+  border: 1px solid var(--ui-stroke);
+}
+
+.mod-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mod-tag {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-muted);
+}
+
+.lobby .mod-delete:hover {
+  color: #ff8a8a;
+}
+
+.mod-problems li {
+  font-size: 0.8em;
+  color: #ff8a8a;
+}
+
+.lobby-mods .lobby-actions {
+  flex-wrap: wrap;
+}
+
+.lobby-mods .lobby-actions button {
+  flex: 1 1 8em;
+}
+
+/* A mod's script, shown before the player turns it on. */
+.mod-script {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 0.6em;
+  background: var(--ui-field);
+  border: 1px solid var(--ui-stroke);
+}
+
+.mod-code {
+  margin: 0;
+  max-height: 12em;
+  overflow: auto;
+  padding: 0.5em;
+  font: 0.75em/1.4 ui-monospace, monospace;
+  white-space: pre;
+  user-select: text;
+  scrollbar-color: var(--ui-stroke) transparent;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* The panel over the stage while an online game waits for a player. */
+.hud-wait {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  width: min(84%, 26em);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+  padding: 1em 1.2em;
+  text-align: center;
+  font-size: clamp(12px, calc(var(--stage-h, 360px) * 0.036), 18px);
+  color: var(--ui-text);
+  background: rgba(14, 16, 22, 0.9);
+  border: 1px solid var(--ui-stroke);
+}
+
+.hud-wait .lobby-note {
+  margin: 0;
+  color: var(--ui-muted);
+}
+
+.hud-wait button {
+  padding: 0.5em 1.2em;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  background: var(--ui-fill);
+  border: 1px solid var(--p1);
+  cursor: pointer;
+}
+
+.hud-wait button:hover,
+.hud-wait button:focus-visible {
+  background: #3a2a2a;
+  outline: none;
 }

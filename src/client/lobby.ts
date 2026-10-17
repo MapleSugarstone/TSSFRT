@@ -4,11 +4,13 @@ import type { LinkState } from '../net/mesh.ts';
 import { browserKeyToName } from '../engine/io.ts';
 import { DEFAULT_PREFS, type Prefs } from '../net/protocol.ts';
 import { ACTIONS, DEFAULT_CONTROLS, loadControls, loadPrefs, saveControls, savePrefs } from './controls.ts';
+import { addMod, deleteMod, listMods, modScript, setModEnabled, setModScriptAllowed, type ModInfo, type ModLoad } from './mods.ts';
 import { installUiAssets, playerBadge } from './ui-assets.ts';
 
 const NAME_KEY = 'sfrt.name';
 const DELAY_KEY = 'sfrt.delay';
 const HQ_KEY = 'sfrt.hqpen';
+const MOD_MAKER = './mod-maker.html';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -19,7 +21,9 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: 
 
 /** An on/off option button: its label, then its state in a small tag. */
 function renderOption(b: HTMLButtonElement, label: string, on: boolean): void {
-  b.replaceChildren(label, el('span', `lobby-option-state${on ? ' on' : ''}`, on ? 'On' : 'Off'));
+  const state = el('span', `lobby-option-state${on ? ' on' : ''}`, on ? 'On' : 'Off');
+  if (label) b.replaceChildren(el('span', 'lobby-option-label', label), state);
+  else b.replaceChildren(state);
   b.setAttribute('aria-pressed', String(on));
 }
 
@@ -70,6 +74,15 @@ export class Lobby {
   private delayIn: HTMLSelectElement;
   private controlsView: HTMLDivElement;
   private controlsBtn: HTMLButtonElement;
+  private modsView: HTMLDivElement;
+  private modsBtn: HTMLButtonElement;
+  private modList: HTMLUListElement;
+  private modProblems: HTMLUListElement;
+  private scriptView: HTMLDivElement;
+  private reloadBtn: HTMLButtonElement;
+  private mods: ModInfo[] = [];
+  private modLoad: ModLoad = { loaded: [], problems: [] };
+  private modsChanged = false;
   private hqBtn: HTMLButtonElement;
   private hq = load(HQ_KEY, '1') === '1';
   private touchBtn: HTMLButtonElement;
@@ -181,11 +194,65 @@ export class Lobby {
     backBtn.addEventListener('click', () => this.closeControls());
     this.renderKeys();
 
+    this.modsView = el('div', 'lobby-controls lobby-mods');
+    this.modsView.hidden = true;
+    this.modList = el('ul', 'mod-list');
+    this.modProblems = el('ul', 'mod-problems');
+    this.scriptView = el('div', 'mod-script');
+    this.scriptView.hidden = true;
+    const modActions = el('div', 'lobby-actions');
+    const addBtn = el('button', '', 'Add mod');
+    this.reloadBtn = el('button', 'primary', 'Reload to apply');
+    this.reloadBtn.hidden = true;
+    const modsDone = el('button', '', 'Done');
+    // On the site the mod maker keeps characters in this browser. Under the development server it edits the project's files.
+    const makeBtn = el('button', '', 'Make a mod');
+    makeBtn.title = 'Open the mod maker in a new tab';
+    makeBtn.addEventListener('click', () => window.open(MOD_MAKER, '_blank', 'noopener'));
+    modActions.append(addBtn, makeBtn, this.reloadBtn, modsDone);
+    this.modsView.append(
+      el('div', 'lobby-heading', 'Mods'),
+      el('p', 'lobby-note', 'Mods add characters, made with the mod maker. They stay in this browser, and changes apply when the page reloads.'),
+      el('p', 'lobby-note', 'Online, you can only play with people who have the same mods turned on. A script in a mod from someone else starts off: read it and turn it on only if you trust where it came from.'),
+      this.modList,
+      this.scriptView,
+      this.modProblems,
+      modActions,
+    );
+    const filePick = el('input');
+    filePick.type = 'file';
+    filePick.accept = '.zip';
+    filePick.multiple = true;
+    filePick.hidden = true;
+    this.modsView.append(filePick);
+    addBtn.addEventListener('click', () => filePick.click());
+    filePick.addEventListener('change', async () => {
+      const files = [...(filePick.files ?? [])];
+      filePick.value = '';
+      const problems: string[] = [];
+      for (const file of files) {
+        try {
+          await addMod(file);
+          this.modsChanged = true;
+        } catch (e) {
+          problems.push(`${file.name}: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+      await this.refreshMods(problems);
+    });
+    this.reloadBtn.addEventListener('click', () => location.reload());
+    modsDone.addEventListener('click', () => this.show('menu'));
+
     this.status = el('div', 'lobby-status');
     this.leaveBtn = el('button', 'lobby-return', 'Leave');
     this.leaveBtn.hidden = true;
     this.controlsBtn = el('button', 'lobby-corner', 'Controls');
     this.controlsBtn.addEventListener('click', () => this.openControls());
+    this.modsBtn = el('button', 'lobby-option');
+    this.modsBtn.addEventListener('click', () => {
+      this.show('mods');
+      void this.refreshMods();
+    });
     this.hqBtn = el('button', 'lobby-option');
     this.hqBtn.addEventListener('click', () => this.setHq(!this.hq));
     this.renderHq();
@@ -193,13 +260,16 @@ export class Lobby {
     this.touchBtn = el('button', 'lobby-option');
     this.touchBtn.addEventListener('click', () => this.h.touchControls(!this.touchOn));
     this.setTouch(false);
-    panel.append(this.menu, this.room, this.controlsView, this.status);
+    panel.append(this.menu, this.room, this.controlsView, this.modsView, this.status);
     // The footer keeps these out of the panel's way on short screens.
     const footer = el('div', 'lobby-footer');
     const left = el('div', 'lobby-footer-left');
     left.append(this.leaveBtn, this.hqBtn, this.touchBtn);
+    const topLeft = el('div', 'lobby-top-left');
+    topLeft.append(this.modsBtn);
+    void this.refreshMods();
     footer.append(left, this.controlsBtn);
-    this.root.append(panel, footer);
+    this.root.append(topLeft, panel, footer);
     parent.append(this.root);
     window.addEventListener('keydown', (e) => this.onCaptureKey(e), true);
 
@@ -254,16 +324,18 @@ export class Lobby {
     this.show('room');
   }
 
-  private show(view: 'menu' | 'room' | 'controls'): void {
-    if (view !== 'controls') this.backTo = view;
+  private show(view: 'menu' | 'room' | 'controls' | 'mods'): void {
+    if (view === 'menu' || view === 'room') this.backTo = view;
     this.capture(-1);
     this.menu.hidden = view !== 'menu';
     this.room.hidden = view !== 'room';
     this.controlsView.hidden = view !== 'controls';
+    this.modsView.hidden = view !== 'mods';
+    this.modsBtn.hidden = view !== 'menu';
     this.leaveBtn.hidden = view !== 'room';
     this.hqBtn.hidden = view !== 'menu';
     this.touchBtn.hidden = view !== 'menu';
-    this.controlsBtn.hidden = view === 'controls';
+    this.controlsBtn.hidden = view === 'controls' || view === 'mods';
     this.root.classList.toggle('in-room', view !== 'menu');
   }
 
@@ -294,6 +366,75 @@ export class Lobby {
     this.controls[this.capturing] = name;
     saveControls(this.controls);
     this.capture(-1);
+  }
+
+  /** Shows what loading the enabled mods did when the page started. */
+  setModLoad(r: ModLoad): void {
+    this.modLoad = r;
+    void this.refreshMods();
+  }
+
+  private async refreshMods(extra: string[] = []): Promise<void> {
+    this.mods = await listMods();
+    const on = this.mods.filter((m) => m.enabled).length;
+    this.modsBtn.replaceChildren('Mods', el('span', `lobby-option-state${on ? ' on' : ''}`, on ? String(on) : 'None'));
+    this.modList.replaceChildren(
+      ...this.mods.map((m) => {
+        const li = el('li', 'mod');
+        const toggle = el('button', 'lobby-option');
+        renderOption(toggle, '', m.enabled);
+        toggle.title = m.enabled ? 'Turn off' : 'Turn on';
+        toggle.addEventListener('click', async () => {
+          await setModEnabled(m.id, !m.enabled);
+          this.modsChanged = true;
+          await this.refreshMods();
+        });
+        const del = el('button', 'lobby-option mod-delete', 'Delete');
+        del.addEventListener('click', async () => {
+          if (!confirm(`Delete ${m.name} from this browser?`)) return;
+          await deleteMod(m.id);
+          this.modsChanged = true;
+          await this.refreshMods();
+        });
+        const loaded = this.modLoad.loaded.includes(m.name);
+        let script: HTMLElement = el('span');
+        if (m.hasScript) {
+          const b = el('button', 'lobby-option');
+          renderOption(b, 'Script', m.scriptAllowed);
+          b.title = m.scriptAllowed ? 'Read or turn off the script' : 'Read the script before turning it on';
+          b.addEventListener('click', () => void this.showScript(m));
+          script = b;
+        }
+        li.append(el('span', 'mod-name', m.name), script, el('span', 'mod-tag', m.enabled && !this.modsChanged && !loaded ? 'Failed' : ''), toggle, del);
+        return li;
+      }),
+    );
+    if (!this.mods.length) this.modList.append(el('li', 'lobby-note', 'No mods yet. Add a character zip exported from the mod maker.'));
+    this.modProblems.replaceChildren(...[...this.modLoad.problems, ...extra].map((p) => el('li', '', p)));
+    this.reloadBtn.hidden = !this.modsChanged;
+  }
+
+  /** Shows a mod's script with a button to turn it on or off. */
+  private async showScript(m: ModInfo): Promise<void> {
+    const source = (await modScript(m.id)) ?? '';
+    const turn = el('button', m.scriptAllowed ? '' : 'primary', m.scriptAllowed ? 'Turn script off' : 'Turn script on');
+    const close = el('button', '', 'Close');
+    const actions = el('div', 'lobby-actions');
+    actions.append(turn, close);
+    this.scriptView.replaceChildren(
+      el('div', 'lobby-heading', `${m.name}'s script`),
+      el('p', 'lobby-note', 'The script adds this character\'s special rules. It runs walled off from the page: it can change fights but not this page, your saved data or other sites. Read it, and turn it on only if you trust where the mod came from.'),
+      el('pre', 'mod-code', source),
+      actions,
+    );
+    this.scriptView.hidden = false;
+    turn.addEventListener('click', async () => {
+      await setModScriptAllowed(m.id, !m.scriptAllowed);
+      this.modsChanged = true;
+      this.scriptView.hidden = true;
+      await this.refreshMods();
+    });
+    close.addEventListener('click', () => (this.scriptView.hidden = true));
   }
 
   private setHq(on: boolean): void {
@@ -374,8 +515,13 @@ export class Hud {
 
   private button: HTMLButtonElement;
   private onAction: () => void = () => {};
+  private wait: HTMLDivElement;
+  private waitTitle: HTMLDivElement;
+  private waitText: HTMLParagraphElement;
+  private waitButton: HTMLButtonElement;
+  private onWait: () => void = () => {};
 
-  constructor(parent: HTMLElement, onLeave: () => void) {
+  constructor(parent: HTMLElement, onLeave: () => void, stage?: HTMLElement) {
     this.root = el('div', 'hud');
     this.line = el('span', 'hud-line');
     this.warn = el('span', 'hud-warn');
@@ -386,6 +532,27 @@ export class Hud {
     leave.addEventListener('click', onLeave);
     this.root.append(this.line, this.warn, this.button, leave);
     parent.append(this.root);
+    this.wait = el('div', 'hud-wait');
+    this.wait.hidden = true;
+    this.waitTitle = el('div', 'lobby-heading');
+    this.waitText = el('p', 'lobby-note');
+    this.waitButton = el('button', 'primary');
+    this.waitButton.addEventListener('click', () => this.onWait());
+    this.wait.append(this.waitTitle, this.waitText, this.waitButton);
+    (stage ?? parent).append(this.wait);
+  }
+
+  /** The panel over the stage while the game waits for a player, or nothing for a null title. */
+  waiting(title: string | null, text = '', button: { label: string; onClick: () => void } | null = null): void {
+    this.wait.hidden = title === null;
+    if (title === null) return;
+    if (this.waitTitle.textContent !== title) this.waitTitle.textContent = title;
+    if (this.waitText.textContent !== text) this.waitText.textContent = text;
+    this.waitButton.hidden = !button;
+    if (button) {
+      this.onWait = button.onClick;
+      if (this.waitButton.textContent !== button.label) this.waitButton.textContent = button.label;
+    }
   }
 
   update(text: string, warn: string): void {
@@ -401,5 +568,6 @@ export class Hud {
 
   remove(): void {
     this.root.remove();
+    this.wait.remove();
   }
 }

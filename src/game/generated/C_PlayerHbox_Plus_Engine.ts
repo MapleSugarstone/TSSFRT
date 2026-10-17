@@ -1118,7 +1118,7 @@ export function build(rt: Runtime) {
     }
     p_DetermineClosestEnemy_List_item_1_counted_enemies_2_distance_to_closest_enemy_3_closest_enemy_ID(t);
     p_CPU_state(t, a_strength, item(t.l.CPU_Features, "7"), (((gt(item(G.l.C_Jumps, t.v.cloneID), "1") || (gt(item(G.l.C_Jumps, t.v.cloneID), "0") && gt(item(G.l.C_Velocity, item(t.l.Variables, "10")), "0"))) && gt("100", Math.sqrt(num((num((num((num(item(G.l.C_Pos, item(t.l.Variables, "9"))) - num(item(G.l.C_Pos, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 2)) - 1))))) * num((num(item(G.l.C_Pos, item(t.l.Variables, "9"))) - num(item(G.l.C_Pos, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 2)) - 1))))))) + num((num((num(item(G.l.C_Pos, item(t.l.Variables, "10"))) - num(item(G.l.C_Pos, (num(item(t.l.clone_determineClosestEnemyData, "3")) * 2))))) * num((num(item(G.l.C_Pos, item(t.l.Variables, "10"))) - num(item(G.l.C_Pos, (num(item(t.l.clone_determineClosestEnemyData, "3")) * 2)))))))))))) && gt(item(G.l.C_Pos, item(t.l.Variables, "10")), "-100")));
-    if ((contains(t.v.AI_input, "c") && (eq(item(G.l.CHARACTERS, t.v.cloneID), "6") || eq(item(G.l.CHARACTERS, t.v.cloneID), "3")))) {
+    if ((contains(t.v.AI_input, "c") && (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "6") || rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "3")))) {
       deleteAll(t.l.CPU_attacks_hitting);
       addTo(t.l.CPU_attacks_hitting, "1");
     }
@@ -1131,7 +1131,7 @@ export function build(rt: Runtime) {
             p_CPU_change_temp_input(t, "b");
             if (eq(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), "NPunch")) {
               if ((lt(Math.abs(num((num(item(G.l.C_Pos, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 2)) - 1))) - num(item(G.l.C_Pos, item(t.l.Variables, "9")))))), "60") && bool(item(t.l.CPU_Features, "6")))) {
-                if (eq(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")), "1")) {
+                if (rt.isCharacter(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")), "1")) {
                   p_CPU_input_l_r_based_on_enPos_swap_0_1(t, "");
                 } else {
                   p_CPU_input_l_r_based_on_enPos_swap_0_1(t, "1");
@@ -1145,29 +1145,29 @@ export function build(rt: Runtime) {
           }
         }
       } else {
-        if (!(contains(t.v.AI_input, "c") && (eq(item(G.l.CHARACTERS, t.v.cloneID), "6") || eq(item(G.l.CHARACTERS, t.v.cloneID), "3")))) {
+        if (!(contains(t.v.AI_input, "c") && (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "6") || rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "3")))) {
           if (bool(item(t.l.CPU_Features, "10"))) {
             deleteAll(t.l.CPU_attacks_hitting);
             t.v.CPU_best_move_percentage = "0";
-            p_Does_attack_hit_before_frames(t, ("NPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
-            p_Does_attack_hit_before_frames(t, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
-            p_Does_attack_hit_before_frames(t, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+            p_Does_attack_hit_before_frames(t, rt.moveName("NPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+            p_Does_attack_hit_before_frames(t, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+            p_Does_attack_hit_before_frames(t, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
             if (eq(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 4)), "fall")) {
-              p_Does_attack_hit_before_frames(t, ("DownAirPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+              p_Does_attack_hit_before_frames(t, rt.moveName("DownAirPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
             } else {
-              p_Does_attack_hit_before_frames(t, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+              p_Does_attack_hit_before_frames(t, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
             }
             if (gt(t.l.CPU_attacks_hitting.length, "0")) {
               if (!contains(t.v.AI_last_input, "x")) {
                 p_CPU_change_temp_input(t, "x");
               }
-              if (listContains(t.l.CPU_attacks_hitting, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+              if (listContains(t.l.CPU_attacks_hitting, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                 p_CPU_input_l_r_based_on_enPos_swap_0_1(t, "1");
               } else {
-                if (listContains(t.l.CPU_attacks_hitting, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                if (listContains(t.l.CPU_attacks_hitting, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                   p_CPU_change_temp_input(t, "w");
                 } else {
-                  if (listContains(t.l.CPU_attacks_hitting, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                  if (listContains(t.l.CPU_attacks_hitting, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                     p_CPU_change_temp_input(t, "s");
                   }
                 }
@@ -1194,7 +1194,7 @@ export function build(rt: Runtime) {
       }
     }
     if (contains(t.v.AI_last_input, "c")) {
-      if (((eq(item(G.l.CHARACTERS, t.v.cloneID), "6") || eq(item(G.l.CHARACTERS, t.v.cloneID), "3")) && eq(item(G.l.ComboChargeMechanic_Data, (num(t.v.cloneID) * 2)), "1"))) {
+      if (((rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "6") || rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "3")) && eq(item(G.l.ComboChargeMechanic_Data, (num(t.v.cloneID) * 2)), "1"))) {
         if (gt(t.l.CPU_attacks_hitting.length, "1")) {
           replaceItem(t.l.CPU_attacks_hitting, "1", (num(item(t.l.CPU_attacks_hitting, "1")) + 1));
         } else {
@@ -1206,7 +1206,7 @@ export function build(rt: Runtime) {
           t.v.nk1 = num(t.v.nk1) + 1;
           replaceItem(G.l.Player_LastButtonPressed, item(t.l.clone_PlayerInputNumbers, t.v.nk1), item(G.l.Player_CurrentButtonsPressed, item(t.l.clone_PlayerInputNumbers, t.v.nk1)));
           replaceItem(G.l.Player_CurrentButtonsPressed, item(t.l.clone_PlayerInputNumbers, t.v.nk1), "0");
-          if ((contains(t.v.AI_state, "recover") && eq(item(G.l.CHARACTERS, t.v.cloneID), "3"))) {
+          if ((contains(t.v.AI_state, "recover") && rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "3"))) {
             t.v.AI_input = (String(t.v.AI_input) + "w");
             replaceItem(G.l.Player_CurrentButtonsPressed, item(t.l.clone_PlayerInputNumbers, "3"), "1");
           }
@@ -1298,28 +1298,28 @@ export function build(rt: Runtime) {
                   if (contains(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), "punch")) {
                     deleteAll(t.l.CPU_attacks_hitting);
                     t.v.CPU_best_move_percentage = "0";
-                    p_Does_attack_hit_before_frames(t, (String(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3"))))), "1000", item(t.l.clone_determineClosestEnemyData, "3"), t.v.cloneID, "", !false);
+                    p_Does_attack_hit_before_frames(t, rt.moveName(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3"))), "1000", item(t.l.clone_determineClosestEnemyData, "3"), t.v.cloneID, "", !false);
                     if (gt(t.l.CPU_attacks_hitting.length, "0")) {
                       deleteAll(t.l.CPU_attacks_hitting);
                       t.v.CPU_best_move_percentage = "0";
-                      p_Does_attack_hit_before_frames(t, ("NPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, (String(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
-                      p_Does_attack_hit_before_frames(t, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, (String(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
-                      p_Does_attack_hit_before_frames(t, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, (String(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                      p_Does_attack_hit_before_frames(t, rt.moveName("NPunch", item(G.l.CHARACTERS, t.v.cloneID)), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, rt.moveName(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                      p_Does_attack_hit_before_frames(t, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, rt.moveName(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                      p_Does_attack_hit_before_frames(t, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, rt.moveName(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                       if (eq(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 4)), "fall")) {
-                        p_Does_attack_hit_before_frames(t, ("DownAirPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, (String(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                        p_Does_attack_hit_before_frames(t, rt.moveName("DownAirPunch", item(G.l.CHARACTERS, t.v.cloneID)), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, rt.moveName(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                       } else {
-                        p_Does_attack_hit_before_frames(t, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, (String(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3))) + ("-" + String(item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                        p_Does_attack_hit_before_frames(t, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)), (num(item(G.l.FrameData, (indexOf(G.l.FrameData, rt.moveName(item(G.l.C_Conditions, (num((num(item(t.l.clone_determineClosestEnemyData, "3")) * 8)) - 3)), item(G.l.CHARACTERS, item(t.l.clone_determineClosestEnemyData, "3")))) + 1))) - 1), t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                       }
                       if (((gt(t.l.CPU_attacks_hitting.length, "0") && bool(item(t.l.CPU_Features, "5"))) && bool(item(t.l.CPU_Features, "10")))) {
                         if (!contains(t.v.AI_last_input, "x")) {
                           p_CPU_change_temp_input(t, "x");
-                          if (listContains(t.l.CPU_attacks_hitting, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                          if (listContains(t.l.CPU_attacks_hitting, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                             p_CPU_input_l_r_based_on_enPos_swap_0_1(t, "1");
                           } else {
-                            if (listContains(t.l.CPU_attacks_hitting, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                            if (listContains(t.l.CPU_attacks_hitting, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                               p_CPU_change_temp_input(t, "w");
                             } else {
-                              if (listContains(t.l.CPU_attacks_hitting, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                              if (listContains(t.l.CPU_attacks_hitting, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                                 p_CPU_change_temp_input(t, "s");
                               }
                             }
@@ -1349,25 +1349,25 @@ export function build(rt: Runtime) {
                           if (bool(item(t.l.CPU_Features, "10"))) {
                             deleteAll(t.l.CPU_attacks_hitting);
                             t.v.CPU_best_move_percentage = "0";
-                            p_Does_attack_hit_before_frames(t, ("NPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
-                            p_Does_attack_hit_before_frames(t, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
-                            p_Does_attack_hit_before_frames(t, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+                            p_Does_attack_hit_before_frames(t, rt.moveName("NPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+                            p_Does_attack_hit_before_frames(t, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+                            p_Does_attack_hit_before_frames(t, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
                             if (eq(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 4)), "fall")) {
-                              p_Does_attack_hit_before_frames(t, ("DownAirPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+                              p_Does_attack_hit_before_frames(t, rt.moveName("DownAirPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
                             } else {
-                              p_Does_attack_hit_before_frames(t, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
+                              p_Does_attack_hit_before_frames(t, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), !false, item(t.l.CPU_Features, "1"));
                             }
                             if (gt(t.l.CPU_attacks_hitting.length, "0")) {
                               if (!contains(t.v.AI_last_input, "x")) {
                                 p_CPU_change_temp_input(t, "x");
                               }
-                              if (listContains(t.l.CPU_attacks_hitting, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                              if (listContains(t.l.CPU_attacks_hitting, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                                 p_CPU_input_l_r_based_on_enPos_swap_0_1(t, "1");
                               } else {
-                                if (listContains(t.l.CPU_attacks_hitting, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                                if (listContains(t.l.CPU_attacks_hitting, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                                   p_CPU_change_temp_input(t, "w");
                                 } else {
-                                  if (listContains(t.l.CPU_attacks_hitting, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                                  if (listContains(t.l.CPU_attacks_hitting, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                                     p_CPU_change_temp_input(t, "s");
                                   }
                                 }
@@ -1427,7 +1427,7 @@ export function build(rt: Runtime) {
                   }
                   if ((gt(item(G.l.COMBOMETER, t.v.cloneID), t.v.CPU_planned_combo_move) && bool(item(t.l.CPU_Features, "11")))) {
                     if (contains(t.v.AI_last_input, "c")) {
-                      if (eq(item(G.l.CHARACTERS, t.v.cloneID), "6")) {
+                      if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "6")) {
                         t.v.AI_input = "";
                         t.v.nk1 = "0";
                         for (let i29 = Math.round(num(G.v.Data_PlayerMaxInputs)); i29-- > 0; ) {
@@ -1445,7 +1445,7 @@ export function build(rt: Runtime) {
                         addTo(t.l.CPU_attacks_hitting, "thing");
                       }
                       if (gt(t.l.CPU_attacks_hitting.length, "0")) {
-                        if (eq(item(G.l.CHARACTERS, t.v.cloneID), "6")) {
+                        if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "6")) {
                           t.v.AI_input = "";
                           t.v.nk1 = "0";
                           for (let i30 = Math.round(num(G.v.Data_PlayerMaxInputs)); i30-- > 0; ) {
@@ -1468,25 +1468,25 @@ export function build(rt: Runtime) {
                         if (bool(item(t.l.CPU_Features, "10"))) {
                           deleteAll(t.l.CPU_attacks_hitting);
                           t.v.CPU_best_move_percentage = "0";
-                          p_Does_attack_hit_before_frames(t, ("NPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
-                          p_Does_attack_hit_before_frames(t, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
-                          p_Does_attack_hit_before_frames(t, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                          p_Does_attack_hit_before_frames(t, rt.moveName("NPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                          p_Does_attack_hit_before_frames(t, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                          p_Does_attack_hit_before_frames(t, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                           if (eq(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 4)), "fall")) {
-                            p_Does_attack_hit_before_frames(t, ("DownAirPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                            p_Does_attack_hit_before_frames(t, rt.moveName("DownAirPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                           } else {
-                            p_Does_attack_hit_before_frames(t, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                            p_Does_attack_hit_before_frames(t, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                           }
                           if (gt(t.l.CPU_attacks_hitting.length, "0")) {
                             if (!contains(t.v.AI_last_input, "x")) {
                               p_CPU_change_temp_input(t, "x");
                             }
-                            if (listContains(t.l.CPU_attacks_hitting, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                            if (listContains(t.l.CPU_attacks_hitting, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                               p_CPU_input_l_r_based_on_enPos_swap_0_1(t, "1");
                             } else {
-                              if (listContains(t.l.CPU_attacks_hitting, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                              if (listContains(t.l.CPU_attacks_hitting, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                                 p_CPU_change_temp_input(t, "w");
                               } else {
-                                if (listContains(t.l.CPU_attacks_hitting, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                                if (listContains(t.l.CPU_attacks_hitting, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                                   p_CPU_change_temp_input(t, "s");
                                 }
                               }
@@ -1515,25 +1515,25 @@ export function build(rt: Runtime) {
                   if (bool(item(t.l.CPU_Features, "10"))) {
                     deleteAll(t.l.CPU_attacks_hitting);
                     t.v.CPU_best_move_percentage = "0";
-                    p_Does_attack_hit_before_frames(t, ("NPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
-                    p_Does_attack_hit_before_frames(t, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
-                    p_Does_attack_hit_before_frames(t, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                    p_Does_attack_hit_before_frames(t, rt.moveName("NPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                    p_Does_attack_hit_before_frames(t, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                    p_Does_attack_hit_before_frames(t, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                     if (eq(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 4)), "fall")) {
-                      p_Does_attack_hit_before_frames(t, ("DownAirPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                      p_Does_attack_hit_before_frames(t, rt.moveName("DownAirPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                     } else {
-                      p_Does_attack_hit_before_frames(t, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
+                      p_Does_attack_hit_before_frames(t, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)), "1000", t.v.cloneID, item(t.l.clone_determineClosestEnemyData, "3"), item(t.l.CPU_Features, "2"), item(t.l.CPU_Features, "1"));
                     }
                     if (gt(t.l.CPU_attacks_hitting.length, "0")) {
                       if (!contains(t.v.AI_last_input, "x")) {
                         p_CPU_change_temp_input(t, "x");
                       }
-                      if (listContains(t.l.CPU_attacks_hitting, ("RunPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                      if (listContains(t.l.CPU_attacks_hitting, rt.moveName("RunPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                         p_CPU_input_l_r_based_on_enPos_swap_0_1(t, "1");
                       } else {
-                        if (listContains(t.l.CPU_attacks_hitting, ("UpPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                        if (listContains(t.l.CPU_attacks_hitting, rt.moveName("UpPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                           p_CPU_change_temp_input(t, "w");
                         } else {
-                          if (listContains(t.l.CPU_attacks_hitting, ("DownPunch-" + String(item(G.l.CHARACTERS, t.v.cloneID))))) {
+                          if (listContains(t.l.CPU_attacks_hitting, rt.moveName("DownPunch", item(G.l.CHARACTERS, t.v.cloneID)))) {
                             p_CPU_change_temp_input(t, "s");
                           }
                         }
@@ -1573,6 +1573,7 @@ export function build(rt: Runtime) {
 
   /** define Char Engine//R %b L %b U %b D %b Shield %b Attack %b Combo %b Jump %b Taunt %b */
   function p_Char_Engine_R_L_U_D_Shield_Attack_Combo_Jump_Taunt(t: T, a_R: Value, a_L: Value, a_U: Value, a_D: Value, a_Shield: Value, a_Attack: Value, a_Combo: Value, a_Jump: Value, a_Taunt: Value): void {
+    rt.gimmick("frame", t, [a_R, a_L, a_U, a_D, a_Shield, a_Attack, a_Combo, a_Jump, a_Taunt]);
     if (!eq(item(G.l.Match_PlayerLivesData, t.v.cloneID), "")) {
       if (gt(item(G.l.C_DeathData, (num((num(t.v.cloneID) * 3)) - 2)), "0")) {
         replaceItem(G.l.C_Conditions, item(t.l.Variables, "3"), "idle");
@@ -1632,7 +1633,7 @@ export function build(rt: Runtime) {
         } else {
           if ((!eq(item(G.l.C_Conditions, item(t.l.Variables, "3")), "hurt") && (eq(item(G.l.C_Conditions, item(t.l.Variables, "7")), "1") && !(bool(a_R) && bool(a_L))))) {
             if (bool(a_R)) {
-              if (!contains(listContents(G.l.UniqueAnimation), (String(item(G.l.C_Conditions, item(t.l.Variables, "3"))) + ("-" + String(item(G.l.CHARACTERS, t.v.cloneID)))))) {
+              if (!contains(listContents(G.l.UniqueAnimation), rt.moveName(item(G.l.C_Conditions, item(t.l.Variables, "3")), item(G.l.CHARACTERS, t.v.cloneID)))) {
                 replaceItem(G.l.C_Conditions, item(t.l.Variables, "1"), "90");
               }
               if (eq(t.v.C_Grounded, "1")) {
@@ -1648,7 +1649,7 @@ export function build(rt: Runtime) {
               }
             }
             if (bool(a_L)) {
-              if (!contains(listContents(G.l.UniqueAnimation), (String(item(G.l.C_Conditions, item(t.l.Variables, "3"))) + ("-" + String(item(G.l.CHARACTERS, t.v.cloneID)))))) {
+              if (!contains(listContents(G.l.UniqueAnimation), rt.moveName(item(G.l.C_Conditions, item(t.l.Variables, "3")), item(G.l.CHARACTERS, t.v.cloneID)))) {
                 replaceItem(G.l.C_Conditions, item(t.l.Variables, "1"), "-90");
               }
               if (eq(t.v.C_Grounded, "1")) {
@@ -1675,7 +1676,7 @@ export function build(rt: Runtime) {
           if ((bool(a_D) && (eq(item(G.l.C_Conditions, item(t.l.Variables, "3")), "jump") || eq(item(G.l.C_Conditions, item(t.l.Variables, "3")), "fall")))) {
             replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), (num(item(G.l.C_Velocity, item(t.l.Variables, "10"))) - num(item(t.l.Stats, "4"))));
           }
-          if ((gt(item(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4)), "0") && (((eq(item(G.l.CHARACTERS, t.v.cloneID), "4") && bool(a_U)) && lt(item(G.l.C_Velocity, item(t.l.Variables, "10")), "0")) && !eq(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 7)), "0")))) {
+          if ((gt(item(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4)), "0") && (((rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "4") && bool(a_U)) && lt(item(G.l.C_Velocity, item(t.l.Variables, "10")), "0")) && !eq(item(G.l.C_Conditions, (num((num(t.v.cloneID) * 8)) - 7)), "0")))) {
             replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), "-0.2");
             replaceItem(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4), (num(item(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4))) - 0.5));
             if (eq(mod(num(item(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4))), 10), "9")) {
@@ -1686,7 +1687,7 @@ export function build(rt: Runtime) {
             if (bool(a_D)) {
               t.v.fallThroughPlatform = "1";
             } else {
-              if (eq(item(G.l.CHARACTERS, t.v.cloneID), "5")) {
+              if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "5")) {
                 if ((eq(t.v.UP, "0") && (eq(item(G.l.C_Jumps, t.v.cloneID), item(t.l.Stats, "5")) && eq(t.v.C_Grounded, "1")))) {
                   replaceItem(G.l.C_Conditions, item(t.l.Variables, "4"), "jcharge");
                 } else {
@@ -1714,7 +1715,7 @@ export function build(rt: Runtime) {
                   } else {
                     if (lt(t.v.falling, "14")) {
                       p_Create_Particle_ID_XPos_YPos_Direc_IgnoreHitPause_0_1_Tied_to_Character_Layer(t, "06_DJumpCloud", item(G.l.C_Pos, item(t.l.Variables, "9")), item(G.l.C_Pos, item(t.l.Variables, "10")), "90", "0", t.v.cloneID, "2");
-                      if (eq(item(G.l.CHARACTERS, t.v.cloneID), "7")) {
+                      if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "7")) {
                         replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), (num(item(t.l.Stats, "3")) / 1.5));
                       } else {
                         replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), item(t.l.Stats, "3"));
@@ -1728,7 +1729,7 @@ export function build(rt: Runtime) {
             }
           } else {
             if (gt(t.v.falling, "4")) {
-              if (eq(item(G.l.CHARACTERS, t.v.cloneID), "5")) {
+              if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "5")) {
                 replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), (num(item(G.l.C_Velocity, item(t.l.Variables, "10"))) * 0.6));
               } else {
                 replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), (num(item(G.l.C_Velocity, item(t.l.Variables, "10"))) * 0.5));
@@ -1739,7 +1740,7 @@ export function build(rt: Runtime) {
           if (contains(t.costumeName(), "jchargeNL")) {
             replaceItem(G.l.C_Conditions, item(t.l.Variables, "4"), "jump");
             p_Create_Particle_ID_XPos_YPos_Direc_IgnoreHitPause_0_1_Tied_to_Character_Layer(t, "04_JumpDust", item(G.l.C_Pos, item(t.l.Variables, "9")), item(G.l.C_Pos, item(t.l.Variables, "10")), "90", "0", t.v.cloneID, "2");
-            if (eq(item(G.l.CHARACTERS, t.v.cloneID), "5")) {
+            if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "5")) {
               replaceItem(G.l.C_Velocity, item(t.l.Variables, "10"), "8");
               replaceItem(G.l.C_Jumps, t.v.cloneID, (num(item(G.l.C_Jumps, t.v.cloneID)) - 0.3));
             } else {
@@ -1826,7 +1827,7 @@ export function build(rt: Runtime) {
             } else {
               if ((!(eq(item(G.l.C_Conditions, item(t.l.Variables, "4")), "ledge") || eq(item(G.l.C_Conditions, item(t.l.Variables, "4")), "jcharge")) && eq(item(G.l.C_Conditions, item(t.l.Variables, "7")), "1"))) {
                 if (eq(t.v.C_Grounded, "1")) {
-                  if ((eq(item(G.l.CHARACTERS, t.v.cloneID), "7") && !(eq(item(G.l.C_Conditions, item(t.l.Variables, "3")), "downslide") || eq(item(G.l.C_Conditions, item(t.l.Variables, "4")), "downslide")))) {
+                  if ((rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "7") && !(eq(item(G.l.C_Conditions, item(t.l.Variables, "3")), "downslide") || eq(item(G.l.C_Conditions, item(t.l.Variables, "4")), "downslide")))) {
                     replaceItem(G.l.Gimmicks5MAX, (num(t.v.cloneID) * 5), "1");
                   }
                   t.v.ledgeInvincibilityAvailable = "0";
@@ -1863,10 +1864,10 @@ export function build(rt: Runtime) {
                   }
                 }
               }
-              if (!contains(listContents(G.l.UniqueAnimation), (String(item(G.l.C_Conditions, item(t.l.Variables, "3"))) + ("-" + String(item(G.l.CHARACTERS, t.v.cloneID)))))) {
+              if (!contains(listContents(G.l.UniqueAnimation), rt.moveName(item(G.l.C_Conditions, item(t.l.Variables, "3")), item(G.l.CHARACTERS, t.v.cloneID)))) {
                 replaceItem(G.l.C_Conditions, item(t.l.Variables, "3"), item(G.l.C_Conditions, item(t.l.Variables, "4")));
               }
-              if (listContains(G.l.Can_tMove, (String(item(G.l.C_Conditions, item(t.l.Variables, "3"))) + ("-" + String(item(G.l.CHARACTERS, t.v.cloneID)))))) {
+              if (listContains(G.l.Can_tMove, rt.moveName(item(G.l.C_Conditions, item(t.l.Variables, "3")), item(G.l.CHARACTERS, t.v.cloneID)))) {
                 replaceItem(G.l.C_Conditions, item(t.l.Variables, "7"), "0");
               } else {
                 replaceItem(G.l.C_Conditions, item(t.l.Variables, "7"), "1");
@@ -1920,7 +1921,7 @@ export function build(rt: Runtime) {
               t.v.UP = "0";
               t.v.ledgeTimer = "50";
             }
-            if (eq(item(G.l.CHARACTERS, t.v.cloneID), "4")) {
+            if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "4")) {
               replaceItem(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4), "50");
             }
             t.v.C_Grounded = "1";
@@ -1961,7 +1962,7 @@ export function build(rt: Runtime) {
               }
             }
           }
-          if ((eq(item(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4)), "1") && eq(item(G.l.CHARACTERS, t.v.cloneID), "7"))) {
+          if ((eq(item(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4)), "1") && rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "7"))) {
             rt.startSound(t, "se_gaogaen_landing02");
             rt.startSound(t, "k4_se_st4_ムカデ_移動_足音_01_Ca");
             replaceItem(G.l.C_Conditions, item(t.l.Variables, "3"), "land");
@@ -2272,10 +2273,10 @@ export function build(rt: Runtime) {
       t.v.nk1 = num(t.v.nk1) + 1;
       replaceItem(G.l.Gimmicks5MAX, (num((num((num(t.v.cloneID) - 1)) * 5)) + num(t.v.nk1)), "0");
     }
-    if (eq(item(G.l.CHARACTERS, t.v.cloneID), "4")) {
+    if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "4")) {
       replaceItem(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4), "50");
     }
-    if (eq(item(G.l.CHARACTERS, t.v.cloneID), "7")) {
+    if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "7")) {
       replaceItem(G.l.Gimmicks5MAX, (num(t.v.cloneID) * 5), "1");
     }
     t.v.nk1 = "0";
@@ -2509,13 +2510,13 @@ export function build(rt: Runtime) {
 
   /** define Does attack %s hit before %s frames? %s %s %b %b */
   function p_Does_attack_hit_before_frames(t: T, a_attack: Value, a_n: Value, a_attackerID: Value, a_enemyID: Value, a_select_best_one: Value, a_predictiveMovement: Value): void {
-    if (eq(a_attack, "DownPunch-6")) {
+    if (rt.isMove(a_attack, "DownPunch-6")) {
       p_Does_attack_hit_before_frames(t, "DownPunch-6_Scarf", a_n, a_attackerID, a_enemyID, a_select_best_one, a_predictiveMovement);
     }
-    if (eq(a_attack, "DownAirPunch-6")) {
+    if (rt.isMove(a_attack, "DownAirPunch-6")) {
       p_Does_attack_hit_before_frames(t, "DownAirPunch-6_Scarf", a_n, a_attackerID, a_enemyID, a_select_best_one, a_predictiveMovement);
     }
-    if (eq(a_attack, "DownPunch-3")) {
+    if (rt.isMove(a_attack, "DownPunch-3")) {
       p_predict_position_in_frames(t, (12 * num(a_predictiveMovement)), item(G.l.C_Pos, (num((num(a_enemyID) * 2)) - 1)), item(G.l.C_Pos, (num(a_enemyID) * 2)), item(G.l.C_Velocity, (num((num(a_enemyID) * 2)) - 1)), item(G.l.C_Velocity, (num(a_enemyID) * 2)), "0", "0", a_enemyID);
       deleteAll(t.l.CPU_playerStats);
       p_Split_List_Input_Seperator_Level(t, item(G.l.CharData_SP_FC_JH_Fall_JA_AirSP_hitwidth_hitheight, item(G.l.CHARACTERS, a_enemyID)), "'", "1");
@@ -2563,11 +2564,11 @@ export function build(rt: Runtime) {
     if (listContains(t.l.CPU_attacks_hitting, "DownAirPunch-6_Scarf")) {
       addTo(t.l.CPU_attacks_hitting, "DownAirPunch-6");
     }
-    if (and((listContains(t.l.CPU_attacks_hitting, "RunPunch-5") || listContains(t.l.CPU_attacks_hitting, "NPunch-5")), and((eq(a_attack, "DownPunch-5") || eq(a_attack, "NPunch-5")), eq(rt.pickRandom("1", "2"), "2")))) {
+    if (and((listContains(t.l.CPU_attacks_hitting, "RunPunch-5") || listContains(t.l.CPU_attacks_hitting, "NPunch-5")), and((rt.isMove(a_attack, "DownPunch-5") || rt.isMove(a_attack, "NPunch-5")), eq(rt.pickRandom("1", "2"), "2")))) {
       deleteAll(t.l.CPU_attacks_hitting);
       addTo(t.l.CPU_attacks_hitting, "DownPunch-5");
     }
-    if (and(listContains(t.l.CPU_attacks_hitting, "RunPunch-5"), and(eq(a_attack, "DownAirPunch-5"), eq(rt.pickRandom("1", "2"), "2")))) {
+    if (and(listContains(t.l.CPU_attacks_hitting, "RunPunch-5"), and(rt.isMove(a_attack, "DownAirPunch-5"), eq(rt.pickRandom("1", "2"), "2")))) {
       deleteAll(t.l.CPU_attacks_hitting);
       addTo(t.l.CPU_attacks_hitting, "DownAirPunch-5");
     }
@@ -2708,7 +2709,7 @@ export function build(rt: Runtime) {
         if (lt("0", a_Yv)) {
           replaceItem(G.l.C_Pos, item(t.l.Variables, "10"), (num(item(G.l.C_Pos, item(t.l.Variables, "10"))) + -0.1));
         } else {
-          if (((eq(item(G.l.CHARACTERS, t.v.cloneID), "7") || eq(item(G.l.CHARACTERS, t.v.cloneID), "1")) && !(eq(item(G.l.C_Conditions, item(t.l.Variables, "3")), "downslide") || eq(item(G.l.C_Conditions, item(t.l.Variables, "4")), "downslide")))) {
+          if (((rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "7") || rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "1")) && !(eq(item(G.l.C_Conditions, item(t.l.Variables, "3")), "downslide") || eq(item(G.l.C_Conditions, item(t.l.Variables, "4")), "downslide")))) {
             if (lt(item(G.l.C_Jumps, t.v.cloneID), item(t.l.Stats, "5"))) {
               replaceItem(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4), "1");
             }
@@ -2716,7 +2717,7 @@ export function build(rt: Runtime) {
           replaceItem(G.l.C_Pos, item(t.l.Variables, "10"), (num(item(G.l.C_Pos, item(t.l.Variables, "10"))) + 0.1));
           replaceItem(G.l.C_Jumps, t.v.cloneID, item(t.l.Stats, "5"));
           t.v.C_Grounded = "1";
-          if (eq(item(G.l.CHARACTERS, t.v.cloneID), "4")) {
+          if (rt.isCharacter(item(G.l.CHARACTERS, t.v.cloneID), "4")) {
             replaceItem(G.l.Gimmicks5MAX, (num((num(t.v.cloneID) * 5)) - 4), "50");
           }
         }

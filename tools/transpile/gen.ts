@@ -162,6 +162,29 @@ function str(e: C): string {
 
 const sameRef = (a: StoreRef, b: StoreRef): boolean => a.scope === b.scope && a.id === b.id && a.list === b.list;
 
+/**
+ * Procedures that first call a pack character's gimmick script (see Runtime.gimmick): once per
+ * fighter per frame with its buttons, when a move's hitbox loads its data, when a hit connects,
+ * once per hitbox per frame, and when a particle's animation starts over.
+ */
+const GIMMICK_HOOKS: { sprite: string; proc: string; event: string; atEnd?: boolean }[] = [
+  { sprite: 'C-PlayerHbox+Engine', proc: 'Char Engine//R %b L %b U %b D %b Shield %b Attack %b Combo %b Jump %b Taunt %b', event: 'frame' },
+  { sprite: 'Hitboxes', proc: 'hitboxClone_load move data', event: 'move', atEnd: true },
+  { sprite: 'Hitboxes', proc: 'Move Connect (Hardcoded Moves) %s %s', event: 'hit' },
+  // The first move script each hitbox runs on an unpaused frame, after its life count advances.
+  { sprite: 'Hitboxes', proc: 'Moves_Gnaw', event: 'tick' },
+  // A particle's animation wrapping around, so pack effects can end after one play.
+  { sprite: 'Particles', proc: 'resetframe', event: 'particle' },
+];
+
+/** A move of one character, such as "NPunch-1" or "E1-3". */
+const MOVE_ID = /^[A-Za-z][A-Za-z0-9]*-[1-9]\d*$/;
+
+/** True for `item (…) of CHARACTERS`: a fighter's character number. */
+function isCharacterOf(e: Expr | undefined): boolean {
+  return e?.k === 'op' && e.op === 'data_itemoflist' && (e.f.LIST as StoreRef).prop === 'CHARACTERS';
+}
+
 /** Structural equality that ignores block ids. */
 function sameExpr(a: Expr | undefined, b: Expr | undefined): boolean {
   if (!a || !b) return a === b;
@@ -372,6 +395,17 @@ export class SpriteGen {
           return lit(e.op === 'operator_equals' ? c === 0 : e.op === 'operator_lt' ? c < 0 : c > 0);
         }
         this.checkOrder(e, ['OPERAND1', 'OPERAND2']);
+        // A test for one particular character also accepts characters made from it (see Runtime.isCharacter).
+        if (e.op === 'operator_equals' && isCharacterOf(e.in.OPERAND1) && B.lit && /^[1-9]\d*$/.test(String(B.lit.v))) {
+          return r(`rt.isCharacter(${A.c}, ${B.c})`, 'bool');
+        }
+        // A test for one character's move ("NPunch-1") also accepts the same move of characters made from it.
+        if (e.op === 'operator_equals' && B.lit && typeof B.lit.v === 'string' && MOVE_ID.test(B.lit.v)) {
+          return r(`rt.isMove(${A.c}, ${B.c})`, 'bool');
+        }
+        if (e.op === 'operator_equals' && A.lit && typeof A.lit.v === 'string' && MOVE_ID.test(A.lit.v)) {
+          return r(`rt.isMove(${B.c}, ${A.c})`, 'bool');
+        }
         const fn = e.op === 'operator_equals' ? 'eq' : e.op === 'operator_lt' ? 'lt' : 'gt';
         return r(`${fn}(${A.c}, ${B.c})`, 'bool');
       }
@@ -385,6 +419,15 @@ export class SpriteGen {
       case 'operator_not':
         return r(`!${bool(I('OPERAND'))}`, 'bool');
       case 'operator_join': {
+        // "<move>-<character>" goes through the runtime, which can give a character a template's move names.
+        const tail = e.in.STRING2;
+        if (tail?.k === 'op' && tail.op === 'operator_join' && tail.in.STRING1?.k === 'lit' && tail.in.STRING1.v === '-' && isCharacterOf(tail.in.STRING2)) {
+          return r(`rt.moveName(${I('STRING1').c}, ${this.ex(tail.in.STRING2, cx).c})`, 'str');
+        }
+        const head = e.in.STRING1;
+        if (head?.k === 'lit' && typeof head.v === 'string' && /^[A-Za-z][A-Za-z0-9]*-$/.test(head.v) && isCharacterOf(tail)) {
+          return r(`rt.moveName(${JSON.stringify(head.v.slice(0, -1))}, ${this.ex(tail, cx).c})`, 'str');
+        }
         const [A, B] = bin('STRING1', 'STRING2');
         if (A.lit && B.lit) return lit(String(A.lit.v) + String(B.lit.v));
         this.checkOrder(e, ['STRING1', 'STRING2']);
@@ -730,7 +773,14 @@ export class SpriteGen {
       args.set(n, id);
     });
     const out: string[] = [];
+    const hook = GIMMICK_HOOKS.find((h) => h.sprite === this.t.name && h.proc === p.proccode);
+    const call = hook ? `    rt.gimmick(${JSON.stringify(hook.event)}, t, [${params.join(', ')}]);` : '';
+    if (hook && !hook.atEnd) out.push(call);
     this.simpleSeq(p.body, { args }, 'W', 'return;', '    ', out);
+    if (hook?.atEnd) {
+      if (out.some((l) => l.trim() === 'return;')) this.errors.push(`gimmick hook at the end of "${p.proccode}" would be skipped by an early return`);
+      out.push(call);
+    }
     const sig = ['t: T', ...params.map((x) => `${x}: Value`)].join(', ');
     return `  /** define ${p.proccode.replace(/\*\//g, '* /')} */\n  function ${this.plainName(p)}(${sig}): void {\n${out.join('\n')}\n  }\n`;
   }

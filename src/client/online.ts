@@ -54,10 +54,14 @@ export interface OnlineHud {
   update(text: string, warn: string): void;
   /** Shows one button, or none for a null label. */
   action(label: string | null, onClick: () => void): void;
+  /** Shows the waiting panel over the stage, or hides it for a null title. */
+  waiting(title: string | null, text?: string, button?: { label: string; onClick: () => void } | null): void;
 }
 
-/** Seconds of silence before the host may continue without a player. */
-const DROP_AFTER_S = 5;
+/** Seconds the game waits on a player before the panel offers the host to continue without them. */
+const PROMPT_AFTER_S = 3;
+/** Milliseconds a "left the game" notice stays in the status line. */
+const NOTICE_MS = 5_000;
 const FREEZE_REPORT_MS = 5_000;
 const AWAY_SILENT_MS = 1_000;
 
@@ -67,6 +71,9 @@ export class OnlineGame {
   private probeTimer: ReturnType<typeof setInterval> | null = null;
   private away = new Set<number>();
   private dropped = new Set<number>();
+  /** Seats that said goodbye: they closed the page or chose Leave. */
+  private left = new Set<number>();
+  private notice: { text: string; until: number } | null = null;
   private stuckSince: number | null = null;
   private freezeReported = false;
   private desyncReported = false;
@@ -104,6 +111,7 @@ export class OnlineGame {
     const audio = new RollbackAudio(game);
     this.session.onFrame = (f, resim, sounds) => audio.frame(f, resim, sounds);
     mesh.onPacket = (data) => this.session.receive(data);
+    this.session.onBye = (seat) => this.left.add(seat);
     reportContext.room = room.id;
     reportContext.seat = local;
     reportContext.online = true;
@@ -143,14 +151,19 @@ export class OnlineGame {
   /** The room announced that the host continues without a seat. */
   onDropped(seat: number, frame: number, data: string): void {
     if (this.dropped.has(seat)) return;
-    if (this.session.applyDrop(seat, frame, fromBase64(data))) this.dropped.add(seat);
+    if (this.session.applyDrop(seat, frame, fromBase64(data))) this.wentOn(seat);
+  }
+
+  private wentOn(seat: number): void {
+    this.dropped.add(seat);
+    this.notice = { text: `${this.name(seat)} left the game.`, until: performance.now() + NOTICE_MS };
   }
 
   private dropSeat(seat: number): void {
     if (this.dropped.has(seat)) return;
     const offer = this.session.dropOffer(seat);
     if (!this.session.applyDrop(seat, offer.frame, offer.data)) return;
-    this.dropped.add(seat);
+    this.wentOn(seat);
     this.room.send({ type: 'drop', seat, frame: offer.frame, data: toBase64(offer.data) });
   }
 
@@ -209,8 +222,9 @@ export class OnlineGame {
     const silentAway = [...this.away].filter((s) => (st.silentFor[s] ?? 0) > AWAY_SILENT_MS);
     const stuck = [...new Set([...st.waitingFor, ...silentAway])].filter((s) => !this.dropped.has(s));
     if (stuck.length) warn = `Waiting for ${stuck.map((s) => this.name(s)).join(', ')}...`;
-    if (st.desync) warn = `Games went out of sync at frame ${st.desync.frame}. Please start a new room.`;
     const now = performance.now();
+    if (!warn && this.notice && now < this.notice.until) warn = this.notice.text;
+    if (st.desync) warn = `Games went out of sync at frame ${st.desync.frame}. Please start a new room.`;
     if (!stuck.length) this.stuckSince = null;
     else if (this.stuckSince === null) this.stuckSince = now;
     else if (now - this.stuckSince > FREEZE_REPORT_MS && !this.freezeReported) {
@@ -223,15 +237,30 @@ export class OnlineGame {
       report('desync', { desync: st.desync, ...this.diagnostics() });
     }
     this.hud.update(parts.join('  |  '), warn);
-    // The host may continue without a player who has been gone a few seconds.
-    const gone = stuck.find((s) => this.away.has(s) || st.silentFor[s] > DROP_AFTER_S * 1000);
-    if (this.local === this.host && gone !== undefined) this.hud.action(`Continue without ${this.name(gone)}`, () => this.dropSeat(gone));
-    else this.hud.action(null, () => {});
+    // A player who closed the page or chose Leave said goodbye, so the host goes on without them at once.
+    const isHost = this.local === this.host;
+    if (isHost) for (const s of this.left) if (!this.dropped.has(s)) this.dropSeat(s);
+    // Anyone else may only be slow, so after a few seconds the host decides, and everyone sees who the game waits for.
+    const waited = this.stuckSince === null ? 0 : (now - this.stuckSince) / 1000;
+    const on = stuck.find((s) => !this.dropped.has(s));
+    if (on !== undefined && waited > PROMPT_AFTER_S && !st.desync) {
+      const who = this.name(on);
+      if (isHost) this.hud.waiting(`Waiting for ${who}`, `Their game has not answered for ${Math.floor(waited)} seconds. It may only be a slow connection.`, { label: `Continue without ${who}`, onClick: () => this.dropSeat(on) });
+      else this.hud.waiting(`Waiting for ${who}`, `Their game has not answered for ${Math.floor(waited)} seconds. ${this.name(this.host)}, the host, can continue without them.`, null);
+    } else this.hud.waiting(null);
+    this.hud.action(null, () => {});
   }
 
   leave(): void {
     this.stop?.();
     if (this.probeTimer) clearInterval(this.probeTimer);
+    // The goodbye goes both directly and through the room, so it arrives even if one way is down.
+    const bye = this.session.goodbye();
+    for (const s of this.start.seats) {
+      if (s === this.local || this.dropped.has(s)) continue;
+      this.mesh.send(s, bye);
+      this.room.send({ type: 'relay', to: s, data: toBase64(bye) });
+    }
     this.mesh.close();
     this.room.close();
   }

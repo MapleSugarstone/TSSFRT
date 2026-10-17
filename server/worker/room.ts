@@ -107,7 +107,8 @@ export class Room extends DurableObject<Env> {
 
   async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
     log('room-socket-closed', { room: this.id(), seat: this.tagOf(ws).seat, code, reason, wasClean });
-    await this.closed(ws);
+    // Browsers close with 1001 when the page closes or navigates away. A broken connection closes with 1006.
+    await this.closed(ws, code === 1001);
   }
 
   async webSocketError(ws: WebSocket, error: unknown): Promise<void> {
@@ -120,13 +121,13 @@ export class Room extends DurableObject<Env> {
     return this.ctx.id.toString().slice(0, 12);
   }
 
-  private async closed(ws: WebSocket): Promise<void> {
+  private async closed(ws: WebSocket, left = false): Promise<void> {
     const seat = this.tagOf(ws).seat;
     if (seat === null) return;
     const others = this.ctx.getWebSockets().filter((o) => o !== ws && this.tagOf(o).seat === seat);
     if (others.length) return;
     const d = await this.load();
-    this.deliver(new RoomRules(d).drop(seat, Date.now()));
+    this.deliver(new RoomRules(d).drop(seat, Date.now(), left));
     await this.save();
   }
 

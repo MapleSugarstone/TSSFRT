@@ -154,7 +154,7 @@ export class WebGLRenderer {
       for (;;) {
         const i = queue.shift();
         if (i === undefined) return;
-        this.images[i] = await loadImage(`${base}${this.skins[i].file}`);
+        this.images[i] = await loadImage(/^(blob|data|https?):/.test(this.skins[i].file) ? this.skins[i].file : `${base}${this.skins[i].file}`);
         done++;
         onProgress?.(done, total);
       }

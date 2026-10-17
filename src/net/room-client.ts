@@ -6,7 +6,13 @@ import { readQueueReply, readRoom, type FromRoom, type QueueReply, type ToRoom }
 declare const __BUILD__: string;
 declare const __RELAY_URL__: string;
 
-export const BUILD: string = typeof __BUILD__ === 'string' ? __BUILD__ : 'dev';
+/** The site's build fingerprint, plus a tag for the enabled mods, so rooms only pair identical games. */
+export let BUILD: string = typeof __BUILD__ === 'string' ? __BUILD__ : 'dev';
+
+/** Marks this page as running the mods with this tag (set once, before any room request). */
+export function setModTag(tag: string): void {
+  BUILD = `${BUILD.split('-')[0]}-${tag}`;
+}
 
 const PING_MS = 10_000;
 const RETRY_MS = 1_500;

@@ -332,6 +332,7 @@ export function build(rt: Runtime) {
 
   /** define resetframe */
   function p_resetframe(t: T): void {
+    rt.gimmick("particle", t, []);
     t.v.frame = "0";
     t.switchCostume("nil");
     while (!(contains(t.costumeName(), "error") || contains(t.costumeName(), (String(t.v.particleID) + "-")))) {
@@ -486,7 +487,7 @@ export function build(rt: Runtime) {
       }
     }
     if (eq(t.v.particleID, "SmokeCloud")) {
-      if (eq(t.v.extraData, "E5-2")) {
+      if (rt.isMove(t.v.extraData, "E5-2")) {
         if (eq(item(G.l.C_Skin, t.v.cloneID), "g")) {
           t.setEffect("color", Infinity);
         } else {

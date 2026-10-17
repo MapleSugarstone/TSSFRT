@@ -16,6 +16,8 @@ npm install
 npm run dev
 ```
 
+On Windows, `play.cmd` does both and opens the page. `play online` also starts a local room server for testing online play in two tabs, and `play editor` opens the mod maker.
+
 Open http://localhost:5173 and choose **Play on this computer**. Player 1 uses W A S D to move, V to attack, C for combo, B to shield, Space to jump and F to taunt. Player 2 uses the arrow keys with `, . M N K`. P pauses. The in-game controls menu can rebind every key.
 
 Controllers work too, in the standard layout: the left stick or the D-pad moves, A attacks and confirms in menus, B is the combo button and goes back in menus, X and Y jump, the shoulder buttons and triggers shield, Back taunts and Start pauses. On one computer the first controller plays Player 1 and the second plays Player 2. Online, every controller plays your own seat.
@@ -68,6 +70,16 @@ Deploy the room server again whenever `src/net/protocol.ts` changes, and raise `
 
 The free hosting tier covers room setup comfortably. Relayed games (players whose direct connection failed) send about 30 messages a second per player through the room, so a busy deployment with many relayed games may need a paid tier.
 
+## New characters
+
+Players add characters to the game's page with **Mods** on the main menu, from zips made with the mod maker. Mods stay in that browser, and players meet online only with the same mods turned on.
+
+`characters/README.md` explains how to make characters. Start the mod maker with:
+
+```bash
+npm run characters
+```
+
 ## How the port works
 
 | Folder | Contents |
@@ -78,7 +90,8 @@ The free hosting tier covers room setup comfortably. Relayed games (players whos
 | `src/client/` | The page: input, audio, the question box, list monitors, the lobby and the online session. |
 | `src/net/` | The room protocol, the rollback session, the WebRTC mesh and the room client. |
 | `server/` | The room server: a lobby and one stateful object per room. |
-| `tools/` | The code generator, asset pipeline, parity, visual and network tests. |
+| `tools/` | The code generator, asset pipeline, character tools and editor, parity, visual and network tests. |
+| `characters/` | Characters added to the game, and copies of the originals to start from. |
 | `reference/` | A page that runs the original project for comparison. |
 
 Scripts that can never pause become plain functions. Scripts that can pause (loops outside "run without screen refresh", waits, sounds that play until done) become small state machines whose state is plain data, so a snapshot can copy every running script. Rollback restores a snapshot and simulates forward again with corrected input.

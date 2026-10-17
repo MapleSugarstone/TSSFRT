@@ -13,6 +13,16 @@ function decodeBase64(s: string): Uint8Array {
   return new Uint8Array(Buffer.from(s, 'base64'));
 }
 
+/** Installs masks given by skin number (the character packs' new menu images). */
+export function installSkinSilhouettes(rt: Runtime, masks: Record<number, { w: number; h: number; bits: string }>): void {
+  for (const [skin, entry] of Object.entries(masks)) {
+    const bits = decodeBase64(entry.bits);
+    const alpha = new Uint8Array(entry.w * entry.h);
+    for (let p = 0; p < alpha.length; p++) alpha[p] = (bits[p >> 3] >> (p & 7)) & 1;
+    rt.render.silhouettes[Number(skin)] = { w: entry.w, h: entry.h, alpha };
+  }
+}
+
 export function installSilhouettes(rt: Runtime, data: SilhouetteData): void {
   for (const sprite of rt.sprites) {
     const list = data[sprite.name];

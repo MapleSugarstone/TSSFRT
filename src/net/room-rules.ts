@@ -2,6 +2,7 @@
 // A room seats up to four players, starts the game for everyone at once, and forwards
 // connection setup messages between them. It never runs the game.
 import { DEFAULT_PREFS, HOLD_SECONDS, SEATS, type FromRoom, type Prefs, type SeatInfo, type StartInfo, type ToRoom } from './protocol.ts';
+import { encodePacket, Kind, toBase64 } from './wire.ts';
 
 export interface SeatState {
   name: string;
@@ -111,8 +112,7 @@ export class RoomRules {
         return { out };
       }
       case 'leave':
-        this.drop(seat, now, true);
-        out.push({ seat: -1, m: this.seatsMsg() });
+        out.push(...this.drop(seat, now, true));
         return { out, close: 'left' };
       case 'ping':
         out.push({ seat, m: { type: 'pong' } });
@@ -121,10 +121,14 @@ export class RoomRules {
     return { out };
   }
 
-  /** A socket closed or left. Before the start the seat frees at once; after it, the seat is held for a rejoin. */
+  /**
+   * A socket closed or left. Before the start the seat frees at once. After it, a seat that left (Leave, or a
+   * closed page) is gone and the other players hear its goodbye, and a seat whose connection broke is held.
+   */
   drop(seat: number, now: number, left = false): Out {
     const s = this.d.seats[seat];
     if (!s) return [];
+    const bye = this.d.start && left && s.connected ? this.goodbye(seat) : [];
     if (!this.d.start || left) {
       if (!this.d.start) this.d.seats[seat] = null;
       else {
@@ -136,7 +140,17 @@ export class RoomRules {
       s.awaySince = now;
     }
     this.pickHost();
-    return [{ seat: -1, m: this.seatsMsg() }];
+    return [...bye, { seat: -1, m: this.seatsMsg() }];
+  }
+
+  /** The leaving seat's goodbye packet, relayed to everyone else so their games stop waiting for it. */
+  private goodbye(seat: number): Out {
+    const data = toBase64(encodePacket({ kind: Kind.Bye, from: seat, t: 0 }));
+    const out: Out = [];
+    this.d.seats.forEach((s, i) => {
+      if (s && s.connected && i !== seat) out.push({ seat: i, m: { type: 'relay', from: seat, data } });
+    });
+    return out;
   }
 
   /** Releases seats whose hold ran out; returns true when the room is empty. */

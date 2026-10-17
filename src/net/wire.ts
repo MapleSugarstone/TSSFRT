@@ -1,5 +1,6 @@
 // Binary packets that travel between players during a game: per-frame inputs (resent until
-// acknowledged, so loss needs no retransmit), state checksums and round-trip probes.
+// acknowledged, so loss needs no retransmit), state checksums, round-trip probes, and a goodbye from a
+// player who leaves.
 import type { PlayerInput } from '../engine/io.ts';
 
 /** Every key name the game can test, in a fixed order shared by all players. */
@@ -22,6 +23,7 @@ export enum Kind {
   Inputs = 1,
   Ping = 2,
   Pong = 3,
+  Bye = 4,
 }
 
 export interface InputPacket {
@@ -39,7 +41,7 @@ export interface InputPacket {
 }
 
 export interface ProbePacket {
-  kind: Kind.Ping | Kind.Pong;
+  kind: Kind.Ping | Kind.Pong | Kind.Bye;
   from: number;
   t: number;
 }
@@ -124,7 +126,7 @@ export function decodePacket(buf: ArrayBuffer): Packet | null {
     const kind = v.getUint8(0);
     const from = v.getUint8(1);
     if (from > 3) return null;
-    if (kind === Kind.Ping || kind === Kind.Pong) {
+    if (kind === Kind.Ping || kind === Kind.Pong || kind === Kind.Bye) {
       if (b.length !== 10) return null;
       return { kind, from, t: v.getFloat64(2) };
     }

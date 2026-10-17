@@ -3,6 +3,7 @@ import { Runtime, FRAME_MS } from '../engine/runtime.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import { modules, monitors } from '../game/generated/index.ts';
 import { skins } from '../game/assets.ts';
+import { installPacks, registerPackCharacters } from '../game/packs.ts';
 import { installSilhouettes, type SilhouetteData } from '../game/silhouettes.ts';
 import silhouetteData from '../game/silhouettes-data.json';
 import { WebGLRenderer } from '../render/webgl.ts';
@@ -15,6 +16,8 @@ export interface GameOptions {
   seed: number;
   /** Simulation start time; also drives the date blocks. */
   t0: number;
+  /** Leave out the character packs, for comparisons with the original. */
+  noPacks?: boolean;
 }
 
 export class Game {
@@ -39,7 +42,9 @@ export class Game {
   }
 
   static createRuntime(opts: GameOptions): Runtime {
+    if (!opts.noPacks) installPacks();
     const rt = new Runtime(modules, skins, { seed: opts.seed, t0: opts.t0 });
+    if (!opts.noPacks) registerPackCharacters(rt);
     installSilhouettes(rt, silhouetteData as unknown as SilhouetteData);
     for (const m of monitors.lists) rt.monitorVisible[m.prop] = m.visible;
     rt.greenFlag();
