@@ -79,8 +79,12 @@ export async function loadMods(): Promise<ModLoad> {
       // A script runs only after the player turns it on for this mod, and then only in the sandbox.
       let gimmick: GimmickScript | undefined;
       if (script && mod.scriptAllowed) {
-        const { sandboxGimmick } = await import('./mod-sandbox.ts');
-        gimmick = sandboxGimmick(new TextDecoder().decode(files.get(script)), pack.name);
+        try {
+          const { sandboxGimmick } = await import('./mod-sandbox.ts');
+          gimmick = sandboxGimmick(new TextDecoder().decode(files.get(script)), pack.name);
+        } catch (e) {
+          result.problems.push(`${mod.name} plays without its script, which did not load: ${e instanceof Error ? e.message : String(e)}`);
+        }
       }
       mergePacks(out, one);
       if (gimmick) gimmicks[id] = gimmick;

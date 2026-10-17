@@ -2,26 +2,34 @@
 // page's built-ins down (frozen, with their dangerous constructors removed), and each script then runs
 // with a global object of its own that holds only a console. The frozen fighter and hitbox objects the
 // game passes it are its only way into the game, and nothing reachable from them leads back to the page.
+import './sandbox-globals.ts';
 import 'ses';
 import type { Gimmick, GimmickScript } from '../game/gimmick-api.ts';
 
-let locked = false;
+/** True once the page is locked down, or the error that stopped it, which every later script gets too. */
+let locked: true | Error | null = null;
 
 /** Locks the page down once. Mods without scripts never pay for it. */
 function lockdownOnce(): void {
-  if (locked) return;
-  locked = true;
-  lockdown({
-    // The game's own code keeps native errors, consoles and number formatting.
-    errorTaming: 'unsafe',
-    consoleTaming: 'unsafe',
-    localeTaming: 'unsafe',
-    stackFiltering: 'verbose',
-    errorTrapping: 'none',
-    unhandledRejectionTrapping: 'none',
-    // Lets code assign properties that frozen built-in prototypes also have, as it could before.
-    overrideTaming: 'severe',
-  });
+  if (locked === true) return;
+  if (locked) throw locked;
+  try {
+    lockdown({
+      // The game's own code keeps native errors, consoles and number formatting.
+      errorTaming: 'unsafe',
+      consoleTaming: 'unsafe',
+      localeTaming: 'unsafe',
+      stackFiltering: 'verbose',
+      errorTrapping: 'none',
+      unhandledRejectionTrapping: 'none',
+      // Lets code assign properties that frozen built-in prototypes also have, as it could before.
+      overrideTaming: 'severe',
+    });
+    locked = true;
+  } catch (e) {
+    locked = e instanceof Error ? e : new Error(String(e));
+    throw locked;
+  }
 }
 
 /** A gimmick module's source as a script that evaluates to its default export. */
