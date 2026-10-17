@@ -187,8 +187,11 @@ function refreshSeats(): void {
 }
 
 function connect(roomId: string, name: string): void {
-  room = new RoomClient(roomId, name);
+  const client = new RoomClient(roomId, name);
+  room = client;
   room.onStatus = (s, why) => {
+    // A refused player's socket closes right after the reason arrives, which stays on screen.
+    if (client.refusal) return;
     if (s !== 'open') report('room-socket', { status: s, why, inGame: online !== null, ...(online?.diagnostics() ?? {}) });
     if (s === 'reconnecting') lobby.setStatus('Connection lost; reconnecting...');
     else if (s === 'closed' && !online) lobby.setStatus('Disconnected from the room.');

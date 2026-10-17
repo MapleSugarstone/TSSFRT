@@ -103,6 +103,12 @@ export class Lobby {
   private prefs = loadPrefs();
   private upJumpBtn!: HTMLButtonElement;
   private comboBtn!: HTMLButtonElement;
+  private controlsHeading: HTMLDivElement;
+  private controlsTabs: HTMLDivElement;
+  private keysTabBtn: HTMLButtonElement;
+  private touchTabBtn: HTMLButtonElement;
+  private controlsTab: 'keys' | 'touch' = 'keys';
+  private keysPart: HTMLDivElement;
   private touchEdit: HTMLDivElement;
   private touchPicks: HTMLButtonElement[] = [];
   private touchButtons = loadTouchButtons();
@@ -203,7 +209,7 @@ export class Lobby {
     };
     this.upJumpBtn = option('Up is Jump', () => this.setPrefs({ ...this.prefs, upJump: !this.prefs.upJump }));
     this.comboBtn = option('Combo use', () => this.setPrefs({ ...this.prefs, combo: this.prefs.combo === 'Charge' ? 'Best' : 'Charge' }));
-    // The touch buttons in their places on the screen, shown while the touch controls are on.
+    // The touch buttons in their places on the screen.
     this.touchEdit = el('div', 'touch-edit');
     const touchFace = el('div', 'touch-edit-face');
     const touchSmall = el('div', 'touch-edit-small');
@@ -215,20 +221,30 @@ export class Lobby {
     });
     const touchPad = el('div', 'touch-edit-pad');
     touchPad.append(touchFace, touchSmall);
-    this.touchEdit.append(el('div', 'lobby-heading', 'Touch buttons'), el('p', 'lobby-note', 'Tap two buttons to swap them.'), touchPad);
+    this.touchEdit.append(el('p', 'lobby-note', 'Tap two buttons to swap them.'), touchPad);
     this.renderTouch();
+    // While the touch controls are on, two tabs take the heading's place, so the screen fits without scrolling.
+    this.controlsHeading = el('div', 'lobby-heading', 'Your controls');
+    this.controlsTabs = el('div', 'controls-tabs');
+    const tab = (label: string, which: 'keys' | 'touch'): HTMLButtonElement => {
+      const b = el('button', '', label);
+      b.addEventListener('click', () => {
+        this.controlsTab = which;
+        this.capture(-1);
+        this.renderControlsTab();
+      });
+      this.controlsTabs.append(b);
+      return b;
+    };
+    this.keysTabBtn = tab('Keys', 'keys');
+    this.touchTabBtn = tab('Touch buttons', 'touch');
+    this.keysPart = el('div', 'controls-keys');
+    this.keysPart.append(el('p', 'lobby-note', 'On this computer these are Player 1\'s controls. Online they control your own seat, and other players can use the same keys.'), grid);
     const actions = el('div', 'lobby-actions');
     const resetBtn = el('button', '', 'Reset to default');
     const backBtn = el('button', 'primary', 'Done');
     actions.append(resetBtn, backBtn);
-    this.controlsView.append(
-      el('div', 'lobby-heading', 'Your controls'),
-      el('p', 'lobby-note', 'On this computer these are Player 1\'s controls. Online they control your own seat, and other players can use the same keys.'),
-      grid,
-      options,
-      this.touchEdit,
-      actions,
-    );
+    this.controlsView.append(this.controlsHeading, this.controlsTabs, this.keysPart, this.touchEdit, options, actions);
     resetBtn.addEventListener('click', () => {
       this.controls = [...DEFAULT_CONTROLS];
       saveControls(this.controls);
@@ -390,7 +406,19 @@ export class Lobby {
   }
 
   private openControls(): void {
+    this.controlsTab = this.touchOn ? 'touch' : 'keys';
+    this.renderControlsTab();
     this.show('controls');
+  }
+
+  private renderControlsTab(): void {
+    const touch = this.touchOn && this.controlsTab === 'touch';
+    this.controlsHeading.hidden = this.touchOn;
+    this.controlsTabs.hidden = !this.touchOn;
+    this.keysPart.hidden = touch;
+    this.touchEdit.hidden = !touch;
+    this.keysTabBtn.setAttribute('aria-pressed', String(!touch));
+    this.touchTabBtn.setAttribute('aria-pressed', String(touch));
   }
 
   private closeControls(): void {
@@ -519,7 +547,7 @@ export class Lobby {
   setTouch(on: boolean): void {
     this.touchOn = on;
     renderOption(this.touchBtn, 'Touch controls', on);
-    this.touchEdit.hidden = !on;
+    this.renderControlsTab();
   }
 
   /** Picks the first touch button of a swap, or swaps its action with the one picked before. */

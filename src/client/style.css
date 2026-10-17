@@ -294,6 +294,8 @@ body {
   min-height: 0;
   margin: auto 0;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-stroke) transparent;
   padding: 0.8em 0;
   display: flex;
   flex-direction: column;
@@ -744,6 +746,27 @@ body {
 
 .lobby-controls .lobby-note {
   font-size: 0.85em;
+}
+
+.controls-tabs {
+  display: flex;
+  gap: 0.6em;
+}
+
+.controls-tabs button {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.lobby .controls-tabs button[aria-pressed='true'] {
+  --stroke: var(--p1);
+  color: #ffffff;
+}
+
+.controls-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
 }
 
 /* The controls menu's copy of the touch buttons in their on-screen places. */

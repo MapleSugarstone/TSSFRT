@@ -22,7 +22,7 @@ Open http://localhost:5173 and choose **Play on this computer**. Player 1 uses W
 
 Controllers work too, in the standard layout: the left stick or the D-pad moves, A attacks and confirms in menus, B is the combo button and goes back in menus, X and Y jump, the shoulder buttons and triggers shield, Back taunts and Start pauses. On one computer the first controller plays Player 1 and the second plays Player 2. Online, every controller plays your own seat.
 
-On touch screens a joystick and six buttons appear once a game starts: beside the stage when the screen is wide, below it when the screen is tall. The joystick centers wherever your thumb lands. The controls hide while a controller is in use and come back at the next touch. While the touch controls are on, **Controls** in the lobby shows the buttons in their places, and tapping two of them swaps what they do.
+On touch screens a joystick and six buttons appear once a game starts: beside the stage when the screen is wide, below it when the screen is tall. The joystick centers wherever your thumb lands. The controls hide while a controller is in use and come back at the next touch. While the touch controls are on, **Controls** in the lobby has a **Touch buttons** tab that shows the buttons in their places. Tapping two of them swaps what they do.
 
 ## Online play
 

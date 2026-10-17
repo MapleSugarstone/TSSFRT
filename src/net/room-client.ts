@@ -50,6 +50,8 @@ export class RoomClient {
   private retries = 0;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
   private closedByUs = false;
+  /** Why the room turned this player away, once it has. */
+  refusal: string | null = null;
   seat = -1;
   onMessage: (m: FromRoom) => void = () => {};
   onStatus: (s: 'open' | 'reconnecting' | 'closed', why?: string) => void = () => {};
@@ -78,7 +80,10 @@ export class RoomClient {
         this.seat = m.seat;
         this.token = m.token;
       }
-      if (m.type === 'refused') this.closedByUs = true;
+      if (m.type === 'refused') {
+        this.closedByUs = true;
+        this.refusal = m.reason;
+      }
       this.onMessage(m);
     };
     ws.onclose = (e) => {
