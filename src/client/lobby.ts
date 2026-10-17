@@ -82,7 +82,7 @@ export class Lobby {
   private scriptView: HTMLDivElement;
   private reloadBtn: HTMLButtonElement;
   private mods: ModInfo[] = [];
-  private modLoad: ModLoad = { loaded: [], problems: [] };
+  private modLoad: ModLoad = { loaded: [], ids: [], problems: [], warnings: [] };
   private modsChanged = false;
   private hqBtn: HTMLButtonElement;
   private hq = load(HQ_KEY, '1') === '1';

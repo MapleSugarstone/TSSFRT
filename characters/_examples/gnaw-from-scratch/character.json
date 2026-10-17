@@ -2,6 +2,7 @@
   "format": 1,
   "name": "Gnaw From Scratch",
   "template": null,
+  "rules": "Gnaw",
   "stats": {
     "speed": 1.4,
     "friction": 0.76,

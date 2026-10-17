@@ -42,7 +42,12 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
   });
 }
 
-export const modRecords = () => tx<ModRecord[]>('readonly', (s) => s.getAll() as IDBRequest<ModRecord[]>);
+/** The record of the character the mod maker is testing, which the Mods list and normal play leave out. */
+export const TEST_MOD = 'test';
+
+const allRecords = () => tx<ModRecord[]>('readonly', (s) => s.getAll() as IDBRequest<ModRecord[]>);
+export const modRecords = async () => (await allRecords()).filter((m) => m.id !== TEST_MOD);
+export const testModRecord = async () => (await allRecords()).find((m) => m.id === TEST_MOD) ?? null;
 
 const info = ({ zip: _zip, maker: _maker, ...m }: ModRecord): ModInfo => ({ ...m, scriptAllowed: !!m.scriptAllowed });
 
@@ -52,6 +57,15 @@ export async function listMods(): Promise<ModInfo[]> {
   } catch {
     return [];
   }
+}
+
+/** Keeps a character file as the one the game's test scene (`?test`) plays, replacing the last one. Its script always runs. */
+export async function setTestMod(file: Blob): Promise<void> {
+  const { pack, files } = await unpackMod(file);
+  if (!pack?.name) throw new Error('character.json has no character name.');
+  const script = scriptFile(pack);
+  const rec: ModRecord = { id: TEST_MOD, name: pack.name, file: 'test', enabled: true, added: Date.now(), hasScript: !!script && files.has(script), scriptAllowed: true, zip: file };
+  await tx('readwrite', (s) => s.put(rec));
 }
 
 export interface Unpacked {

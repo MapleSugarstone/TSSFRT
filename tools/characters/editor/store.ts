@@ -311,6 +311,8 @@ export const browserStore: Store = {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   },
 
+  packFile: (dir) => zipOf(dir),
+
   async play(dir) {
     const { pack } = await packRow(dir);
     const errors = (await checkOwn(dir, pack)).filter((p) => p.level === 'error');

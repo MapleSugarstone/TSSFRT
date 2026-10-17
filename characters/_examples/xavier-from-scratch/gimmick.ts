@@ -1,20 +1,20 @@
-import type { Fighter, Gimmick, Hitbox } from '@characters/api';
+import type { Fighter, Gimmick, Hitbox, MoveAttribute } from '@characters/api';
 
-// Xavier's moves, made with the mod maker alone. Every move is this character's own data on the Moves tab,
-// and this script does what Xavier's built-in move scripts do, phase by phase. His hover comes from
-// Xavier's movement rules, chosen on the Overview tab. `life` counts a hitbox's frames from 1, as Xavier's
-// scripts do, so the numbers below are the ones in his scripts.
+// Xavier From Scratch: every move is this character's own data on the Moves tab, and this script moves the
+// hitboxes the way Xavier's move scripts do. His hover is not here: it comes from Xavier's built-in rules,
+// chosen on the Overview tab.
 //
-// Hitbox slot 1 is NPunch's release frame and then whether it was let go in the air, E1's aim (1 when
-// aimed with up or down), DownAirPunch's countdown, E3's dive timer, and E5's frame count.
+// How to read it: `tick` runs every frame for each hitbox, and the switch at the bottom picks the move by
+// name. Most moves run in phases: `h.phase(1, 4)` is true for the hitbox's first 4 frames, `h.phase(2, 5)`
+// for the 5 after those, and so on. As in the original scripts, a phase starts on the last frame of the one
+// before it. `life(h)` is the hitbox's frame, counted from 1.
 
 const life = (h: Hitbox) => h.frame + 1;
 const onGround = (f: Fighter) => Number(f.lists.Collision_Players_Plat_Num?.[f.index - 1] ?? 0) > 0;
 
-/** Move attributes by their number in the game's move data (1 is hitbox width, 7 knockback X, and on). */
-const FIELDS = ['hitboxWidth', 'hitboxHeight', 'displacementX', 'displacementY', 'pushbackX', 'pushbackY', 'knockbackX', 'knockbackY', 'iframes', 'hitstun', 'damage', 'hitsBeforeDeletion', 'rotateStyle', 'comboGain', 'knockbackScalingX', 'knockbackScalingY', 'hitstunScaling', 'diScaling', 'cloneType'] as const;
-function attrs(h: Hitbox, values: Record<number, number>): void {
-  for (const [i, v] of Object.entries(values)) h.setAttribute(FIELDS[Number(i) - 1], v);
+/** Sets several move attributes, by their names on the Moves tab. */
+function set(h: Hitbox, values: Partial<Record<MoveAttribute, number>>): void {
+  for (const [name, v] of Object.entries(values)) h.setAttribute(name as MoveAttribute, v);
 }
 
 /** Speeds the fighter up toward the left or right button held. */
@@ -23,7 +23,7 @@ function steer(f: Fighter, by: number): void {
   if (f.buttons.left) f.vx -= by;
 }
 
-/** A projectile of a character with no template moves by vx and vy unless the script moved it, and Xavier's scripts keep it still. */
+/** The game moves a projectile by its vx and vy unless the script moved it, so a still one needs them at 0. */
 function still(h: Hitbox): void {
   h.vx = 0;
   h.vy = 0;
@@ -41,13 +41,14 @@ function dodge(f: Fighter, h: Hitbox): void {
   }
 }
 
-/** NPunch charges, then the fighter hops and the orb swings forward, turns and swings back. */
+/** NPunch: charges while attack is held, then Xavier hops and the orb swings forward and back. */
 function npunch(f: Fighter, h: Hitbox): void {
   if (h.charge()) return;
+  // charge() keeps the frame attack was let go on in slot 1. Slot 1 then says whether that was in the air.
   if (life(h) === h.slot(1)) {
+    const air = !onGround(f);
     h.setAttribute('comboGain', 7);
     h.ghost = 30;
-    const air = !onGround(f);
     f.vy = Number(h.attribute('knockbackY')) / (air ? 2.5 : 1.6);
     h.setSlot(1, air ? 1 : 0);
     h.playSound('NPunch-4_');
@@ -63,6 +64,7 @@ function npunch(f: Fighter, h: Hitbox): void {
     h.setAttribute('knockbackX', Number(h.attribute('knockbackX')) * -1);
   }
   if (h.phase(3, 1)) {
+    // Turn the hitbox around without turning how it is drawn.
     const rotation = h.rotation;
     h.direction = -h.direction;
     h.rotation = rotation;
@@ -75,7 +77,7 @@ function npunch(f: Fighter, h: Hitbox): void {
   if (h.phase(5, 1)) h.remove();
 }
 
-/** DownAirPunch drops as a projectile and hits harder near the ground, then lands with a crash. */
+/** DownAirPunch: Xavier bounces up while the hitbox drops, hitting harder near the end, and crashes on landing. */
 function downAir(f: Fighter, h: Hitbox): void {
   if (h.phase(1, 1)) h.moveBy(0, -10);
   h.phase(2, 5);
@@ -90,10 +92,10 @@ function downAir(f: Fighter, h: Hitbox): void {
     h.setSlot(1, h.slot(1) - 1);
     h.vy += -1;
     h.moveBy(0, h.vy);
-    if (h.slot(1) < 6) attrs(h, { 7: 11, 8: 10, 9: 7, 10: 8, 11: 4, 15: 9, 16: 13, 17: 14, 18: 5 });
+    if (h.slot(1) < 6) set(h, { knockbackX: 11, knockbackY: 10, iframes: 7, hitstun: 8, damage: 4, knockbackScalingX: 9, knockbackScalingY: 13, hitstunScaling: 14, diScaling: 5 });
     if (h.hitWall || h.hitGround) {
       h.endPhase(4);
-      attrs(h, { 7: 11, 8: 10, 9: 7, 10: 8, 11: 2, 15: 12, 16: 13, 17: 13, 18: 3 });
+      set(h, { knockbackX: 11, knockbackY: 10, iframes: 7, hitstun: 8, damage: 2, knockbackScalingX: 12, knockbackScalingY: 13, hitstunScaling: 13, diScaling: 3 });
       h.playSound('XavierDownAirImpact');
       h.showFrame(4);
       h.toGround(10);
@@ -106,11 +108,12 @@ function downAir(f: Fighter, h: Hitbox): void {
   if (h.phase(6, 1)) h.remove();
 }
 
-/** E1, Electromagnetic Sphere: an orb thrown in an arc, or straight down at an angle with up or down held. */
+/** E1, Electromagnetic Sphere: an orb thrown in an arc, or at a steep angle with up or down held. It bursts on what it touches. */
 function sphere(f: Fighter, h: Hitbox): void {
+  const aimed = 1;
   if (h.phase(1, 1)) {
     if (f.buttons.down || f.buttons.up) {
-      h.setSlot(1, 1);
+      h.setSlot(1, aimed);
       h.heading = h.direction * 1.8;
       h.rotation = h.direction * 1.8;
       if (f.buttons.up) f.vy = 10;
@@ -121,7 +124,7 @@ function sphere(f: Fighter, h: Hitbox): void {
     }
   }
   if (h.phase(2, 200)) {
-    if (h.slot(1) === 1) h.moveSteps(8, h.heading);
+    if (h.slot(1) === aimed) h.moveSteps(8, h.heading);
     else {
       h.vy += -0.3;
       h.moveBy(8, h.vy);
@@ -135,6 +138,7 @@ function sphere(f: Fighter, h: Hitbox): void {
 
 /** E3, Shockpulse: a dive that, once it lands, sends shockwaves out on both sides three times. */
 function shockpulse(f: Fighter, h: Hitbox): void {
+  // Slot 1 counts down the dive. It is still above 0 if the dive landed in time.
   if (life(h) === 1) h.setSlot(1, 20);
   if (h.phase(1, 20)) {
     h.setSlot(1, h.slot(1) - 1);
@@ -149,7 +153,7 @@ function shockpulse(f: Fighter, h: Hitbox): void {
     f.vy = 8;
     h.setSlot(1, 0);
     h.follows = false;
-    attrs(h, { 1: 1, 2: 1, 7: 0, 8: 0 });
+    set(h, { hitboxWidth: 1, hitboxHeight: 1, knockbackX: 0, knockbackY: 0 });
   }
   if (h.phase(3, 3)) h.moveBy(0, -5);
   const waves = (back: number, ahead: number) => {
@@ -169,7 +173,7 @@ function shockpulse(f: Fighter, h: Hitbox): void {
   if (h.phase(9, 1)) h.remove();
 }
 
-/** A shockwave sits on the ground, leaves a rune, bounces up and fades. */
+/** A shockwave sits on the ground, leaves a rune, pops up and fades. */
 function shockwave(h: Hitbox): void {
   if (h.phase(1, 1)) {
     h.size = 200;
@@ -190,7 +194,7 @@ function shockwave(h: Hitbox): void {
   if (h.phase(4, 1)) h.remove();
 }
 
-/** A rune floats up behind the fighters, spinning, and fades. */
+/** A rune: one of five looks, floating up behind the fighters, spinning and fading. */
 function rune(f: Fighter, h: Hitbox): void {
   if (life(h) === 1) {
     h.animation = `Rune${f.random(1, 5)}`;
@@ -210,7 +214,7 @@ function rune(f: Fighter, h: Hitbox): void {
   if (h.phase(3, 1)) h.remove();
 }
 
-/** E5, Gravitational Pull: a planet over the stage that makes every enemy fall twice as fast, with shockwaves every second. */
+/** E5, Gravitational Pull: a planet over the stage makes every enemy fall twice as fast, with shockwaves every second. */
 function pull(f: Fighter, h: Hitbox): void {
   const wave = () => f.math.sin(Number(f.vars.Timer) * 100);
   if (life(h) === 1) {
@@ -236,7 +240,7 @@ function pull(f: Fighter, h: Hitbox): void {
     h.rotation += 1;
     const n = h.slot(1);
     if (n % 30 === 0) {
-      // The shockwaves start on their first frame, as Xavier's do.
+      // Each pair of shockwaves starts on its first frame, as Xavier's do.
       h.animation = 'Shockwave';
       h.showFrame(1);
       h.ghost = 0;
@@ -268,6 +272,7 @@ function planet(f: Fighter, h: Hitbox): void {
     h.rotation -= 1;
   }
   if (h.phase(2, 1)) {
+    // The change lasts as long as the planet does.
     for (const other of f.all()) {
       if (other.index !== f.index && (f.team === '' || other.team === '' || f.team !== other.team)) h.changeStats(other, { fallSpeed: ['*', 2] });
     }

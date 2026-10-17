@@ -17,6 +17,34 @@ interface SiteFiles {
 
 type Strip = (code: string, options: { mode: 'strip' }) => string;
 
+/**
+ * Type stripping blanks each type out with spaces of the same length. This drops those spaces, and the
+ * space before a type that ends at a comma, a bracket, a semicolon or the end of a line, so
+ * `(f: Fighter, h: Hitbox)` reads `(f, h)` and `} satisfies Gimmick;` reads `};`.
+ */
+function closeGaps(source: string, stripped: string): string {
+  if (stripped.length !== source.length) return stripped;
+  const space = (c: string | undefined) => c !== undefined && /\s/.test(c);
+  const blanked = (k: number) => space(stripped[k]) && !space(source[k]);
+  let out = '';
+  for (let i = 0; i < source.length; ) {
+    if (!blanked(i)) {
+      out += stripped[i++];
+      continue;
+    }
+    let end = i;
+    for (let k = i; k < source.length && (blanked(k) || space(source[k])); k++) if (blanked(k)) end = k + 1;
+    let after = end;
+    while (stripped[after] === ' ' || stripped[after] === '\t') after++;
+    const before = /[ \t]*$/.exec(out)![0].length;
+    if (after >= source.length || /[,);\]\r\n]/.test(stripped[after])) {
+      out = out.slice(0, out.length - before);
+      i = after;
+    } else i = before > 0 ? after : end;
+  }
+  return out;
+}
+
 /** A TypeScript gimmick script as JavaScript. Node's type stripping keeps the layout and comments. */
 async function toJavaScript(code: string): Promise<string> {
   const strip = (nodeModule as unknown as { stripTypeScriptTypes?: Strip }).stripTypeScriptTypes;
@@ -25,8 +53,10 @@ async function toJavaScript(code: string): Promise<string> {
     // It warns on every build that the function is experimental.
     process.emitWarning = () => {};
     try {
-      return strip(code, { mode: 'strip' })
+      const eol = code.includes('\r\n') ? '\r\n' : '\n';
+      return closeGaps(code, strip(code, { mode: 'strip' }))
         .replace(/[ \t]+;?$/gm, (m) => m.trim())
+        .replace(/(?:\r?\n[ \t]*){3,}/g, eol + eol)
         .replace(/^\s+/, '');
     } catch {
       // Syntax that stripping cannot remove falls through to the compiler.

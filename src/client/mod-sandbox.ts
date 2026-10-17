@@ -5,6 +5,7 @@
 import './sandbox-globals.ts';
 import 'ses';
 import type { Gimmick, GimmickScript } from '../game/gimmick-api.ts';
+import { scriptMessage } from '../game/script-messages.ts';
 
 /** True once the page is locked down, or the error that stopped it, which every later script gets too. */
 let locked: true | Error | null = null;
@@ -47,8 +48,11 @@ export function sandboxGimmick(source: string, name: string): GimmickScript {
   lockdownOnce();
   const say =
     (level: 'log' | 'warn' | 'error') =>
-    (...args: unknown[]) =>
-      console[level](`[${name}]`, ...args.map((a) => (typeof a === 'object' && a !== null ? String(a) : a)));
+    (...args: unknown[]) => {
+      const parts = args.map((a) => (typeof a === 'object' && a !== null ? String(a) : a));
+      console[level](`[${name}]`, ...parts);
+      scriptMessage({ level, character: name, text: parts.map(String).join(' ') });
+    };
   // The library reads endowments from a plain object, whatever its type declarations say.
   const globals = { console: harden({ log: say('log'), warn: say('warn'), error: say('error') }) } as unknown as Map<string, unknown>;
   const compartment = new Compartment({ globals, __options__: true, name });

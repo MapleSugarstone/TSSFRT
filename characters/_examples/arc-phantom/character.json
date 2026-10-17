@@ -889,53 +889,6 @@
       "sound": null,
       "cues": []
     },
-    "SpikeBack": {
-      "attributes": {
-        "hitboxWidth": 16,
-        "hitboxHeight": 20,
-        "displacementX": 0,
-        "displacementY": 0,
-        "pushbackX": 0,
-        "pushbackY": 0,
-        "knockbackX": 5,
-        "knockbackY": 22.5,
-        "iframes": 13,
-        "hitstun": 16.9,
-        "damage": 10,
-        "hitsBeforeDeletion": 0,
-        "rotateStyle": "lr",
-        "comboGain": 10,
-        "knockbackScalingX": 15,
-        "knockbackScalingY": 22,
-        "hitstunScaling": 4,
-        "diScaling": 4,
-        "cloneType": 1
-      },
-      "hitboxes": [
-        {
-          "file": "moves/SpikeBack/01.svg",
-          "speed": 6,
-          "center": [
-            0,
-            0
-          ],
-          "resolution": 1
-        }
-      ],
-      "active": {
-        "start": 2,
-        "end": 6
-      },
-      "aiSpacing": null,
-      "cantMove": false,
-      "uniqueAnimation": false,
-      "shieldBreaking": false,
-      "ignoreVelocityLimit": false,
-      "freeze": null,
-      "hitSound": null,
-      "sound": null,
-      "cues": []
-    },
     "SpikeA": {
       "attributes": {
         "hitboxWidth": 16,

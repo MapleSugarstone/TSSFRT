@@ -233,7 +233,6 @@ take('E1', phantom, PHANTOM, 'E1', 'shadow');
 take('ShadowBurst', phantom, PHANTOM, 'E1-2_Impact', 'burst');
 take('ShadowRing', phantom, PHANTOM, 'E1-2_Circle', 'ring');
 take('Spike', arc, ARC, 'DownPunch-3_Spike', 'spike');
-take('SpikeBack', arc, ARC, 'DownPunch-3_Spike', 'spike');
 ['SpikeA', 'SpikeB', 'SpikeC', 'SpikeD'].forEach((n, i) => take(n, arc, ARC, 'DownPunch-3_Spike', 'spike', { sources: costumeFrames(`E3-3_Spike${i + 1}`), variant: i }));
 take('JudgementFinish', arc, ARC, 'E1', 'finish');
 // Judgement's slash actions: the script switches the fighter to them, and these entries give them Arc's

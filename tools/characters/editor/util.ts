@@ -34,6 +34,8 @@ export interface Store {
   exportZip(dir: string): Promise<void>;
   /** Makes the pack playable: a site build in the project, or a mod in this browser. */
   play(dir: string): Promise<{ ok: boolean; output: string }>;
+  /** The pack as a character file, as Export character makes it. */
+  packFile(dir: string): Promise<Blob>;
 }
 
 const BASE = '/__characters';
@@ -65,6 +67,11 @@ const serverStore: Store = {
   importZip: (file) => call('POST', '/import', file),
   exportZip: async (dir) => void (location.href = `${BASE}/export?${q({ dir })}`),
   play: () => call('POST', '/build'),
+  packFile: async (dir) => {
+    const r = await fetch(`${BASE}/export?${q({ dir })}`);
+    if (!r.ok) throw new Error(`The character could not be packed: ${r.statusText}`);
+    return r.blob();
+  },
 };
 
 /** The development server's endpoints edit the project's files. The published site, and ?browser in development, use the browser. */

@@ -9,6 +9,7 @@ import { mathop, toNumber, type Value } from '../engine/cast.ts';
 import { KILLED, type Runtime, type Tint } from '../engine/runtime.ts';
 import type { Target } from '../engine/target.ts';
 import { EXTRA_HITBOXES, HITBOX_SPRITE, MOVE_FIELDS, packHitboxId, PLAYER_SPRITE, STAT_FIELDS } from './pack-format.ts';
+import { scriptMessage } from './script-messages.ts';
 
 export interface Buttons {
   readonly right: boolean;
@@ -35,7 +36,8 @@ export interface Gimmick {
 
 type Lists = Record<string, Value[]>;
 type Slot = 1 | 2 | 3 | 4 | 5;
-type MoveField = (typeof MOVE_FIELDS)[number][0];
+/** A move attribute by its name on the Moves tab, such as "damage" or "knockbackX" (see MOVE_FIELDS). */
+export type MoveAttribute = (typeof MOVE_FIELDS)[number][0];
 type StatField = (typeof STAT_FIELDS)[number][0];
 
 /** A change to a stat: an operator and a value, such as ["*", 2] to double it. */
@@ -146,8 +148,8 @@ export interface Hitbox {
   /** Whether the hitbox can hit this frame. */
   active: boolean;
   /** One of the 19 move attributes (see MOVE_FIELDS), as currently set for this hitbox. */
-  attribute(name: MoveField): Value;
-  setAttribute(name: MoveField, v: Value): void;
+  attribute(name: MoveAttribute): Value;
+  setAttribute(name: MoveAttribute, v: Value): void;
   /** Plays one of the hitbox sprite's sounds, such as "hit3", "Charged" or "ShieldBreak". */
   playSound(name: string): void;
   /** The name the Moves tab gives it, such as "NPunch", "Fireball" or a hitbox of the character's own. */
@@ -209,6 +211,8 @@ export interface Hitbox {
   survivesHits: boolean;
   /** Whether it ends once its fighter is on the ground. */
   endsOnLanding: boolean;
+  /** Whether it stays when its fighter is knocked out. A projectile otherwise ends then. */
+  outlivesFighter: boolean;
   /** The kind of platform it overlaps now: 0 for none, 1 for solid ground, 4 for a platform fighters can jump through. */
   platform(): number;
   /**
@@ -538,7 +542,7 @@ function miscVar(n: unknown): string {
 
 function makeHitbox(rt: Runtime, t: Target, owner: Owner, requests: Requests): Hitbox {
   const attrs = () => t.l.MoveAttributes as Value[];
-  const field = (name: MoveField) => MOVE_FIELDS.findIndex(([k]) => k === name);
+  const field = (name: MoveAttribute) => MOVE_FIELDS.findIndex(([k]) => k === name);
   const impact = (n: number) => String((t.l.collision_ImpactChecks as Value[] | undefined)?.[n]) === 'true';
   // The game's moves delete a hitbox that leaves the stage, which ends its thread once the script returns.
   const moving = (move: () => void) => {
@@ -710,6 +714,12 @@ function makeHitbox(rt: Runtime, t: Target, owner: Owner, requests: Requests): H
     set endsOnLanding(v: boolean) {
       t.v.clone_DeleteOnGround = v ? '1' : '0';
     },
+    get outlivesFighter() {
+      return String(t.v.clone_deleteOnCharDeath) === '0';
+    },
+    set outlivesFighter(v: boolean) {
+      t.v.clone_deleteOnCharDeath = v ? '0' : '1';
+    },
     platform: () => {
       rt.hitboxProcs.collision?.(t, toNumber(attrs()[0]) / 2, toNumber(attrs()[1]) / 2, 'x', '0');
       return toNumber(t.v.clone_collisionPlatformType);
@@ -801,8 +811,8 @@ function makeHitbox(rt: Runtime, t: Target, owner: Owner, requests: Requests): H
     set active(v: boolean) {
       t.v.active = v ? '1' : '0';
     },
-    attribute: (name: MoveField) => attrs()[field(name)],
-    setAttribute: (name: MoveField, v: Value) => {
+    attribute: (name: MoveAttribute) => attrs()[field(name)],
+    setAttribute: (name: MoveAttribute, v: Value) => {
       attrs()[field(name)] = plain(v);
     },
     playSound: (name: string) => rt.startSound(t, String(name)),
@@ -864,7 +874,9 @@ export function gimmickHandler(rt: Runtime, scripts: Record<number, GimmickScrip
       else if (event === 'hit' && g.hit) g.hit(f, makeFighter(rt, toNumber(args[0]), owner), makeHitbox(rt, t, owner, requests));
       else if (event === 'tick' && g.tick) g.tick(f, makeHitbox(rt, t, owner, requests));
     } catch (e) {
-      const key = `${id}:${event}:${e instanceof Error ? e.message : String(e)}`;
+      const text = e instanceof Error ? e.message : String(e);
+      scriptMessage({ level: 'error', character: id, text, event });
+      const key = `${id}:${event}:${text}`;
       if (!reported.has(key)) {
         reported.add(key);
         console.error(`Gimmick script of character ${id} failed in ${event}:`, e);

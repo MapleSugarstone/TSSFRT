@@ -230,6 +230,7 @@ const pack = {
   format: tmpl.format,
   name: 'Gnaw From Scratch',
   template: null,
+  rules: 'Gnaw',
   stats: tmpl.stats,
   text: {
     lore: 'Gnaw, rebuilt out of three squares in the mod maker. He has no template: every move is his own data, and his gimmick script does what Gnaw\'s move scripts do.',

@@ -7,14 +7,18 @@ import type { Image } from '../game/pack-format.ts';
 import { checkPack } from '../game/pack-validate.ts';
 import { modTables, nextCharacterId, setModPacks } from '../game/packs.ts';
 import { setModTag } from '../net/room-client.ts';
-import { modRecords, scriptFile, unpackMod, type ModRecord } from './mod-store.ts';
+import { modRecords, scriptFile, testModRecord, unpackMod, type ModRecord } from './mod-store.ts';
 
 export { addMod, deleteMod, listMods, modScript, setModEnabled, setModScriptAllowed, type ModInfo } from './mod-store.ts';
 
 /** What loading the enabled mods did, for the mods screen. */
 export interface ModLoad {
   loaded: string[];
+  /** The character number of each loaded mod, in the same order. */
+  ids: number[];
   problems: string[];
+  /** Pack warnings, which only the test scene shows. */
+  warnings: string[];
 }
 
 const TYPES: Record<string, string> = { png: 'image/png', svg: 'image/svg+xml', wav: 'audio/wav', mp3: 'audio/mpeg', ogg: 'audio/ogg', js: 'text/javascript' };
@@ -28,12 +32,15 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Builds the enabled mods into the game. Call once, before the first runtime. */
-export async function loadMods(): Promise<ModLoad> {
-  const result: ModLoad = { loaded: [], problems: [] };
+/** Builds the enabled mods into the game, or only the mod maker's test character with `test`. Call once, before the first runtime. */
+export async function loadMods(test = false): Promise<ModLoad> {
+  const result: ModLoad = { loaded: [], ids: [], problems: [], warnings: [] };
   let mods: ModRecord[];
   try {
-    mods = (await modRecords()).filter((m) => m.enabled).sort((a, b) => (a.id < b.id ? -1 : 1));
+    if (test) {
+      const rec = await testModRecord();
+      mods = rec ? [rec] : [];
+    } else mods = (await modRecords()).filter((m) => m.enabled).sort((a, b) => (a.id < b.id ? -1 : 1));
   } catch {
     return result;
   }
@@ -45,8 +52,10 @@ export async function loadMods(): Promise<ModLoad> {
   for (const mod of mods) {
     try {
       const { pack, files } = await unpackMod(mod.zip);
-      const problems = checkPack(pack, (f) => files.has(f), tables.names).filter((p) => p.level === 'error');
+      const checked = checkPack(pack, (f) => files.has(f), tables.names);
+      const problems = checked.filter((p) => p.level === 'error');
       if (problems.length) throw new Error(problems.map((p) => p.message).join('; '));
+      if (test) result.warnings.push(...checked.filter((p) => p.level === 'warning').map((p) => p.message));
       const urls = new Map<string, string>();
       const url = (f: string) => {
         let u = urls.get(f);
@@ -90,6 +99,7 @@ export async function loadMods(): Promise<ModLoad> {
       if (gimmick) gimmicks[id] = gimmick;
       ids.push(gimmick ? `${mod.id}+script` : mod.id);
       result.loaded.push(pack.name);
+      result.ids.push(id);
     } catch (e) {
       result.problems.push(`${mod.name}: ${e instanceof Error ? e.message : String(e)}`);
     }

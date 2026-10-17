@@ -22,9 +22,9 @@ Red Gnaw is a finished example: Gnaw recolored with angry eyebrows, new stats, r
 
 ## Examples made from scratch
 
-Five examples have no template, so every move is their own data and a gimmick script does what the original characters' move scripts do. Their art is placeholder shapes.
+Five examples have no template, so every move is their own data and a gimmick script does what the original characters' move scripts do. Their art is placeholder shapes. Each script opens with a short guide to reading it, and they share the same few helpers, so reading one makes the others easier. They are good places to see how a phased move, a projectile, a grab or a charged attack is written.
 
-- [Gnaw From Scratch](_examples/gnaw-from-scratch) is Gnaw rebuilt from three squares with dot eyes and square feet. His [script](_examples/gnaw-from-scratch/gimmick.ts) charges NPunch, arcs fireballs that leave fire on the ground, grabs and heals with the bite, and fires the barrage. He plays the same as Gnaw frame for frame.
+- [Gnaw From Scratch](_examples/gnaw-from-scratch) is Gnaw rebuilt from three squares with dot eyes and square feet. His [script](_examples/gnaw-from-scratch/gimmick.ts) charges NPunch, arcs fireballs that leave fire on the ground, grabs and heals with the bite, and fires the barrage. He follows Gnaw's built-in rules for DownAirPunch's steering, and plays the same as Gnaw frame for frame.
 - [Arc Phantom](_examples/arc-phantom) is a big diamond with four small ones holding a sharp triangle, made half of Arc and half of Phantom, with their stats averaged. Arc's NPunch, RunPunch, DownPunch, Taunt and Judgement come from Arc, and UpPunch, DownAirPunch, Dodge, Shadowflame Charge and Shadow Trick from Phantom. Each move plays the same as the original's.
 - [Xavier From Scratch](_examples/xavier-from-scratch) is a triangle with a round head and an orb. His [script](_examples/xavier-from-scratch/gimmick.ts) throws the orb, dives and sends out shockwaves and runes, and raises the planet that makes enemies fall twice as fast. He follows Xavier's built-in rules for the hover, and plays the same as Xavier frame for frame.
 - [Rikaal From Scratch](_examples/rikaal-from-scratch) is a trapezoid with a horned square head and two big fists. His [script](_examples/rikaal-from-scratch/gimmick.ts) grabs and throws four ways, slides after his dive, roars with super armor, and aims and fires the red beam. He follows Rikaal's built-in rules for the heavy landing, and plays the same as Rikaal frame for frame.
@@ -67,6 +67,16 @@ The game also treats some original moves specially outside their move scripts. *
 **Export character** downloads a character as a `.sfrt` file, and **Import character** adds one from a `.sfrt` file. A `.sfrt` file is a zip archive of the character's folder. Players add the same file to the game's page with **Mods** on the main menu, without the project, so the file is all a player needs. A `.sfrt` file from the project carries the gimmick script compiled to JavaScript for that. Both mod makers export and import the same file, and both still accept character files exported as `.zip` before.
 
 The paint editor draws at the character's own pixel size and scales the frames up to the game's image size when it saves. It keeps layers in the character's `paint` folder. Left click draws, right click picks a color, F fills under the pointer, and Shift click draws a line from the last point. Ctrl+Z undoes. Hover over a button to see its name.
+
+## Testing a character
+
+**Test**, in the mod maker's top bar and on the Check tab, opens the game with the character in Training mode against a dummy that stands still. It does not add the character to the Mods list or build the site, so it also works on the original characters and the examples. The bar above the stage has these buttons:
+
+- **Pause** stops the game, and **Play** starts it again.
+- **Step** plays one frame with the keys you hold. Hold a key and click Step to follow a move frame by frame.
+- **Reset** puts everything back as it was when the test started.
+- **Messages** lists what the gimmick script reports: each error with the function that threw it and the frame, and each line it writes with `console.log`, as well as problems with the character. The first error opens the list and pauses the game.
+- **Exit** closes the test.
 
 ## The character folder
 
@@ -141,7 +151,7 @@ A hitbox has:
 | --- | --- |
 | `name`, `move` | Its name on the Moves tab, and the game's name for it such as `NPunch-8` or `Fireball@8`. |
 | `frame`, `active` | Frames of its life from 0, and whether it can hit, to change. |
-| `attribute(name)`, `setAttribute(name, value)` | The move data from the Moves tab, such as `damage`. |
+| `attribute(name)`, `setAttribute(name, value)` | The move data from the Moves tab, such as `damage`. The `MoveAttribute` type lists the names. |
 | `x`, `y`, `vx`, `vy`, `direction`, `rotation` | Position, speed (vx forward along its facing), facing, and the angle it is drawn at. |
 | `offsetX`, `offsetY`, `follows` | Where a hitbox that follows its fighter sits, and whether it follows or stays where it is. |
 | `moveBy(x, y, collide, throughPlatforms)`, `moveSteps(steps, direction, collide, throughPlatforms)`, `toGround(steps)`, `pointAt(x, y)`, `heading` | Moves it now, stopping at walls and floors unless `collide` is false, sets it on the ground below, or turns it toward a place. |
@@ -150,7 +160,7 @@ A hitbox has:
 | `phase(n, frames)`, `phaseLeft(n)`, `endPhase(n)` | Runs a move in phases, as the original characters' move scripts do. |
 | `charge()` | Charges the move while attack is held, as the original characters' NPunch does. |
 | `slot(n)`, `slotText(n)`, `setSlot(n, value)` | Its four slots for the script, which a copy starts with, as a number or as text. |
-| `survivesHits`, `endsOnLanding`, `platform()` | Whether it lasts when its fighter is hit, whether it ends when its fighter lands, and the kind of platform it overlaps. |
+| `survivesHits`, `endsOnLanding`, `outlivesFighter`, `platform()` | Whether it lasts when its fighter is hit, whether it ends when its fighter lands, whether it stays when its fighter is knocked out, and the kind of platform it overlaps. |
 | `grabs`, `holding`, `holdAt(x, y, direction)`, `release()`, `closestEnemy()`, `knockbackAdds` | Grabbing and holding a fighter, finding the nearest enemy, and knockback that adds to a target's speed. |
 | `armor`, `noHitPause` | Super armor for its fighter while it lasts, and hits that do not pause the game. |
 | `changeStats(who, changes)`, `addModifier(who, modifier)` | Changes fighters' stats, such as `{ fallSpeed: ['*', 2] }`, or gives them one of the game's extra modifiers, while it lasts. |

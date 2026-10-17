@@ -1,6 +1,7 @@
 // The mod maker page: pick or create a character pack, edit it in tabs, save, and play it in the
 // game. The store in util.ts decides whether packs live in the project's folders or in this browser.
-import { BookOpen, FolderInput, FolderOutput, Sparkles, Bot, Check, FilePlus, Film, Hammer, Image as ImageIcon, Info, Play, Save, SlidersHorizontal, Swords, Trash2, Unlink, UserPlus, X } from 'lucide';
+import { BookOpen, FolderInput, FolderOutput, Sparkles, Bot, Check, FilePlus, Film, FlaskConical, Hammer, Image as ImageIcon, Info, Play, Save, SlidersHorizontal, Swords, Trash2, Unlink, UserPlus, X } from 'lucide';
+import { setTestMod } from '../../../src/client/mod-store.ts';
 import { CHARACTER_FILE_TYPES, RULES, STAT_FIELDS, type CharacterPack } from '../../../src/game/pack-format.ts';
 import { slugify } from '../pack-files.ts';
 import { renderAnimations } from './animations.ts';
@@ -114,6 +115,7 @@ function header(): void {
     h('span', { class: 'grow' }),
     el.status,
     h('button', { onclick: () => void app.save(), disabled: app.readOnly }, icon(Save), 'Save'),
+    h('button', { onclick: () => void testCharacter(), disabled: !app.pack, title: TEST_HELP }, icon(FlaskConical), 'Test'),
     h('button', { class: 'primary', onclick: () => void buildAndPlay(), disabled: app.readOnly }, icon(Play), PLAY_LABEL),
   );
   fill(
@@ -249,6 +251,28 @@ function newCharacter(): void {
   document.body.append(dialog);
   dialog.showModal();
   name.focus();
+}
+
+const TEST_HELP = 'Play this character against a dummy in a test scene that can pause, play one frame at a time, reset, and show script errors';
+
+/** Opens the game's test scene with this character, without adding it to the Mods list or building the site. */
+async function testCharacter(): Promise<void> {
+  if (app.dirty && !(await app.save(true))) return;
+  if (!app.readOnly && app.problems.some((p) => p.level === 'error')) {
+    toast(`The character has errors. See ${TABS.at(-1)![1]}.`, true);
+    app.tab = 'check';
+    header();
+    renderTab();
+    return;
+  }
+  try {
+    await setTestMod(await api.packFile(app.dir));
+  } catch (e) {
+    toast(e instanceof Error ? e.message : String(e), true);
+    return;
+  }
+  // A game tab with this name loads again, which is when it reads the character.
+  window.open('./?test', 'sfrt-test');
 }
 
 async function buildAndPlay(): Promise<void> {
@@ -529,6 +553,17 @@ function check(body: HTMLElement): void {
       h('h2', null, 'Problems'),
       app.problems.length ? h('ul', { class: 'problems' }, list('error'), list('warning')) : h('p', null, 'No problems found.'),
       h('p', { class: 'hint' }, `Errors stop ${api.browser ? 'the character from playing' : 'the build'}. Warnings point at things that will look or play wrong.`),
+    ),
+    h(
+      'section',
+      { class: 'card' },
+      h('h2', null, 'Test'),
+      h(
+        'p',
+        null,
+        'Test saves the character and opens it in the game against a dummy that stands still, in Training mode. Pause stops the game, Step plays one frame with the keys you hold, Reset goes back to the start, and Messages lists what the gimmick script reports: its errors and what it writes with console.log. Exit closes the test. The character is not added to the Mods list.',
+      ),
+      h('button', { onclick: () => void testCharacter(), disabled: !app.pack, title: TEST_HELP }, icon(FlaskConical), 'Test'),
     ),
     h(
       'section',

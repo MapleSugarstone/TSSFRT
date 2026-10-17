@@ -9,6 +9,7 @@ import { report } from '../net/report.ts';
 import { applyToPlayerOne, loadControls, loadPrefs, seatKeys } from './controls.ts';
 import { actionKeys, Pads } from './pads.ts';
 import { TouchControls } from './touch.ts';
+import { runTestScene } from './test-scene.ts';
 import type { Value } from '../engine/cast.ts';
 import { hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
 import type { PlayerInput } from '../engine/io.ts';
@@ -55,8 +56,11 @@ function localT0(): number {
 fitStage();
 window.addEventListener('resize', fitStage);
 
+// The mod maker's Test button opens the page with ?test, which plays only the character it is testing.
+const testing = new URLSearchParams(location.search).has('test');
+
 // Mods build into the game's tables, so they load before the first runtime exists.
-const modLoad = await loadMods();
+const modLoad = await loadMods(testing);
 
 // One game object per page: assets load once while the menu shows, and the runtime is replaced
 // when an online game starts with the shared seed.
@@ -71,6 +75,26 @@ const resumeAudio = () => game.audio.resume();
 window.addEventListener('pointerdown', resumeAudio);
 window.addEventListener('keydown', resumeAudio);
 (window as unknown as { __game: Game }).__game = game;
+
+/** The local player's input for one frame: keys, touch and controllers, the mouse, and an answer to a question. */
+function sampleLocal(): PlayerInput {
+  const keys = new Set(input.sampleKeys());
+  // Touch and controller slot n press the buttons of player n+1's row of the controls table.
+  const table = game.rt.stage.l.Player_Input as Value[];
+  pads.sample().forEach((acts, slot) => {
+    for (const k of actionKeys(acts, seatKeys(table, slot))) keys.add(k);
+  });
+  const p0: PlayerInput = { keys: [...keys] };
+  if (input.mouseDirty) {
+    p0.mouse = { ...input.mouse };
+    input.mouseDirty = false;
+  }
+  if (game.question.pendingAnswer !== undefined) {
+    p0.answer = game.question.pendingAnswer;
+    game.question.pendingAnswer = undefined;
+  }
+  return p0;
+}
 
 let room: RoomClient | null = null;
 let mesh: Mesh | null = null;
@@ -89,24 +113,7 @@ const lobby = new Lobby(overlay, {
     applyToPlayerOne(g.l.Player_Input as Value[], g.l.Player_Settings as Value[], loadControls(), loadPrefs());
     touch.setPlaying(true);
     startFixedLoop(
-      () => {
-        const keys = new Set(input.sampleKeys());
-        // Touch and controller slot n press the buttons of player n+1's row of the controls table.
-        const table = game.rt.stage.l.Player_Input as Value[];
-        pads.sample().forEach((acts, slot) => {
-          for (const k of actionKeys(acts, seatKeys(table, slot))) keys.add(k);
-        });
-        const p0: PlayerInput = { keys: [...keys] };
-        if (input.mouseDirty) {
-          p0.mouse = { ...input.mouse };
-          input.mouseDirty = false;
-        }
-        if (game.question.pendingAnswer !== undefined) {
-          p0.answer = game.question.pendingAnswer;
-          game.question.pendingAnswer = undefined;
-        }
-        game.step([p0]);
-      },
+      () => game.step([sampleLocal()]),
       () => game.present(),
     );
   },
@@ -257,7 +264,35 @@ if (!onlineAvailable()) lobby.disableOnline();
 window.addEventListener('error', (e) => report('error', { message: e.message, at: `${e.filename}:${e.lineno}:${e.colno}`, stack: e.error?.stack, ...(online?.diagnostics() ?? {}) }));
 window.addEventListener('unhandledrejection', (e) => report('error', { message: String(e.reason?.message ?? e.reason), stack: e.reason?.stack, ...(online?.diagnostics() ?? {}) }));
 
+function startTest(): void {
+  status.hidden = true;
+  runTestScene({
+    game,
+    character: modLoad.ids[0] ?? null,
+    name: modLoad.loaded[0] ?? 'nothing',
+    problems: modLoad.problems,
+    warnings: modLoad.warnings,
+    sample: sampleLocal,
+    applyControls: () => {
+      const g = game.rt.stage;
+      applyToPlayerOne(g.l.Player_Input as Value[], g.l.Player_Settings as Value[], loadControls(), loadPrefs());
+    },
+    onStart: () => {
+      input.enabled = true;
+      touch.setPlaying(true);
+    },
+    page,
+    stage: stageWrap,
+  });
+}
+
+const status = document.getElementById('status')!;
+if (testing) {
+  lobby.hide();
+  status.hidden = false;
+}
+const progress = (t: string) => (testing ? (status.textContent = t) : lobby.setStatus(t));
 void game
-  .load((t) => lobby.setStatus(t))
-  .then(() => lobby.loaded())
-  .catch((e) => lobby.setStatus(`Could not load the game: ${String(e)}`));
+  .load(progress)
+  .then(() => (testing ? startTest() : lobby.loaded()))
+  .catch((e) => progress(`Could not load the game: ${String(e)}`));
