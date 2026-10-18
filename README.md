@@ -18,7 +18,7 @@ npm run dev
 
 On Windows, `play.cmd` does both and opens the page. `play online` also starts a local room server for testing online play in two tabs, and `play editor` opens the mod maker.
 
-Open http://localhost:5173 and choose **Play on this computer**. Player 1 uses W A S D to move, V to attack, C for combo, B to shield, Space to jump and F to taunt. Player 2 uses the arrow keys with `, . M N K`. P pauses. The in-game controls menu can rebind every key.
+Open http://localhost:5173 and choose **Play offline**. Player 1 uses W A S D to move, V to attack, C for combo, B to shield, Space to jump and F to taunt. Player 2 uses the arrow keys with `, . M N K`. P pauses. The in-game controls menu can rebind every key.
 
 Controllers work too, in the standard layout: the left stick or the D-pad moves, A attacks and confirms in menus, B is the combo button and goes back in menus, X and Y jump, the shoulder buttons and triggers shield, Back taunts and Start pauses. On one computer the first controller plays Player 1 and the second plays Player 2. Online, every controller plays your own seat.
 

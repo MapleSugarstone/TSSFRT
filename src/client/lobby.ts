@@ -1,4 +1,4 @@
-// The screen shown before the game starts: play on this computer, or host or join an online room.
+// The screen shown before the game starts: play offline, or host or join an online room.
 import type { SeatInfo } from '../net/protocol.ts';
 import type { LinkState } from '../net/mesh.ts';
 import { browserKeyToName } from '../engine/io.ts';
@@ -147,7 +147,7 @@ export class Lobby {
       this.setStatus(NAME_RULE);
     });
     nameRow.append(this.nameIn);
-    const localBtn = el('button', 'primary', 'Play on this computer');
+    const localBtn = el('button', 'primary', 'Play offline');
     const hostBtn = el('button', '', 'Host an online game');
     const joinRow = el('div', 'lobby-join');
     const codeIn = el('input');
@@ -239,7 +239,7 @@ export class Lobby {
     this.keysTabBtn = tab('Keys', 'keys');
     this.touchTabBtn = tab('Touch buttons', 'touch');
     this.keysPart = el('div', 'controls-keys');
-    this.keysPart.append(el('p', 'lobby-note', 'On this computer these are Player 1\'s controls. Online they control your own seat, and other players can use the same keys.'), grid);
+    this.keysPart.append(el('p', 'lobby-note', 'These are Player 1\'s controls in offline play. Online they control your own seat, and other players can use the same keys.'), grid);
     const actions = el('div', 'lobby-actions');
     const resetBtn = el('button', '', 'Reset to default');
     const backBtn = el('button', 'primary', 'Done');
