@@ -2,7 +2,7 @@
 
 ![Red Gnaw's character select portrait](art/portrait/icvd8s4d-01.png)
 
-Red Gnaw is Gnaw with red scales, gold spikes and angry eyebrows. He is quicker on his feet, falls faster, and takes more knockback, and several of his moves hit sooner, reach further or come out in a new shape. His fireball burns red and hits harder. Every hit adds a third of a Red stack to the target, shown as three diamonds over its head, and Red fades 3 seconds after the last hit. Three full stacks burst for 18% extra damage and paint the target red for 3 seconds.
+Red Gnaw is Gnaw with red scales, gold spikes and angry eyebrows. He is quicker on his feet, falls faster, and takes more knockback, and several of his moves hit sooner, reach further or come out in a new shape. His hits deal Gnaw's damage. His fireball burns red, flies flatter and further, and pops targets up. Every hit adds a third of a Red stack to the target, shown as three diamonds over its head, and Red fades 3 seconds after the last hit. Three full stacks burst for 18% extra damage and paint the target red for 3 seconds.
 
 This folder holds the finished character. The steps below make it from scratch in the mod maker.
 
@@ -17,16 +17,16 @@ This folder holds the finished character. The steps below make it from scratch i
 7. Choose **Paint** (the brush icon) on the idle row and add a layer. Draw a short dark line above the eye that slopes down toward the snout, and save.
 8. Draw the eyebrows on the other animations the same way. Onion skin shows the neighboring frames, so the brows line up from frame to frame.
 9. On the **Art** tab, paint thick brows over the eyes in the portrait, the roster icon and the match intro art, and repaint the name images.
-10. On the **Moves** tab, set **Move data** to Customized for every move and raise its damage a little.
-11. Select UpPunch and drag the start of the red **Can hit** bar to frame 3. Drag a corner of the red hitbox until it is tall and narrow, then drag the box up a little.
-12. Select DownAirPunch and drag its **Can hit** bar to start at frame 6 and end at frame 14, so the spike comes out sooner.
+10. On the **Moves** tab, set **Move data** to Customized for every move and raise its knockback a little.
+11. Select UpPunch and drag its red **Can hit** bar to start at frame 2 and end at frame 8. Drag a corner of the red hitbox until it is tall and narrow, then drag the box up a little.
+12. Select DownAirPunch and drag its **Can hit** bar to start at frame 5 and end at frame 13, so the spike comes out sooner. Select RunPunch and drag its bar to start at frame 4 and end at frame 12.
 13. Select DownPunch and make the hitbox wide and flat. Select NPunch and drag the box further in front of Gnaw for more reach.
 14. Select E3 (Big Bite), move the timeline to frame 8, and choose **Add a sound at the timeline frame** with the bite sound from `sounds/E3.wav`. The bite now chomps twice.
-15. Under **Extra hitboxes** at the bottom of the move list, select Fireball, the fireball that E1 and E5 throw. Set **Move data** to Customized, raise Damage to 12, and raise Knockback Y to 18 so the fireball pops targets up.
-16. Customize FireStationary, the fire the fireball leaves on the ground, and raise its damage to 4. Customize FireballImpact, the fireball's explosion, without changing its numbers.
+15. Under **Extra hitboxes** at the bottom of the move list, select Fireball, the fireball that E1 and E5 throw. Set **Move data** to Customized and raise Knockback Y to 18 so the fireball pops targets up.
+16. Customize FireStationary, the fire the fireball leaves on the ground, and FireballImpact, the fireball's explosion, without changing their numbers.
 17. Make the fire red in all three. Choose **Paint effect frames** (the brush icon) and fill the yellow, light orange, orange and deep orange with `#ff9a8a`, `#ff5a50`, `#e8242c` and `#96101c`, the colors of the Red marks. You can also choose **Export effect**, change the colors in another image editor, and bring the frames back with **Import effect**.
 18. On the **Particles** tab, choose **New particle**, name it `red1`, and paint three small diamonds with the first one a third full. Make `red2` to `red9` the same way, each a third fuller than the one before.
-19. On the **Overview** tab, choose **Add a gimmick script**. Replace the contents of the new `gimmick.ts` with this folder's `gimmick.ts`.
+19. On the **Overview** tab, choose **Add a gimmick script**. Replace the contents of the new `gimmick.ts` with this folder's `gimmick.ts`. Besides the Red marks, its `move` function throws fireballs flatter and faster than Gnaw's.
 20. Choose **Build and play** (the play icon) and pick Red Gnaw on the character select screen.
 
 Hover over any button to see its name.

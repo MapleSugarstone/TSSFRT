@@ -56,7 +56,7 @@
         "knockbackY": 6.3,
         "iframes": 8,
         "hitstun": 10,
-        "damage": 17,
+        "damage": 15,
         "hitsBeforeDeletion": 0,
         "rotateStyle": "lr",
         "comboGain": 22,
@@ -149,7 +149,7 @@
         "knockbackY": 15,
         "iframes": 12,
         "hitstun": 12.5,
-        "damage": 9,
+        "damage": 7,
         "hitsBeforeDeletion": 0,
         "rotateStyle": "lr",
         "comboGain": 22,
@@ -189,8 +189,8 @@
         }
       ],
       "active": {
-        "start": 3,
-        "end": 9
+        "start": 2,
+        "end": 8
       },
       "aiSpacing": [
         "000",
@@ -221,7 +221,7 @@
         "knockbackY": 12.6,
         "iframes": 6,
         "hitstun": 12,
-        "damage": 4,
+        "damage": 2,
         "hitsBeforeDeletion": 1,
         "rotateStyle": "lr",
         "comboGain": 12,
@@ -299,7 +299,7 @@
         "knockbackY": 5.3,
         "iframes": 6.5,
         "hitstun": 7,
-        "damage": 6,
+        "damage": 5,
         "hitsBeforeDeletion": 0,
         "rotateStyle": "lr",
         "comboGain": 22,
@@ -339,8 +339,8 @@
         }
       ],
       "active": {
-        "start": 6,
-        "end": 14
+        "start": 4,
+        "end": 12
       },
       "aiSpacing": [
         "025",
@@ -371,7 +371,7 @@
         "knockbackY": -15,
         "iframes": 10,
         "hitstun": 12,
-        "damage": 11,
+        "damage": 8,
         "hitsBeforeDeletion": 0,
         "rotateStyle": "lr",
         "comboGain": 12,
@@ -429,8 +429,8 @@
         }
       ],
       "active": {
-        "start": 6,
-        "end": 14
+        "start": 5,
+        "end": 13
       },
       "aiSpacing": [
         "000",
@@ -461,7 +461,7 @@
         "knockbackY": 6.3,
         "iframes": 10,
         "hitstun": 10,
-        "damage": 15,
+        "damage": 12,
         "hitsBeforeDeletion": 1,
         "rotateStyle": "all",
         "comboGain": 17,
@@ -582,7 +582,7 @@
         "knockbackY": 6.3,
         "iframes": 10,
         "hitstun": 10,
-        "damage": 12,
+        "damage": 10,
         "hitsBeforeDeletion": 1,
         "rotateStyle": "all",
         "comboGain": 17,
@@ -688,7 +688,7 @@
         "knockbackY": 18,
         "iframes": 10,
         "hitstun": 10,
-        "damage": 12,
+        "damage": 10,
         "hitsBeforeDeletion": 1,
         "rotateStyle": "all",
         "comboGain": 10,
@@ -745,7 +745,7 @@
         "knockbackY": 8,
         "iframes": 5,
         "hitstun": 10,
-        "damage": 4,
+        "damage": 3,
         "hitsBeforeDeletion": 1,
         "rotateStyle": "all",
         "comboGain": 5,
