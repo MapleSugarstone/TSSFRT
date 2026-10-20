@@ -18,11 +18,15 @@ npm run dev
 
 On Windows, `play.cmd` does both and opens the page. `play online` also starts a local room server for testing online play in two tabs, and `play editor` opens the mod maker.
 
-Open http://localhost:5173 and choose **Play offline**. Player 1 uses W A S D to move, V to attack, C for combo, B to shield, Space to jump and F to taunt. Player 2 uses the arrow keys with `, . M N K`. P pauses. The in-game controls menu can rebind every key.
+Open http://localhost:5173 and choose **Play offline**. Player 1 uses W A S D to move, V to attack, C for combo, B to shield, Space to jump and F to taunt. Player 2 uses the arrow keys with `, . M N K`. P pauses. The in-game controls menu can rebind every key. **Leave game** under the stage goes back to the start screen.
 
-Controllers work too, in the standard layout: the left stick or the D-pad moves, A attacks and confirms in menus, B is the combo button and goes back in menus, X and Y jump, the shoulder buttons and triggers shield, Back taunts and Start pauses. On one computer the first controller plays Player 1 and the second plays Player 2. Online, every controller plays your own seat.
+Controllers work too, in the standard layout: the left stick or the D-pad moves, A attacks and confirms in menus, B is the combo button and goes back in menus, X and Y jump, the shoulder buttons and triggers shield, Back taunts and Start pauses. On one computer the first controller you use plays Player 1 and the next one plays Player 2. Online, every controller plays your own seat. Controllers that clip onto a phone work the same way. **Controls** in the lobby names the controllers the browser sees. A controller shows up there once you press a button on it.
 
 On touch screens a joystick and six buttons appear once a game starts: beside the stage when the screen is wide, below it when the screen is tall. The joystick centers wherever your thumb lands. The controls hide while a controller is in use and come back at the next touch. While the touch controls are on, **Controls** in the lobby has a **Touch buttons** tab that shows the buttons in their places. Tapping two of them swaps what they do.
+
+Training mode in offline play has practice keys. F2 saves the whole game state and F4 loads it. F8 starts recording the dummy: your controls move the dummy for up to 10 seconds while your fighter stands still, and F8 again stops. F9 makes the dummy repeat the recording until you press F9 again. Recording and playback need the dummy's CPU level at 0, the training default. The mod maker's test scene has the same keys.
+
+After a versus or survival match, offline or online, the game asks whether to save a replay. Saved replays stay in the browser. **Replays** on the start screen lists them, renames and deletes them, and plays them with pause, frame steps, speeds and a seek bar. A replay plays only with the same mods turned on. A replay saved with an older version of the game may not play the same, and the player says so when it stops matching.
 
 ## Online play
 

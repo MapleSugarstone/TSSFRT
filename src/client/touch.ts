@@ -67,10 +67,11 @@ export class TouchControls {
         this.update();
       }
     });
-    window.addEventListener('gamepadconnected', () => {
+    // A real controller's first input hides the controls. A device that only claims to be one never sends any.
+    this.pads.onController = () => {
       this.touchDevice = false;
       this.update();
-    });
+    };
     window.addEventListener('blur', () => this.pads.releaseAll());
     this.update();
   }

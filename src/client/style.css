@@ -69,6 +69,14 @@ body {
   cursor: text;
 }
 
+/* A slider is an input but not a text field. */
+#app input[type='range'] {
+  -webkit-user-select: none;
+  user-select: none;
+  caret-color: transparent;
+  cursor: pointer;
+}
+
 #stage-wrap {
   position: relative;
   width: 480px;
@@ -209,7 +217,8 @@ body {
 .lobby button:not(.lobby-return, .lobby-corner, .lobby-option),
 .seat,
 .hud button,
-.test-panel button {
+.test-panel button,
+.replay-offer button {
   --cut: 0.45em;
   --chamfer: polygon(0 var(--cut), var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
   position: relative;
@@ -221,7 +230,8 @@ body {
 .lobby button:not(.lobby-return, .lobby-corner, .lobby-option)::before,
 .seat::before,
 .hud button::before,
-.test-panel button::before {
+.test-panel button::before,
+.replay-offer button::before {
   --inner: calc(var(--cut) - 1.17px);
   content: '';
   position: absolute;
@@ -349,7 +359,8 @@ body {
 
 .lobby button:not(.lobby-return, .lobby-corner, .lobby-option),
 .hud button,
-.test-panel button {
+.test-panel button,
+.replay-offer button {
   --stroke: var(--ui-stroke);
   --fill: var(--ui-fill);
   font: inherit;
@@ -364,7 +375,8 @@ body {
 
 .lobby button:not(.lobby-return, .lobby-corner, .lobby-option)::before,
 .hud button::before,
-.test-panel button::before {
+.test-panel button::before,
+.replay-offer button::before {
   background: var(--fill);
 }
 
@@ -372,7 +384,8 @@ body {
 .lobby button:focus-visible,
 .hud button:hover,
 .hud button:focus-visible,
-.test-panel button:hover {
+.test-panel button:hover,
+.replay-offer button:hover {
   --stroke: #ffffff;
   outline: none;
 }
@@ -621,6 +634,8 @@ body {
 
 /* The main menu's Mods button, in the top-left corner. */
 .lobby-top-left {
+  display: flex;
+  gap: 1.2em;
   position: absolute;
   top: calc(env(safe-area-inset-top, 0px) + 0.5em);
   left: calc(env(safe-area-inset-left, 0px) + 0.6em);
@@ -867,7 +882,8 @@ body {
 }
 
 .hud button,
-.test-panel button {
+.test-panel button,
+.replay-offer button {
   padding: 2px 10px;
   font-size: 11px;
 }
@@ -895,6 +911,73 @@ body {
 .hud button:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* Training messages and "Replay saved", at the top of the stage. */
+.toast {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 7;
+  max-width: calc(100% - 32px);
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--ui-text);
+  background: rgba(12, 14, 18, 0.85);
+  border: 1px solid var(--ui-stroke);
+  pointer-events: none;
+}
+
+/* The question after a match, in the stage's bottom-right corner while the game goes on. */
+.replay-offer {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 7;
+  max-width: calc(100% - 16px);
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--ui-text);
+  background: rgba(12, 14, 18, 0.92);
+  border: 1px solid var(--ui-stroke);
+}
+
+.replay-offer p {
+  margin: 0 0 8px;
+}
+
+.replay-offer-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.replay-offer button.primary {
+  --stroke: var(--p1);
+  color: #ffffff;
+}
+
+.replay-bar .replay-seek {
+  flex: 1;
+  min-width: 3em;
+  accent-color: var(--p1);
+}
+
+/* Why a replay cannot play, or that it ended, over the top of the stage. */
+.replay-note {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 4;
+  padding: 6px 10px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--ui-text);
+  background: rgba(12, 14, 18, 0.9);
+  border: 1px solid var(--ui-stroke);
 }
 
 .test-panel {
@@ -1140,6 +1223,81 @@ body {
   padding: 0.2em 0.4em;
   background: var(--ui-field);
   border: 1px solid var(--ui-stroke);
+}
+
+/* A long list of replays shrinks to the space the screen has and scrolls, so the heading and Done stay in view. */
+.lobby-replays {
+  min-height: 0;
+}
+
+.replay-list {
+  min-height: 4em;
+  max-height: 28em;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-stroke) transparent;
+}
+
+.mod.replay {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 0.2em;
+}
+
+/* A row asking whether to delete it: the name, the question under it, then Delete and Keep. */
+.mod.asking {
+  border-color: #ff8a8a;
+}
+
+.row-ask {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.row-question,
+.lobby .mod.asking .mod-delete {
+  color: #ff8a8a;
+}
+
+.row-question {
+  font-size: 0.75em;
+}
+
+.lobby .mod.asking .mod-delete:hover {
+  color: #ffffff;
+}
+
+.mod.asking .lobby-option {
+  padding: 0 0.4em;
+}
+
+/* An icon button: the icon alone, in the muted text color until hovered. */
+.lobby .lobby-icon {
+  width: 2.2em;
+  justify-content: center;
+}
+
+.lobby .lobby-icon svg {
+  flex: none;
+}
+
+.replay-what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.replay-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75em;
+  color: var(--ui-muted);
+}
+
+.lobby input.replay-rename {
+  width: 100%;
+  padding: 0.1em 0.4em;
 }
 
 .mod-name {

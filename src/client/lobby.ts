@@ -7,6 +7,10 @@ import { cleanName, DEFAULT_PREFS, NAME_MAX, type Prefs } from '../net/protocol.
 import { ACTIONS, DEFAULT_CONTROLS, DEFAULT_TOUCH_BUTTONS, loadControls, loadPrefs, loadTouchButtons, saveControls, savePrefs, saveTouchButtons } from './controls.ts';
 import { addMod, deleteMod, listMods, modScript, setModEnabled, setModScriptAllowed, type ModInfo, type ModLoad } from './mods.ts';
 import { installUiAssets, playerBadge } from './ui-assets.ts';
+import { listControllers } from './pads.ts';
+import { createElement, Pencil, Play, Trash2, type IconNode } from 'lucide';
+import { clock, REPLAY_NAME_MAX, replayName, replayTitle, type ReplayMeta } from './replay.ts';
+import { deleteReplay, listReplays, renameReplay } from './replay-store.ts';
 
 const NAME_KEY = 'sfrt.name';
 const DELAY_KEY = 'sfrt.delay';
@@ -40,6 +44,48 @@ function randomName(): string {
 
 const NAME_RULE = 'Names use letters, numbers, _ and -, as Scratch usernames do.';
 
+/** A button that shows only an icon, with its name in the tooltip. */
+function iconButton(node: IconNode, label: string, cls = ''): HTMLButtonElement {
+  const b = el('button', `lobby-option lobby-icon ${cls}`.trim());
+  b.title = label;
+  b.setAttribute('aria-label', label);
+  b.append(createElement(node, { width: 18, height: 18, 'aria-hidden': 'true' }));
+  return b;
+}
+
+/**
+ * Turns a list row into a question with Delete and Keep, keeping `name` on the left. Pages cannot count on
+ * the browser's own dialogs, which some embedded browsers never show.
+ */
+function askDelete(li: HTMLLIElement, name: HTMLElement, question: string, remove: () => Promise<void>, keep: () => void): void {
+  const ask = el('div', 'row-ask');
+  ask.append(name, el('span', 'row-question', question));
+  const yes = el('button', 'lobby-option mod-delete', 'Delete');
+  yes.addEventListener('click', () => void remove());
+  const no = el('button', 'lobby-option', 'Keep');
+  no.addEventListener('click', keep);
+  li.classList.add('asking');
+  li.replaceChildren(ask, yes, no);
+  no.focus();
+}
+
+/** "FINAL DESTINATION" as "Final Destination". */
+const titleCase = (s: string) => s.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+
+/** "Online versus, Battlefield, 2:31, Oct 20", after the fighters when the replay has a name. */
+function replayDetail(m: ReplayMeta): string {
+  const kind = `${m.online ? 'Online ' : ''}${m.mode.toLowerCase()}`;
+  const when = new Date(m.saved).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return [m.name ? replayTitle(m) : '', `${kind[0].toUpperCase()}${kind.slice(1)}`, titleCase(m.stage), clock(m.frames), when].filter(Boolean).join(', ');
+}
+
+/** Everything about a replay, for the tooltip on its row. */
+function replayAbout(m: ReplayMeta): string {
+  const who = m.online && m.names.length ? `\nPlayers: ${m.names.join(', ')}` : '';
+  const when = new Date(m.saved).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  return `${replayName(m)}\n${replayTitle(m)}, ${titleCase(m.stage)}\n${m.online ? 'Online ' : ''}${m.mode}, ${clock(m.frames)}, saved ${when}${who}`;
+}
+
 function load(key: string, fallback: string): string {
   try {
     return localStorage.getItem(key) ?? fallback;
@@ -67,6 +113,8 @@ export interface LobbyHandlers {
   touchControls(on: boolean): void;
   /** The player changed which touch button does what, in the place order of `DEFAULT_TOUCH_BUTTONS`. */
   touchButtons(names: string[]): void;
+  /** The player chose a replay to watch. */
+  watch(id: string): void;
   leave(): void;
 }
 
@@ -86,6 +134,9 @@ export class Lobby {
   private controlsBtn: HTMLButtonElement;
   private modsView: HTMLDivElement;
   private modsBtn: HTMLButtonElement;
+  private replaysView: HTMLDivElement;
+  private replaysBtn: HTMLButtonElement;
+  private replayList: HTMLUListElement;
   private modList: HTMLUListElement;
   private modProblems: HTMLUListElement;
   private scriptView: HTMLDivElement;
@@ -109,6 +160,9 @@ export class Lobby {
   private touchTabBtn: HTMLButtonElement;
   private controlsTab: 'keys' | 'touch' = 'keys';
   private keysPart: HTMLDivElement;
+  /** Which controllers the browser sees, while the controls screen shows. */
+  private padNote: HTMLParagraphElement;
+  private padTimer: ReturnType<typeof setInterval> | null = null;
   private touchEdit: HTMLDivElement;
   private touchPicks: HTMLButtonElement[] = [];
   private touchButtons = loadTouchButtons();
@@ -239,12 +293,13 @@ export class Lobby {
     this.keysTabBtn = tab('Keys', 'keys');
     this.touchTabBtn = tab('Touch buttons', 'touch');
     this.keysPart = el('div', 'controls-keys');
-    this.keysPart.append(el('p', 'lobby-note', 'These are Player 1\'s controls in offline play. Online they control your own seat, and other players can use the same keys.'), grid);
+    this.keysPart.append(el('p', 'lobby-note', 'Your default controls for player 1 and online.'), grid);
     const actions = el('div', 'lobby-actions');
     const resetBtn = el('button', '', 'Reset to default');
     const backBtn = el('button', 'primary', 'Done');
     actions.append(resetBtn, backBtn);
-    this.controlsView.append(this.controlsHeading, this.controlsTabs, this.keysPart, this.touchEdit, options, actions);
+    this.padNote = el('p', 'lobby-note');
+    this.controlsView.append(this.controlsHeading, this.controlsTabs, this.keysPart, this.touchEdit, options, this.padNote, actions);
     resetBtn.addEventListener('click', () => {
       this.controls = [...DEFAULT_CONTROLS];
       saveControls(this.controls);
@@ -306,6 +361,15 @@ export class Lobby {
     this.reloadBtn.addEventListener('click', () => location.reload());
     modsDone.addEventListener('click', () => this.show('menu'));
 
+    this.replaysView = el('div', 'lobby-controls lobby-mods lobby-replays');
+    this.replaysView.hidden = true;
+    this.replayList = el('ul', 'mod-list replay-list');
+    const replayActions = el('div', 'lobby-actions');
+    const replaysDone = el('button', 'primary', 'Done');
+    replaysDone.addEventListener('click', () => this.show('menu'));
+    replayActions.append(replaysDone);
+    this.replaysView.append(el('div', 'lobby-heading', 'Replays'), this.replayList, replayActions);
+
     this.status = el('div', 'lobby-status');
     this.leaveBtn = el('button', 'lobby-return', 'Leave');
     this.leaveBtn.hidden = true;
@@ -323,14 +387,17 @@ export class Lobby {
     this.touchBtn = el('button', 'lobby-option');
     this.touchBtn.addEventListener('click', () => this.h.touchControls(!this.touchOn));
     this.setTouch(false);
-    panel.append(this.menu, this.room, this.controlsView, this.modsView, this.status);
+    this.replaysBtn = el('button', 'lobby-option', 'Replays');
+    this.replaysBtn.addEventListener('click', () => this.openReplays());
+    panel.append(this.menu, this.room, this.controlsView, this.modsView, this.replaysView, this.status);
     // The footer keeps these out of the panel's way on short screens.
     const footer = el('div', 'lobby-footer');
     const left = el('div', 'lobby-footer-left');
     left.append(this.leaveBtn, this.hqBtn, this.touchBtn);
     const topLeft = el('div', 'lobby-top-left');
-    topLeft.append(this.modsBtn);
+    topLeft.append(this.modsBtn, this.replaysBtn);
     void this.refreshMods();
+    void this.refreshReplays();
     footer.append(left, this.controlsBtn);
     this.root.append(topLeft, panel, footer);
     parent.append(this.root);
@@ -388,8 +455,10 @@ export class Lobby {
     this.show('room');
   }
 
-  private show(view: 'menu' | 'room' | 'controls' | 'mods'): void {
+  private show(view: 'menu' | 'room' | 'controls' | 'mods' | 'replays'): void {
     if (view === 'menu' || view === 'room') this.backTo = view;
+    if (this.padTimer) clearInterval(this.padTimer);
+    this.padTimer = null;
     this.capture(-1);
     this.picked = -1;
     this.renderTouch();
@@ -397,18 +466,96 @@ export class Lobby {
     this.room.hidden = view !== 'room';
     this.controlsView.hidden = view !== 'controls';
     this.modsView.hidden = view !== 'mods';
+    this.replaysView.hidden = view !== 'replays';
     this.modsBtn.hidden = view !== 'menu';
+    this.replaysBtn.hidden = view !== 'menu';
     this.leaveBtn.hidden = view !== 'room';
     this.hqBtn.hidden = view !== 'menu';
     this.touchBtn.hidden = view !== 'menu';
-    this.controlsBtn.hidden = view === 'controls' || view === 'mods';
+    this.controlsBtn.hidden = view === 'controls' || view === 'mods' || view === 'replays';
     this.root.classList.toggle('in-room', view !== 'menu');
+  }
+
+  private openReplays(): void {
+    this.show('replays');
+    void this.refreshReplays();
+  }
+
+  private async refreshReplays(): Promise<void> {
+    const all = await listReplays();
+    this.replaysBtn.replaceChildren('Replays', el('span', `lobby-option-state${all.length ? ' on' : ''}`, all.length ? String(all.length) : 'None'));
+    this.replayList.replaceChildren(...all.map((m) => this.replayRow(m)));
+    if (!all.length) this.replayList.append(el('li', 'lobby-note', 'No replays yet.'));
+  }
+
+  private replayRow(m: ReplayMeta): HTMLLIElement {
+    const li = el('li', 'mod replay');
+    const what = el('div', 'replay-what');
+    const name = el('span', 'mod-name', replayName(m));
+    what.title = replayAbout(m);
+    what.append(name, el('span', 'replay-detail', replayDetail(m)));
+    const rename = iconButton(Pencil, 'Rename');
+    rename.addEventListener('click', () => this.rename(m, name));
+    const watch = iconButton(Play, 'Watch');
+    watch.addEventListener('click', () => this.h.watch(m.id));
+    const del = iconButton(Trash2, 'Delete', 'mod-delete');
+    del.addEventListener('click', () =>
+      askDelete(
+        li,
+        name,
+        'Delete this replay?',
+        async () => {
+          await deleteReplay(m.id);
+          await this.refreshReplays();
+        },
+        () => li.replaceWith(this.replayRow(m)),
+      ),
+    );
+    li.append(what, rename, watch, del);
+    return li;
+  }
+
+  /** Puts a text box in place of a replay's name. Enter or leaving the box saves, Escape cancels, and an empty name brings back the fighters and stage. */
+  private rename(m: ReplayMeta, name: HTMLElement): void {
+    const box = el('input', 'replay-rename');
+    box.maxLength = REPLAY_NAME_MAX;
+    box.value = m.name ?? '';
+    box.placeholder = replayTitle(m);
+    let finished = false;
+    const finish = async (save: boolean) => {
+      if (finished) return;
+      finished = true;
+      if (save) await renameReplay(m.id, box.value.trim());
+      await this.refreshReplays();
+    };
+    // The game's key handler takes Space and the arrow keys, so key presses stop at the box.
+    box.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') void finish(true);
+      else if (e.key === 'Escape') void finish(false);
+    });
+    box.addEventListener('blur', () => void finish(true));
+    name.replaceWith(box);
+    box.focus();
+    box.select();
   }
 
   private openControls(): void {
     this.controlsTab = this.touchOn ? 'touch' : 'keys';
     this.renderControlsTab();
     this.show('controls');
+    this.renderPads();
+    this.padTimer = setInterval(() => this.renderPads(), 500);
+  }
+
+  /** Names the controllers the browser lists, so a player can tell whether theirs is seen at all. */
+  private renderPads(): void {
+    const all = listControllers();
+    const used = all.filter((c) => c.used).map((c) => c.name);
+    const other = all.filter((c) => !c.used).map((c) => c.name);
+    let text = used.length ? `${used.length > 1 ? 'Controllers' : 'Controller'}: ${used.join(', ')}.` : 'No controller found. Connect one and press a button on it.';
+    if (other.length) text += ` Not used: ${other.join(', ')}.`;
+    if (this.padNote.textContent !== text) this.padNote.textContent = text;
   }
 
   private renderControlsTab(): void {
@@ -467,13 +614,21 @@ export class Lobby {
           this.modsChanged = true;
           await this.refreshMods();
         });
+        const name = el('span', 'mod-name', m.name);
         const del = el('button', 'lobby-option mod-delete', 'Delete');
-        del.addEventListener('click', async () => {
-          if (!confirm(`Delete ${m.name} from this browser?`)) return;
-          await deleteMod(m.id);
-          this.modsChanged = true;
-          await this.refreshMods();
-        });
+        del.addEventListener('click', () =>
+          askDelete(
+            li,
+            name,
+            'Delete this mod from this browser?',
+            async () => {
+              await deleteMod(m.id);
+              this.modsChanged = true;
+              await this.refreshMods();
+            },
+            () => void this.refreshMods(),
+          ),
+        );
         const loaded = this.modLoad.loaded.includes(m.name);
         let script: HTMLElement = el('span');
         if (m.hasScript) {
@@ -483,7 +638,7 @@ export class Lobby {
           b.addEventListener('click', () => void this.showScript(m));
           script = b;
         }
-        li.append(el('span', 'mod-name', m.name), script, el('span', 'mod-tag', m.enabled && !this.modsChanged && !loaded ? 'Failed' : ''), toggle, del);
+        li.append(name, script, el('span', 'mod-tag', m.enabled && !this.modsChanged && !loaded ? 'Failed' : ''), toggle, del);
         return li;
       }),
     );
@@ -628,6 +783,14 @@ export class Lobby {
 
   hide(): void {
     this.root.hidden = true;
+  }
+
+  /** Shows the start screen again after a game or a replay, on its menu or its Replays screen. */
+  showStart(view: 'menu' | 'replays'): void {
+    this.root.hidden = false;
+    this.setStatus('');
+    if (view === 'replays') this.openReplays();
+    else this.show('menu');
   }
 }
 

@@ -101,6 +101,9 @@ export class RollbackSession {
   onFrame: ((frame: number, resim: boolean, sounds: SoundEvent[]) => void) | null = null;
   /** A player said they are leaving the game. */
   onBye: ((seat: number) => void) | null = null;
+  /** Called once per frame, in order, when every seat's input for it is confirmed, with the four slots' inputs and the state after it. */
+  onConfirmed: ((frame: number, inputs: PlayerInput[], after: Snapshot) => void) | null = null;
+  private reported = 0;
 
   constructor(o: SessionOptions) {
     this.rt = o.rt;
@@ -265,6 +268,7 @@ export class RollbackSession {
       this.stats.stalls++;
     }
     this.checksum();
+    this.reportConfirmed();
     this.sendInputs();
     this.prune();
     this.stats.frame = this.frame;
@@ -294,6 +298,17 @@ export class RollbackSession {
     this.myHashes.set(f, h);
     this.checkOut = { frame: f, hash: h };
     for (const s of this.remotes) this.compareHash(s, f);
+  }
+
+  private reportConfirmed(): void {
+    if (!this.onConfirmed) return;
+    const c = this.confirmedFrame();
+    while (this.reported < c) {
+      const f = ++this.reported;
+      const used = this.used.get(f);
+      const after = this.snaps.get(f);
+      if (used && after) this.onConfirmed(f, [0, 1, 2, 3].map((s) => used[s] ?? EMPTY), after);
+    }
   }
 
   private sendInputs(): void {

@@ -5,13 +5,19 @@ import { Hud, Lobby } from './lobby.ts';
 import { loadMods } from './mods.ts';
 import { OnlineGame } from './online.ts';
 import { Mesh } from '../net/mesh.ts';
-import { report } from '../net/report.ts';
+import { report, reportContext } from '../net/report.ts';
 import { applyToPlayerOne, loadControls, loadPrefs, seatKeys } from './controls.ts';
 import { actionKeys, Pads } from './pads.ts';
 import { TouchControls } from './touch.ts';
 import { runTestScene } from './test-scene.ts';
+import { Toast } from './toast.ts';
+import { TrainingTools } from './training.ts';
+import { ReplayRecorder, runtimeState, snapshotState } from './replay.ts';
+import { ReplayOffer } from './replay-offer.ts';
+import { loadReplay } from './replay-store.ts';
+import { runReplayViewer } from './replay-viewer.ts';
 import type { Value } from '../engine/cast.ts';
-import { cancelRoom, hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
+import { BUILD, cancelRoom, hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
 import type { PlayerInput } from '../engine/io.ts';
 import type { SeatInfo, StartInfo } from '../net/protocol.ts';
 
@@ -62,9 +68,10 @@ const testing = new URLSearchParams(location.search).has('test');
 // Mods build into the game's tables, so they load before the first runtime exists.
 const modLoad = await loadMods(testing);
 
-// One game object per page: assets load once while the menu shows, and the runtime is replaced
-// when an online game starts with the shared seed.
-const game = new Game(canvas, overlay, { seed: crypto.getRandomValues(new Uint32Array(1))[0], t0: localT0() });
+// One game object per page: assets load once while the menu shows. The runtime is replaced when an
+// online game starts with the shared seed, when a replay plays, and when a player leaves for the start screen.
+const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
+const game = new Game(canvas, overlay, { seed: randomSeed(), t0: localT0() });
 const input = new LocalInput(stageWrap);
 const pads = new Pads();
 const touch = new TouchControls(page, pads, fitStage);
@@ -75,6 +82,51 @@ const resumeAudio = () => game.audio.resume();
 window.addEventListener('pointerdown', resumeAudio);
 window.addEventListener('keydown', resumeAudio);
 (window as unknown as { __game: Game }).__game = game;
+const toast = new Toast(stageWrap);
+const offer = new ReplayOffer(stageWrap, toast);
+
+/** Stops whatever runs in place of the start screen: offline play, an online game or a replay. */
+let stopPlaying: (() => void) | null = null;
+
+/**
+ * Goes back to the start screen on a fresh runtime. The images and sounds stay loaded, so this takes no
+ * reload. A question about saving a replay stays up, over the start screen.
+ */
+function backToStart(view: 'menu' | 'replays' = 'menu'): void {
+  stopPlaying?.();
+  stopPlaying = null;
+  game.audio.stopAll();
+  game.rt = Game.createRuntime({ seed: randomSeed(), t0: localT0() });
+  game.renderer.smoothSkins = new Set();
+  toast.hide();
+  touch.setPlaying(false);
+  game.present();
+  lobby.showStart(view);
+}
+
+/** The bar under the stage in offline play, with the way back to the start screen. */
+function leaveBar(): HTMLElement {
+  const bar = document.createElement('div');
+  bar.className = 'hud';
+  const leave = document.createElement('button');
+  leave.className = 'hud-leave';
+  leave.textContent = 'Leave game';
+  leave.title = 'Back to the start screen';
+  leave.tabIndex = -1;
+  leave.addEventListener('mousedown', (e) => e.preventDefault());
+  leave.addEventListener('click', () => backToStart());
+  bar.append(leave);
+  page.append(bar);
+  return bar;
+}
+
+/** Records each versus and survival match and asks after it whether to save a replay. */
+function recorder(t0: number, net: boolean, names: string[]): ReplayRecorder {
+  const r = new ReplayRecorder(t0, net, { build: BUILD, mods: modLoad.loaded, names });
+  r.onStart = () => offer.clear();
+  r.onFinish = (done) => offer.offer(done);
+  return r;
+}
 
 /** The local player's input for one frame: keys, touch and controllers, the mouse, and an answer to a question. */
 function sampleLocal(): PlayerInput {
@@ -113,10 +165,29 @@ const lobby = new Lobby(overlay, {
     const g = game.rt.stage;
     applyToPlayerOne(g.l.Player_Input as Value[], g.l.Player_Settings as Value[], loadControls(), loadPrefs());
     touch.setPlaying(true);
-    startFixedLoop(
-      () => game.step([sampleLocal()]),
+    const tools = new TrainingTools(game, toast);
+    const onKey = (e: KeyboardEvent) => {
+      if (tools.key(e)) e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    const replay = recorder(game.rt.t0, false, []);
+    const bar = leaveBar();
+    const stopLoop = startFixedLoop(
+      () => {
+        const p = tools.input(sampleLocal());
+        game.step([p]);
+        replay.frame([p], runtimeState(game.rt));
+      },
       () => game.present(),
     );
+    stopPlaying = () => {
+      stopLoop();
+      window.removeEventListener('keydown', onKey);
+      bar.remove();
+    };
+  },
+  watch(id) {
+    void watchReplay(id);
   },
   async host(name) {
     lobby.setStatus('Opening a room...');
@@ -253,17 +324,24 @@ function begin(start: StartInfo): void {
   }
   game.rt = Game.createRuntime({ seed: start.seed, t0: start.t0 });
   const names = new Map(seats.map((s) => [s.seat, s.name]));
-  // Leaving reloads the page, which is the simplest way back to a clean menu.
-  const hud = new Hud(
-    page,
-    () => {
-      online?.leave();
-      location.reload();
-    },
-    overlay,
-  );
+  const hud = new Hud(page, () => backToStart(), overlay);
+  stopPlaying = () => {
+    // Leaving says goodbye to the others and closes the room and the direct links.
+    online?.leave();
+    hud.remove();
+    online = null;
+    delete (window as unknown as { __online?: OnlineGame }).__online;
+    room = null;
+    mesh = null;
+    reportContext.online = false;
+    delete reportContext.room;
+    delete reportContext.seat;
+  };
   online = new OnlineGame(game, room, mesh, start, room.seat, names, hud, host);
   (window as unknown as { __online: OnlineGame }).__online = online;
+  // Online, a frame is recorded once every player's input for it is confirmed.
+  const replay = recorder(start.t0, true, start.seats.map((s) => names.get(s) ?? `P${s + 1}`));
+  online.session.onConfirmed = (_frame, inputs, after) => replay.frame(inputs, snapshotState(game.rt, after));
   lobby.hide();
   input.enabled = true;
   touch.setPlaying(true);
@@ -277,13 +355,17 @@ window.addEventListener('unhandledrejection', (e) => report('error', { message: 
 
 function startTest(): void {
   status.hidden = true;
+  const tools = new TrainingTools(game, toast);
+  window.addEventListener('keydown', (e) => {
+    if (tools.key(e)) e.preventDefault();
+  });
   runTestScene({
     game,
     character: modLoad.ids[0] ?? null,
     name: modLoad.loaded[0] ?? 'nothing',
     problems: modLoad.problems,
     warnings: modLoad.warnings,
-    sample: sampleLocal,
+    sample: () => tools.input(sampleLocal()),
     applyControls: () => {
       const g = game.rt.stage;
       applyToPlayerOne(g.l.Player_Input as Value[], g.l.Player_Settings as Value[], loadControls(), loadPrefs());
@@ -295,6 +377,31 @@ function startTest(): void {
     page,
     stage: stageWrap,
   });
+}
+
+/** Plays a saved replay in place of the start screen. A replay plays the same only in the build and with the mods it was saved with. */
+async function watchReplay(id: string): Promise<void> {
+  const saved = await loadReplay(id).catch(() => null);
+  if (!saved) {
+    lobby.setStatus('This replay is not in this browser anymore.');
+    return;
+  }
+  const { meta, body } = saved;
+  const tag = (b: string) => b.split('-')[1] ?? '';
+  if (tag(meta.build) !== tag(BUILD)) {
+    lobby.setStatus(
+      meta.mods.length
+        ? `This replay needs exactly these mods turned on: ${meta.mods.join(', ')}. Change them on the Mods screen.`
+        : 'This replay was saved with no mods turned on. Turn your mods off on the Mods screen to watch it.',
+    );
+    return;
+  }
+  const warning = meta.build !== BUILD ? 'Desynced version detected: The replay may diverge due to balance changes.' : '';
+  lobby.hide();
+  lobby.setStatus('');
+  game.audio.stopAll();
+  game.rt = Game.createRuntime({ seed: 0, t0: body.t0 });
+  stopPlaying = runReplayViewer({ game, meta, body, warning, page, stage: stageWrap, onExit: () => backToStart('replays') });
 }
 
 const status = document.getElementById('status')!;
