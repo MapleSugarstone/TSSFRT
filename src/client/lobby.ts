@@ -8,9 +8,24 @@ import { ACTIONS, DEFAULT_CONTROLS, DEFAULT_TOUCH_BUTTONS, loadControls, loadPre
 import { addMod, deleteMod, listMods, modScript, setModEnabled, setModScriptAllowed, type ModInfo, type ModLoad } from './mods.ts';
 import { installUiAssets, playerBadge } from './ui-assets.ts';
 import { listControllers } from './pads.ts';
-import { createElement, Pencil, Play, Trash2, type IconNode } from 'lucide';
+import { createElement, Download, Pencil, Play, Trash2, X, type IconNode } from 'lucide';
 import { clock, REPLAY_NAME_MAX, replayName, replayTitle, type ReplayMeta } from './replay.ts';
-import { deleteReplay, listReplays, renameReplay } from './replay-store.ts';
+import { deleteReplay, importReplay, listReplays, renameReplay, REPLAY_FILE_TYPE, replayFile } from './replay-store.ts';
+import { VIDEO_QUALITIES, type VideoQuality } from './replay-viewer.ts';
+import { downloadFile, fileName } from './download.ts';
+
+const EXPORT_KEY = 'sfrt.replayExport';
+
+/** The last download choices: a video or a replay file, and the video's quality. */
+function loadExport(): { kind: 'mp4' | 'sfrp'; quality: VideoQuality } {
+  try {
+    const v = JSON.parse(localStorage.getItem(EXPORT_KEY) ?? 'null');
+    if ((v?.kind === 'mp4' || v?.kind === 'sfrp') && v.quality in VIDEO_QUALITIES) return v;
+  } catch {
+    // Storage may be blocked.
+  }
+  return { kind: 'mp4', quality: '720p' };
+}
 
 const NAME_KEY = 'sfrt.name';
 const DELAY_KEY = 'sfrt.delay';
@@ -115,6 +130,8 @@ export interface LobbyHandlers {
   touchButtons(names: string[]): void;
   /** The player chose a replay to watch. */
   watch(id: string): void;
+  /** The player chose to download a replay as a video. */
+  recordVideo(id: string, quality: VideoQuality): void;
   leave(): void;
 }
 
@@ -365,9 +382,30 @@ export class Lobby {
     this.replaysView.hidden = true;
     this.replayList = el('ul', 'mod-list replay-list');
     const replayActions = el('div', 'lobby-actions');
+    const upload = el('button', '', 'Upload');
+    const replayPick = el('input');
+    replayPick.type = 'file';
+    replayPick.accept = REPLAY_FILE_TYPE;
+    replayPick.multiple = true;
+    replayPick.hidden = true;
+    upload.addEventListener('click', () => replayPick.click());
+    replayPick.addEventListener('change', async () => {
+      const files = [...(replayPick.files ?? [])];
+      replayPick.value = '';
+      const problems: string[] = [];
+      for (const file of files) {
+        try {
+          await importReplay(file);
+        } catch (e) {
+          problems.push(`${file.name}: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+      await this.refreshReplays();
+      this.setStatus(problems.join(' '));
+    });
     const replaysDone = el('button', 'primary', 'Done');
     replaysDone.addEventListener('click', () => this.show('menu'));
-    replayActions.append(replaysDone);
+    replayActions.append(upload, replaysDone, replayPick);
     this.replaysView.append(el('div', 'lobby-heading', 'Replays'), this.replayList, replayActions);
 
     this.status = el('div', 'lobby-status');
@@ -511,8 +549,61 @@ export class Lobby {
         () => li.replaceWith(this.replayRow(m)),
       ),
     );
-    li.append(what, rename, watch, del);
+    const save = iconButton(Download, 'Download');
+    save.addEventListener('click', () => this.askDownload(m, li, name));
+    li.append(what, rename, watch, save, del);
     return li;
+  }
+
+  /** Turns a replay's row into the download choices: a video or a replay file, and the video's quality. */
+  private askDownload(m: ReplayMeta, li: HTMLLIElement, name: HTMLElement): void {
+    const pick = loadExport();
+    const keep = () => {
+      try {
+        localStorage.setItem(EXPORT_KEY, JSON.stringify(pick));
+      } catch {
+        // Storage may be blocked.
+      }
+    };
+    const kinds = el('div', 'export-kind');
+    const mp4 = el('button', 'lobby-option', 'MP4');
+    const sfrp = el('button', 'lobby-option', 'SFRP');
+    kinds.append(mp4, sfrp);
+    const quality = el('select', 'export-quality');
+    quality.title = 'Video quality';
+    for (const q of Object.keys(VIDEO_QUALITIES)) quality.append(new Option(q, q));
+    quality.value = pick.quality;
+    const render = () => {
+      mp4.classList.toggle('on', pick.kind === 'mp4');
+      sfrp.classList.toggle('on', pick.kind === 'sfrp');
+      quality.hidden = pick.kind !== 'mp4';
+    };
+    const choose = (kind: 'mp4' | 'sfrp') => () => {
+      pick.kind = kind;
+      keep();
+      render();
+    };
+    mp4.addEventListener('click', choose('mp4'));
+    sfrp.addEventListener('click', choose('sfrp'));
+    quality.addEventListener('change', () => {
+      pick.quality = quality.value as VideoQuality;
+      keep();
+    });
+    const go = iconButton(Download, 'Download');
+    go.addEventListener('click', async () => {
+      li.replaceWith(this.replayRow(m));
+      if (pick.kind === 'mp4') {
+        this.h.recordVideo(m.id, pick.quality);
+        return;
+      }
+      const file = await replayFile(m.id);
+      if (file) downloadFile(file, `${fileName(replayName(m))}${REPLAY_FILE_TYPE}`);
+    });
+    const cancel = iconButton(X, 'Cancel');
+    cancel.addEventListener('click', () => li.replaceWith(this.replayRow(m)));
+    render();
+    li.classList.add('choosing');
+    li.replaceChildren(name, kinds, quality, go, cancel);
   }
 
   /** Puts a text box in place of a replay's name. Enter or leaving the box saves, Escape cancels, and an empty name brings back the fighters and stage. */

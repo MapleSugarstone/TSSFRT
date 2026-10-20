@@ -1239,8 +1239,29 @@ body {
 }
 
 .mod.replay {
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) repeat(4, auto);
   gap: 0.2em;
+}
+
+/* A replay's download choices: MP4 or SFRP, then the video quality. */
+.export-kind {
+  display: flex;
+  gap: 0.2em;
+}
+
+.lobby .export-kind .lobby-option {
+  padding: 0 0.45em;
+  border: 1px solid transparent;
+}
+
+.lobby .export-kind .lobby-option.on {
+  color: #ffffff;
+  border-color: var(--p1);
+}
+
+.lobby select.export-quality {
+  padding: 0.1em 0.3em;
+  font-size: 0.85em;
 }
 
 /* A row asking whether to delete it: the name, the question under it, then Delete and Keep. */

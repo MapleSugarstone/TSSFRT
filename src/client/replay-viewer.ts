@@ -15,8 +15,35 @@ export interface ReplayViewerOptions {
   warning: string;
   page: HTMLElement;
   stage: HTMLElement;
-  /** The player chose Exit. */
+  /** The player chose Exit, or a video finished recording. */
   onExit: () => void;
+  /** Records the whole replay as a video at normal speed instead of letting the player watch. */
+  video?: VideoOptions;
+}
+
+/** Video sizes keep the game's 4:3 shape. */
+export const VIDEO_QUALITIES = {
+  '480p': { width: 640, height: 480, bitrate: 2_500_000 },
+  '720p': { width: 960, height: 720, bitrate: 5_000_000 },
+  '1080p': { width: 1440, height: 1080, bitrate: 10_000_000 },
+} as const;
+export type VideoQuality = keyof typeof VIDEO_QUALITIES;
+
+export interface VideoOptions {
+  quality: VideoQuality;
+  /** Sets the canvas to a fixed size while recording, or back to the window's when null. */
+  setCanvasSize: (size: [number, number] | null) => void;
+  /** Called with the finished video and its file extension. */
+  done: (video: Blob, extension: string) => void;
+}
+
+/** MP4 where the browser can record it, otherwise WebM. */
+const VIDEO_TYPES = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
+
+/** The video type this browser records, or null when it records none. */
+export function videoType(): string | null {
+  if (typeof MediaRecorder === 'undefined' || typeof HTMLCanvasElement.prototype.captureStream !== 'function') return null;
+  return VIDEO_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
 const KEEP_EVERY = 60;
@@ -62,9 +89,16 @@ export function runReplayViewer(o: ReplayViewerOptions): () => void {
     e.preventDefault();
   };
   window.addEventListener('keydown', onKey);
+  let recorder: MediaRecorder | null = null;
   const stop = () => {
     stopLoop();
     window.removeEventListener('keydown', onKey);
+    // A recording stopped before the end is thrown away.
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    if (o.video) {
+      game.audio.endCapture();
+      o.video.setCanvasSize(null);
+    }
     bar.remove();
     note.remove();
     document.title = pageTitle;
@@ -148,6 +182,7 @@ export function runReplayViewer(o: ReplayViewerOptions): () => void {
 
   /** Space, Left and Right control the replay. Returns whether the key was one of them. */
   function controls(key: string): boolean {
+    if (o.video) return false;
     if (key === ' ') setPaused(!paused);
     else if (key === 'ArrowLeft') back.click();
     else if (key === 'ArrowRight') step.click();
@@ -185,7 +220,9 @@ export function runReplayViewer(o: ReplayViewerOptions): () => void {
       }
       if (at >= total) {
         paused = true;
-        if (!mismatch) tell('End of the replay. Play starts over.');
+        if (recorder) {
+          if (recorder.state === 'recording') finishVideo();
+        } else if (!mismatch) tell('End of the replay. Play starts over.');
       }
     },
     () => {
@@ -196,7 +233,40 @@ export function runReplayViewer(o: ReplayViewerOptions): () => void {
       }
     },
   );
-  if (o.warning) {
+  let finishVideo = () => {};
+  if (o.video) {
+    // The whole replay plays once at normal speed while the canvas and the game's sound are recorded.
+    const video = o.video;
+    const quality = VIDEO_QUALITIES[video.quality];
+    const type = videoType()!;
+    for (const b of [seekBar, pause, back, step, rate]) b.hidden = true;
+    bar.prepend(el('span', 'hud-line', `Recording ${video.quality} video`));
+    exit.textContent = 'Cancel';
+    exit.title = 'Stop recording (Escape)';
+    if (o.warning) tell(o.warning);
+    video.setCanvasSize([quality.width, quality.height]);
+    game.present();
+    game.audio.resume();
+    const tracks = [...game.canvas.captureStream(30).getVideoTracks(), ...game.audio.capture().getAudioTracks()];
+    const rec = new MediaRecorder(new MediaStream(tracks), { mimeType: type, videoBitsPerSecond: quality.bitrate, audioBitsPerSecond: 160_000 });
+    const chunks: Blob[] = [];
+    let complete = false;
+    rec.ondataavailable = (e) => {
+      if (e.data.size) chunks.push(e.data);
+    };
+    rec.onstop = () => {
+      for (const t of tracks) t.stop();
+      if (!complete) return;
+      video.done(new Blob(chunks, { type }), type.startsWith('video/mp4') ? 'mp4' : 'webm');
+      o.onExit();
+    };
+    finishVideo = () => {
+      complete = true;
+      rec.stop();
+    };
+    rec.start(1000);
+    recorder = rec;
+  } else if (o.warning) {
     paused = true;
     tell(o.warning);
   }

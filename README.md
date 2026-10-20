@@ -26,7 +26,7 @@ On touch screens a joystick and six buttons appear once a game starts: beside th
 
 Training mode in offline play has practice keys. F2 saves the whole game state and F4 loads it. F8 starts recording the dummy: your controls move the dummy for up to 10 seconds while your fighter stands still, and F8 again stops. F9 makes the dummy repeat the recording until you press F9 again. Recording and playback need the dummy's CPU level at 0, the training default. The mod maker's test scene has the same keys.
 
-After a versus or survival match, offline or online, the game asks whether to save a replay. Saved replays stay in the browser. **Replays** on the start screen lists them, renames and deletes them, and plays them with pause, frame steps, speeds and a seek bar. A replay plays only with the same mods turned on. A replay saved with an older version of the game may not play the same, and the player says so when it stops matching.
+After a versus or survival match, offline or online, the game asks whether to save a replay. Saved replays stay in the browser. **Replays** on the start screen lists them, renames and deletes them, and plays them with pause, frame steps, speeds and a seek bar. Its download button saves a replay as an MP4 video at 480p, 720p or 1080p, recorded while the replay plays once at normal speed, or as a `.sfrp` file. **Upload** adds `.sfrp` files from other players. A replay plays only with the same mods turned on. A replay saved with an older version of the game may not play the same, and the player says so when it stops matching.
 
 ## Online play
 

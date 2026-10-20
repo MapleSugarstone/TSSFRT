@@ -83,6 +83,21 @@ export class AudioOut {
     this.master.gain.value = v;
   }
 
+  private tap: MediaStreamAudioDestinationNode | null = null;
+
+  /** Everything the game plays, as a new stream, for recording a video. `endCapture` stops feeding it. */
+  capture(): MediaStream {
+    this.endCapture();
+    this.tap = this.ctx.createMediaStreamDestination();
+    this.master.connect(this.tap);
+    return this.tap.stream;
+  }
+
+  endCapture(): void {
+    if (this.tap) this.master.disconnect(this.tap);
+    this.tap = null;
+  }
+
   /** Applies queued events and empties the queue. */
   apply(events: SoundEvent[]): void {
     for (const e of events) this.handle(e);

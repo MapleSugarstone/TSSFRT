@@ -1,6 +1,6 @@
 // Saved replays, kept in this browser (IndexedDB). The list and the recordings are separate stores,
 // so the Replays screen reads only the short entries. A recording is stored gzipped.
-import type { FinishedReplay, ReplayBody, ReplayMeta } from './replay.ts';
+import { REPLAY_NAME_MAX, type FinishedReplay, type ReplayBody, type ReplayMeta } from './replay.ts';
 
 const DB = 'sfrt-replays';
 const META = 'meta';
@@ -69,6 +69,65 @@ export async function loadReplay(id: string): Promise<{ meta: ReplayMeta; body: 
   const [meta, blob] = await Promise.all([request(t.objectStore(META).get(id) as IDBRequest<ReplayMeta | undefined>), request(t.objectStore(DATA).get(id) as IDBRequest<Blob | undefined>)]);
   if (!meta || !blob) return null;
   return { meta, body: JSON.parse(await gunzip(blob)) as ReplayBody };
+}
+
+// ---------------------------------------------------------------- replay files
+
+/** The extension of a replay file, which another player's game can open with Upload. */
+export const REPLAY_FILE_TYPE = '.sfrp';
+const FILE_KIND = 'sfrt-replay';
+const FILE_MAX = 30 * 1024 * 1024;
+const FRAMES_MAX = 30 * 60 * 30;
+
+/** A replay as one gzipped file: its list entry and its recording. */
+export async function replayFile(id: string): Promise<Blob | null> {
+  const r = await loadReplay(id);
+  if (!r) return null;
+  const { id: _id, saved: _saved, ...meta } = r.meta;
+  return gzip(JSON.stringify({ format: 1, kind: FILE_KIND, meta, body: r.body }));
+}
+
+const isText = (v: unknown): v is string => typeof v === 'string';
+const isTexts = (v: unknown): v is string[] => Array.isArray(v) && v.every(isText);
+const isInputs = (v: unknown) =>
+  Array.isArray(v) && v.length <= 4 && v.every((p) => p && typeof p === 'object' && isTexts((p as { keys?: unknown }).keys));
+
+/** The replay in a file's parsed contents, or null when they are not one this version can read. */
+function readReplayFile(v: unknown): FinishedReplay | null {
+  if (!v || typeof v !== 'object') return null;
+  const { format, kind, meta: m, body: b } = v as Record<string, Record<string, unknown> | undefined>;
+  if ((format as unknown) !== 1 || (kind as unknown) !== FILE_KIND || !m || !b) return null;
+  if (!isText(m.mode) || !isTexts(m.fighters) || !isText(m.stage) || !isTexts(m.names) || !isText(m.build) || !isTexts(m.mods)) return null;
+  if (typeof m.online !== 'boolean' || (m.name !== undefined && !isText(m.name))) return null;
+  if (b.format !== 1 || typeof b.t0 !== 'number' || typeof b.net !== 'boolean' || !b.start || typeof b.start !== 'object') return null;
+  if (!Array.isArray(b.runs) || !Array.isArray(b.checks)) return null;
+  // The runs must add up to the length the entry gives, which also keeps a crafted file from expanding without end.
+  let frames = 0;
+  for (const run of b.runs as unknown[]) {
+    if (!Array.isArray(run) || !Number.isInteger(run[0]) || run[0] < 1 || !isInputs(run[1])) return null;
+    frames += run[0];
+  }
+  if (frames !== m.frames || frames > FRAMES_MAX) return null;
+  if (!(b.checks as unknown[]).every((c) => Array.isArray(c) && Number.isInteger(c[0]) && Number.isInteger(c[1]))) return null;
+  return {
+    meta: { name: m.name?.slice(0, REPLAY_NAME_MAX), mode: m.mode, fighters: m.fighters, stage: m.stage, frames, online: m.online, names: m.names, build: m.build, mods: m.mods },
+    body: b as unknown as ReplayBody,
+  };
+}
+
+/** Keeps the replay in a .sfrp file in this browser. Throws with a message the player can read when the file is not one. */
+export async function importReplay(file: Blob): Promise<ReplayMeta> {
+  if (file.size > FILE_MAX) throw new Error('The file is too large to be a replay.');
+  let data: unknown;
+  try {
+    // The file comes from someone else, so keys that would change an object's prototype are dropped.
+    data = JSON.parse(await gunzip(file), (k, v) => (k === '__proto__' ? undefined : v));
+  } catch {
+    throw new Error('The file is not a replay.');
+  }
+  const replay = readReplayFile(data);
+  if (!replay) throw new Error('The file is not a replay, or a newer version of the game made it.');
+  return saveReplay(replay);
 }
 
 /** Gives a replay a name, or takes it away when `name` is empty. */

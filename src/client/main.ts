@@ -12,10 +12,11 @@ import { TouchControls } from './touch.ts';
 import { runTestScene } from './test-scene.ts';
 import { Toast } from './toast.ts';
 import { TrainingTools } from './training.ts';
-import { ReplayRecorder, runtimeState, snapshotState } from './replay.ts';
+import { ReplayRecorder, replayName, runtimeState, snapshotState } from './replay.ts';
 import { ReplayOffer } from './replay-offer.ts';
 import { loadReplay } from './replay-store.ts';
-import { runReplayViewer } from './replay-viewer.ts';
+import { runReplayViewer, videoType, type VideoOptions, type VideoQuality } from './replay-viewer.ts';
+import { downloadFile, fileName } from './download.ts';
 import type { Value } from '../engine/cast.ts';
 import { BUILD, cancelRoom, hostRoom, joinRoom, onlineAvailable, RoomClient } from '../net/room-client.ts';
 import type { PlayerInput } from '../engine/io.ts';
@@ -48,10 +49,17 @@ function fitStage(): void {
   stageWrap.style.height = `${cssH}px`;
   document.documentElement.style.setProperty('--stage-w', `${cssW}px`);
   document.documentElement.style.setProperty('--stage-h', `${cssH}px`);
+  if (videoSize) {
+    [canvas.width, canvas.height] = videoSize;
+    return;
+  }
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
 }
+
+/** The canvas size while a replay records as a video, which the window's size does not change. */
+let videoSize: [number, number] | null = null;
 
 /** Local time expressed in UTC fields, so the date blocks read the player's wall clock. */
 function localT0(): number {
@@ -188,6 +196,9 @@ const lobby = new Lobby(overlay, {
   },
   watch(id) {
     void watchReplay(id);
+  },
+  recordVideo(id, quality) {
+    void watchReplay(id, quality);
   },
   async host(name) {
     lobby.setStatus('Opening a room...');
@@ -379,8 +390,15 @@ function startTest(): void {
   });
 }
 
-/** Plays a saved replay in place of the start screen. A replay plays the same only in the build and with the mods it was saved with. */
-async function watchReplay(id: string): Promise<void> {
+/**
+ * Plays a saved replay in place of the start screen, or records it as a video. A replay plays the same only
+ * in the build and with the mods it was saved with.
+ */
+async function watchReplay(id: string, quality?: VideoQuality): Promise<void> {
+  if (quality && !videoType()) {
+    lobby.setStatus('This browser cannot record video.');
+    return;
+  }
   const saved = await loadReplay(id).catch(() => null);
   if (!saved) {
     lobby.setStatus('This replay is not in this browser anymore.');
@@ -401,7 +419,19 @@ async function watchReplay(id: string): Promise<void> {
   lobby.setStatus('');
   game.audio.stopAll();
   game.rt = Game.createRuntime({ seed: 0, t0: body.t0 });
-  stopPlaying = runReplayViewer({ game, meta, body, warning, page, stage: stageWrap, onExit: () => backToStart('replays') });
+  const video: VideoOptions | undefined = quality && {
+    quality,
+    setCanvasSize: (size) => {
+      videoSize = size;
+      fitStage();
+    },
+    done: (file, extension) => {
+      const name = `${fileName(replayName(meta))}.${extension}`;
+      downloadFile(file, name);
+      toast.show(extension === 'mp4' ? `Saved ${name}.` : `Saved ${name}. This browser records WebM rather than MP4.`, 5000);
+    },
+  };
+  stopPlaying = runReplayViewer({ game, meta, body, warning, page, stage: stageWrap, video, onExit: () => backToStart('replays') });
 }
 
 const status = document.getElementById('status')!;
