@@ -32,6 +32,8 @@ After a versus or survival match, offline or online, the game asks whether to sa
 
 Online games are peer to peer. Every player runs the whole game, and inputs travel directly between browsers over WebRTC data channels. A small room server in `server/` hands out room codes and passes the connection setup messages between players. It never sees gameplay traffic unless a direct connection fails, and then it relays inputs for that pair of players.
 
+Before a player's first online game, the page says that playing online shares IP addresses with the other players in the room, because the connections are direct. Once they accept, that browser does not show it again.
+
 1. One player chooses **Host an online game** and shares the six-character room code.
 2. Up to three others enter the code and choose **Join**.
 3. The host picks the input delay and starts the game. Everyone sees the same game from the title screen on, and each player controls their own seat (P1 to P4).

@@ -28,6 +28,8 @@ function loadExport(): { kind: 'mp4' | 'sfrp'; quality: VideoQuality } {
 }
 
 const NAME_KEY = 'sfrt.name';
+/** Set once the player accepts the online notice, which then never shows again in this browser. */
+const ONLINE_NOTICE_KEY = 'sfrt.onlineNotice';
 const DELAY_KEY = 'sfrt.delay';
 const HQ_KEY = 'sfrt.hqpen';
 const MOD_MAKER = './mod-maker.html';
@@ -152,6 +154,9 @@ export class Lobby {
   private modsView: HTMLDivElement;
   private modsBtn: HTMLButtonElement;
   private replaysView: HTMLDivElement;
+  private noticeView: HTMLDivElement;
+  /** The Host or Join waiting for the player to accept the online notice. */
+  private afterNotice: (() => void) | null = null;
   private replaysBtn: HTMLButtonElement;
   private replayList: HTMLUListElement;
   private modList: HTMLUListElement;
@@ -427,7 +432,30 @@ export class Lobby {
     this.setTouch(false);
     this.replaysBtn = el('button', 'lobby-option', 'Replays');
     this.replaysBtn.addEventListener('click', () => this.openReplays());
-    panel.append(this.menu, this.room, this.controlsView, this.modsView, this.replaysView, this.status);
+    // Shown before the first Host or Join in this browser.
+    this.noticeView = el('div', 'lobby-controls');
+    this.noticeView.hidden = true;
+    const noticeOk = el('button', 'primary', 'I understand');
+    const noticeBack = el('button', '', 'Cancel');
+    const noticeActions = el('div', 'lobby-actions');
+    noticeActions.append(noticeBack, noticeOk);
+    this.noticeView.append(
+      el('div', 'lobby-heading', 'Playing online'),
+      el('p', 'lobby-note', "Online games connect you straight to the other players in your room (peer to peer, through WebRTC). This means you and they can see each other's IP addresses. Only play online with people you are comfortable sharing that with."),
+      noticeActions,
+    );
+    noticeOk.addEventListener('click', () => {
+      store(ONLINE_NOTICE_KEY, '1');
+      const go = this.afterNotice;
+      this.afterNotice = null;
+      this.show('menu');
+      go?.();
+    });
+    noticeBack.addEventListener('click', () => {
+      this.afterNotice = null;
+      this.show('menu');
+    });
+    panel.append(this.menu, this.room, this.controlsView, this.modsView, this.replaysView, this.noticeView, this.status);
     // The footer keeps these out of the panel's way on short screens.
     const footer = el('div', 'lobby-footer');
     const left = el('div', 'lobby-footer-left');
@@ -448,10 +476,10 @@ export class Lobby {
       return n;
     };
     localBtn.addEventListener('click', () => this.h.local());
-    hostBtn.addEventListener('click', () => this.h.host(name()));
-    joinBtn.addEventListener('click', () => this.h.join(name(), codeIn.value.trim().toUpperCase()));
+    hostBtn.addEventListener('click', () => this.online(() => this.h.host(name())));
+    joinBtn.addEventListener('click', () => this.online(() => this.h.join(name(), codeIn.value.trim().toUpperCase())));
     codeIn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') this.h.join(name(), codeIn.value.trim().toUpperCase());
+      if (e.key === 'Enter') this.online(() => this.h.join(name(), codeIn.value.trim().toUpperCase()));
     });
     this.startBtn.addEventListener('click', () => {
       store(DELAY_KEY, this.delayIn.value);
@@ -493,7 +521,18 @@ export class Lobby {
     this.show('room');
   }
 
-  private show(view: 'menu' | 'room' | 'controls' | 'mods' | 'replays'): void {
+  /** Runs an online action, after the player accepts the online notice if they have not yet. */
+  private online(action: () => void): void {
+    if (load(ONLINE_NOTICE_KEY, '') === '1') {
+      action();
+      return;
+    }
+    this.afterNotice = action;
+    this.setStatus('');
+    this.show('notice');
+  }
+
+  private show(view: 'menu' | 'room' | 'controls' | 'mods' | 'replays' | 'notice'): void {
     if (view === 'menu' || view === 'room') this.backTo = view;
     if (this.padTimer) clearInterval(this.padTimer);
     this.padTimer = null;
@@ -504,13 +543,14 @@ export class Lobby {
     this.room.hidden = view !== 'room';
     this.controlsView.hidden = view !== 'controls';
     this.modsView.hidden = view !== 'mods';
+    this.noticeView.hidden = view !== 'notice';
     this.replaysView.hidden = view !== 'replays';
     this.modsBtn.hidden = view !== 'menu';
     this.replaysBtn.hidden = view !== 'menu';
     this.leaveBtn.hidden = view !== 'room';
     this.hqBtn.hidden = view !== 'menu';
     this.touchBtn.hidden = view !== 'menu';
-    this.controlsBtn.hidden = view === 'controls' || view === 'mods' || view === 'replays';
+    this.controlsBtn.hidden = view === 'controls' || view === 'mods' || view === 'replays' || view === 'notice';
     this.root.classList.toggle('in-room', view !== 'menu');
   }
 
