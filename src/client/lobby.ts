@@ -438,7 +438,7 @@ export class Lobby {
     const noticeOk = el('button', 'primary', 'I understand');
     const noticeBack = el('button', '', 'Cancel');
     const noticeActions = el('div', 'lobby-actions');
-    noticeActions.append(noticeBack, noticeOk);
+    noticeActions.append(noticeOk, noticeBack);
     this.noticeView.append(
       el('div', 'lobby-heading', 'Playing online'),
       el('p', 'lobby-note', "Online games connect you straight to the other players in your room (peer to peer, through WebRTC). This means you and they can see each other's IP addresses. Only play online with people you are comfortable sharing that with."),
