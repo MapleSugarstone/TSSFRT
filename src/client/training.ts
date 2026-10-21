@@ -54,6 +54,7 @@ export class TrainingTools {
         }
         loadSnapshot(rt, this.state);
         rt.soundEvents.length = 0;
+        this.game.audio.resync(rt);
         this.toast.show('State loaded.');
         break;
       case 'F8':

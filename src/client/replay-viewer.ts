@@ -113,6 +113,7 @@ export function runReplayViewer(o: ReplayViewerOptions): () => void {
     return stop;
   }
   rt().io.netMode = body.net;
+  game.audio.resync(rt());
 
   const frames = replayFrames(body);
   const total = frames.length;
@@ -149,7 +150,7 @@ export function runReplayViewer(o: ReplayViewerOptions): () => void {
     }
     while (at < n) advance();
     rt().soundEvents.length = 0;
-    game.audio.stopAll();
+    game.audio.resync(rt());
     carry = 0;
     if (!mismatch) note.hidden = true;
     draw();

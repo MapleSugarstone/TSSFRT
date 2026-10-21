@@ -115,6 +115,7 @@ export function runTestScene(o: TestSceneOptions): void {
     if (!start) return;
     loadSnapshot(game.rt, start);
     game.rt.soundEvents.length = 0;
+    game.audio.resync(game.rt);
     o.sample();
     note({ level: 'log', character: '', text: 'Reset to the start.' });
     draw();

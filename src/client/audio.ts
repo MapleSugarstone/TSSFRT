@@ -109,7 +109,7 @@ export class AudioOut {
     const now = this.ctx.currentTime;
     this.still = simMs === this.lastSim ? this.still + 1 : 0;
     this.lastSim = simMs;
-    for (const v of this.voices.values()) {
+    for (const [key, v] of [...this.voices]) {
       if (!v.follow) continue;
       if (this.still >= HOLD_AFTER) {
         // The game is waiting (for another player, usually), so the music waits too.
@@ -117,6 +117,11 @@ export class AudioOut {
         continue;
       }
       const want = expected(v, simMs);
+      // Game time went back to before the sound started, as when a saved state loads, so it is not playing yet.
+      if (want < 0) {
+        this.fadeOut(key, now);
+        continue;
+      }
       if (want >= v.buffer.duration) continue;
       if (v.held) {
         this.restart(v, want, now);
@@ -138,25 +143,7 @@ export class AudioOut {
       this.fadeOut(key, now);
       const buffer = this.buffers[e.sprite]?.[e.sound];
       if (!buffer || this.muted) return;
-      const pan = this.ctx.createStereoPanner();
-      pan.pan.value = (e.pan ?? 0) / 100;
-      pan.connect(this.master);
-      const v: Voice = {
-        buffer,
-        src: null as unknown as AudioBufferSourceNode,
-        gain: null as unknown as GainNode,
-        pan,
-        serial: e.serial,
-        volume: e.volume / 100,
-        follow: buffer.duration >= FOLLOW_MIN_S,
-        rate: e.rate,
-        simPos: 0,
-        simAt: e.at,
-        realPos: 0,
-        realAt: now,
-        playRate: e.rate,
-        held: false,
-      };
+      const v = this.voice(buffer, e.serial, e.volume, e.pan ?? 0, e.rate, 0, e.at, now);
       this.startSource(v, 0, now, false);
       this.voices.set(key, v);
     } else if (e.kind === 'stop') {
@@ -173,6 +160,51 @@ export class AudioOut {
       if (!v.held) v.gain.gain.value = v.volume;
       v.pan.pan.value = (e.pan ?? 0) / 100;
     }
+  }
+
+  /** A voice at buffer position `simPos` seconds at simulation time `simAt`, before its source starts. */
+  private voice(buffer: AudioBuffer, serial: number, volume: number, pan: number, rate: number, simPos: number, simAt: number, now: number): Voice {
+    const panner = this.ctx.createStereoPanner();
+    panner.pan.value = pan / 100;
+    panner.connect(this.master);
+    return {
+      buffer,
+      src: null as unknown as AudioBufferSourceNode,
+      gain: null as unknown as GainNode,
+      pan: panner,
+      serial,
+      volume: volume / 100,
+      follow: buffer.duration >= FOLLOW_MIN_S,
+      rate,
+      simPos,
+      simAt,
+      realPos: simPos,
+      realAt: now,
+      playRate: rate,
+      held: false,
+    };
+  }
+
+  /**
+   * After the game jumps to another moment, such as a loaded state, plays what the game says is playing
+   * then: each long sound (the music) from where it is, and nothing else.
+   */
+  resync(rt: Runtime): void {
+    this.stopAll();
+    if (this.muted) return;
+    const now = this.ctx.currentTime;
+    const simMs = rt.currentMSecs;
+    rt.players.forEach((list, si) =>
+      list.forEach((p, i) => {
+        const buffer = this.buffers[si]?.[i];
+        if (!p.isPlaying || !buffer || buffer.duration < FOLLOW_MIN_S) return;
+        const offset = (p.pos + (simMs - p.lastT) * p.rate) / 1000;
+        if (offset < 0 || offset >= buffer.duration) return;
+        const v = this.voice(buffer, p.serial, p.owner?.volume ?? 100, p.owner?.snd?.pan ?? 0, p.rate, offset, simMs, now);
+        this.startSource(v, offset, now, true);
+        this.voices.set(`${si}:${i}`, v);
+      }),
+    );
   }
 
   /** Starts the voice's buffer at `offset` seconds through a fresh source and gain. */
