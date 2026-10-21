@@ -165,6 +165,25 @@ let seats: SeatInfo[] = [];
 let host = 0;
 let code = '';
 let hosting = false;
+/** True while a host or join request waits for the lobby. */
+let asking = false;
+
+/**
+ * Withdraws the code of a room this player hosts. An open code counts toward the three an address may have,
+ * so it goes as soon as it can no longer let anyone in: when the host leaves, is refused, or the game starts.
+ */
+function withdrawCode(): void {
+  if (hosting && code) void cancelRoom(code);
+  hosting = false;
+}
+
+/** Closes the room connection and the direct links, so a new room starts clean. */
+function closeRoom(): void {
+  mesh?.close();
+  room?.close();
+  mesh = null;
+  room = null;
+}
 
 const lobby = new Lobby(overlay, {
   local() {
@@ -201,8 +220,12 @@ const lobby = new Lobby(overlay, {
     void watchReplay(id, quality);
   },
   async host(name) {
+    // Enter repeats a focused button's click, so presses while a request waits or a room is open do nothing.
+    if (asking || room) return;
+    asking = true;
     lobby.setStatus('Opening a room...');
     const r = await hostRoom();
+    asking = false;
     if (!r.ok) {
       lobby.setStatus(r.reason);
       return;
@@ -212,12 +235,15 @@ const lobby = new Lobby(overlay, {
     connect(r.room, name);
   },
   async join(name, c) {
+    if (asking || room) return;
     if (!/^[A-Z0-9]{6}$/.test(c)) {
       lobby.setStatus('A room code is six letters and numbers.');
       return;
     }
+    asking = true;
     lobby.setStatus('Joining...');
     const r = await joinRoom(c);
+    asking = false;
     if (!r.ok) {
       lobby.setStatus(r.reason);
       return;
@@ -244,10 +270,8 @@ const lobby = new Lobby(overlay, {
   },
   leave() {
     online?.leave();
-    mesh?.close();
-    room?.close();
-    room = null;
-    mesh = null;
+    withdrawCode();
+    closeRoom();
     lobby.showMenu();
     lobby.setStatus('');
   },
@@ -269,6 +293,7 @@ function refreshSeats(): void {
 }
 
 function connect(roomId: string, name: string): void {
+  closeRoom();
   const client = new RoomClient(roomId, name);
   room = client;
   room.onStatus = (s, why) => {
@@ -276,8 +301,11 @@ function connect(roomId: string, name: string): void {
     if (client.refusal) return;
     if (s !== 'open') report('room-socket', { status: s, why, inGame: online !== null, ...(online?.diagnostics() ?? {}) });
     if (s === 'reconnecting') lobby.setStatus('Connection lost; reconnecting...');
-    else if (s === 'closed' && !online) lobby.setStatus('Disconnected from the room.');
-    else if (s === 'open') lobby.setStatus('');
+    else if (s === 'closed' && !online) {
+      lobby.setStatus('Disconnected from the room.');
+      // The connection gave up, so Host and Join work again.
+      if (room === client) closeRoom();
+    } else if (s === 'open') lobby.setStatus('');
   };
   room.onMessage = (m) => {
     switch (m.type) {
@@ -317,8 +345,9 @@ function connect(roomId: string, name: string): void {
         begin(m.start);
         break;
       case 'refused':
-        // A room refused to its own host has nobody in it, so its code is withdrawn.
-        if (hosting && code) void cancelRoom(code);
+        // A room refused to its own host has nobody in it.
+        withdrawCode();
+        closeRoom();
         lobby.setStatus(m.reason);
         lobby.showMenu();
         break;
@@ -333,6 +362,8 @@ function begin(start: StartInfo): void {
     lobby.setStatus('The game started without you.');
     return;
   }
+  // A started game takes no one new, so its code is withdrawn.
+  withdrawCode();
   game.rt = Game.createRuntime({ seed: start.seed, t0: start.t0 });
   const names = new Map(seats.map((s) => [s.seat, s.name]));
   const hud = new Hud(page, () => backToStart(), overlay);
